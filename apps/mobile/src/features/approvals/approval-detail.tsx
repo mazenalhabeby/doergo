@@ -26,6 +26,7 @@ import { ISO_DAY } from './approval-detail-helpers';
 import { ApprovalDetailView } from './approval-detail-view';
 import { ApprovalDurationField } from './approval-duration-field';
 import { FactsWell } from '@/components/facts-well';
+import { DateField } from '@/components/date-field';
 
 /**
  * ONE WAITING DECISION — its facts, and the kind's own buttons
@@ -181,16 +182,18 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
         title={armed ? t(`approvals.actions.${armed.labelKey}`) : ''}
         eyebrow={<SectionLabel>{item.subject.name}</SectionLabel>}
       >
-        {armed?.input === 'minutes' ? <ApprovalDurationField value={duration} onChange={setDuration} /> : null}
+        {armed?.input === 'minutes' ? (
+          <ApprovalDurationField key={`${itemKey}:${armed.id}`} value={duration} onChange={setDuration} />
+        ) : null}
         {armed?.input === 'expiresOn' ? (
           <>
             <SectionLabel>{t('approvals.expiresOn')}</SectionLabel>
-            <GlassInput
+            <DateField
               value={expiresOn}
-              onChangeText={setExpiresOn}
-              placeholder="2027-12-31"
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
+              onChange={setExpiresOn}
+              minDate={new Date()}
+              clearable
+              title={t('approvals.expiresOn')}
             />
           </>
         ) : null}

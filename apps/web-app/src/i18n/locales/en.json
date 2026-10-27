@@ -8357,7 +8357,11 @@
     "ENTRY_ALREADY_CLOSED": "This shift was clocked out meanwhile — open it again to see the real time.",
     "OUTSIDE_ALREADY_DECIDED": "This time was already decided.",
     "OUTSIDE_NOTHING": "There is no time outside the shift to decide.",
-    "FIX_MISSING": "Your location is needed to clock in at {{location}}. Allow location access and try again."
+    "FIX_MISSING": "Your location is needed to clock in at {{location}}. Allow location access and try again.",
+    "CHANGED_MEANWHILE": "This changed while you were deciding. Look again and decide.",
+    "CLOCK_OUT_IN_FUTURE": "A clock-out cannot be in the future.",
+    "OVERTIME_ALREADY_DECIDED": "Somebody already decided this overtime.",
+    "TIME_OFF_DECIDED": "This request was already decided."
   },
   "signLink": {
     "tabs": {
@@ -9830,7 +9834,8 @@
       "maxDays": "At most {{count}} days at a time.",
       "tooLong": "Too long — at most {{count}} days at a time.",
       "confirmEnd": "End?",
-      "confirmEndLabel": "End this stand-in? Press again to confirm"
+      "confirmEndLabel": "End this stand-in? Press again to confirm",
+      "refreshFailed": "Couldn't refresh the stand-ins — this is how they were {{time}}."
     },
     "step": {
       "firstDone": "Approved — now waiting for {{role}}.",
@@ -9889,7 +9894,7 @@
       "count_other": "{{count}} things to decide",
       "approve": "Approve day",
       "review": "Review",
-      "needsMinutes": "Extra time and overtime need minutes — open them one by one.",
+      "needsMinutes": "For extra time and overtime, enter how much time to count — open them one by one.",
       "nothingToApprove": "Nothing here can be approved in one go — open each item.",
       "partly": "Approved — {{what}} still needs {{role}}.",
       "approved": "Day approved for {{name}}",

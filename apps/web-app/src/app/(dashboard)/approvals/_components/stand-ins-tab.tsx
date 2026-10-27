@@ -8,18 +8,20 @@ import { DELEGATION_MAX_DAYS, standInDatesProblem, type StandInView } from "@hbc
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
-import { formatMediumDate } from "@/lib/format-date"
+import { AlertTriangle } from "lucide-react"
+import { formatMediumDate, formatTimeAgo } from "@/lib/format-date"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Combobox } from "@/components/ui/combobox"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { GroupLabel, Panel } from "@/components/page/page-kit"
+import { GroupLabel, Notice, Panel } from "@/components/page/page-kit"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ListTableError } from "@/components/common/list-page"
 import { cn } from "@/lib/utils"
 import { useConfirmPress } from "../_hooks/use-confirm-press"
 import { useTodayKey } from "../_hooks/use-today-key"
+import { useTick } from "../_hooks/use-tick"
 import { ConfirmHint } from "./confirm-hint"
 
 const day = (k: string) => formatMediumDate(`${k}T12:00:00Z`)
@@ -32,7 +34,7 @@ const day = (k: string) => formatMediumDate(`${k}T12:00:00Z`)
 export function StandInsTab() {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: keys.approvals.standIns(),
     queryFn: approvalsApi.standIns,
   })
@@ -95,7 +97,9 @@ export function StandInsTab() {
   const tooLong = standInDatesProblem(startsOn, endsOn, today, DELEGATION_MAX_DAYS) === "STAND_IN_TOO_LONG"
   const ready = !!toUserId && !!startsOn && !!endsOn && endsOn >= startsOn && !tooLong && !create.isPending
 
-  if (isError) return <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
+  // A background read that failed keeps what is on screen (a line says so), as the inbox does.
+  if (isError && !data)
+    return <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
   if (isLoading)
     return (
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
@@ -105,112 +109,127 @@ export function StandInsTab() {
     )
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-      <Panel className="flex flex-col gap-3 p-5">
-        <div>
-          <b className="text-base">{t("approvals.standIn.title")}</b>
-          <p className="mt-1 text-sm text-muted-foreground">{t("approvals.standIn.intro")}</p>
-        </div>
+    <>
+      {isError && <StaleLine since={dataUpdatedAt} />}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <Panel className="flex flex-col gap-3 p-5">
+          <div>
+            <b className="text-base">{t("approvals.standIn.title")}</b>
+            <p className="mt-1 text-sm text-muted-foreground">{t("approvals.standIn.intro")}</p>
+          </div>
 
-        {data && !canFill && <p className="text-sm text-muted-foreground">{t("approvals.standIn.nothing")}</p>}
+          {data && !canFill && <p className="text-sm text-muted-foreground">{t("approvals.standIn.nothing")}</p>}
 
-        {canFill && (
-          <div className="space-y-3">
-            {data!.mayArrange && (
+          {canFill && (
+            <div className="space-y-3">
+              {data!.mayArrange && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="stand-in-whose">{t("approvals.standIn.whose")}</Label>
+                  <Combobox
+                    id="stand-in-whose"
+                    value={fromUserId}
+                    // Nobody stands in for themselves: a stand-in who is now the one away is cleared.
+                    onChange={(v) => {
+                      setFrom(v)
+                      if (v && v === toUserId) setTo("")
+                    }}
+                    options={leaders}
+                    placeholder={t("approvals.standIn.me")}
+                  />
+                </div>
+              )}
               <div className="space-y-1.5">
-                <Label htmlFor="stand-in-whose">{t("approvals.standIn.whose")}</Label>
+                <Label htmlFor="stand-in-who">{t("approvals.standIn.who")}</Label>
                 <Combobox
-                  id="stand-in-whose"
-                  value={fromUserId}
-                  // Nobody stands in for themselves: a stand-in who is now the one away is cleared.
-                  onChange={(v) => {
-                    setFrom(v)
-                    if (v && v === toUserId) setTo("")
-                  }}
-                  options={leaders}
-                  placeholder={t("approvals.standIn.me")}
+                  id="stand-in-who"
+                  value={toUserId}
+                  onChange={setTo}
+                  options={people}
+                  placeholder={t("approvals.standIn.pickPerson")}
                 />
               </div>
-            )}
-            <div className="space-y-1.5">
-              <Label htmlFor="stand-in-who">{t("approvals.standIn.who")}</Label>
-              <Combobox
-                id="stand-in-who"
-                value={toUserId}
-                onChange={setTo}
-                options={people}
-                placeholder={t("approvals.standIn.pickPerson")}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="stand-in-from">{t("approvals.standIn.firstDay")}</Label>
+                  <DatePicker
+                    id="stand-in-from"
+                    value={startsOn}
+                    min={today}
+                    // A first day after the last one moves the last one with it.
+                    onChange={(v) => {
+                      setStart(v)
+                      if (v > endsOn) setEnd(v)
+                    }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="stand-in-to">{t("approvals.standIn.lastDay")}</Label>
+                  <DatePicker id="stand-in-to" value={endsOn} min={startsOn} onChange={setEnd} />
+                </div>
+              </div>
+              <p aria-live="polite" className={cn("text-xs", tooLong ? "text-shell-crit" : "text-muted-foreground")}>
+                {t(tooLong ? "approvals.standIn.tooLong" : "approvals.standIn.maxDays", { count: DELEGATION_MAX_DAYS })}
+              </p>
               <div className="space-y-1.5">
-                <Label htmlFor="stand-in-from">{t("approvals.standIn.firstDay")}</Label>
-                <DatePicker
-                  id="stand-in-from"
-                  value={startsOn}
-                  min={today}
-                  // A first day after the last one moves the last one with it.
-                  onChange={(v) => {
-                    setStart(v)
-                    if (v > endsOn) setEnd(v)
-                  }}
+                <Label htmlFor="stand-in-note">{t("approvals.standIn.note")}</Label>
+                <Textarea
+                  id="stand-in-note"
+                  rows={2}
+                  maxLength={300}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="stand-in-to">{t("approvals.standIn.lastDay")}</Label>
-                <DatePicker id="stand-in-to" value={endsOn} min={startsOn} onChange={setEnd} />
-              </div>
+              <Button className="w-full rounded-lg" disabled={!ready} onClick={() => create.mutate()}>
+                {t("approvals.standIn.save")}
+              </Button>
             </div>
-            <p aria-live="polite" className={cn("text-xs", tooLong ? "text-shell-crit" : "text-muted-foreground")}>
-              {t(tooLong ? "approvals.standIn.tooLong" : "approvals.standIn.maxDays", { count: DELEGATION_MAX_DAYS })}
-            </p>
-            <div className="space-y-1.5">
-              <Label htmlFor="stand-in-note">{t("approvals.standIn.note")}</Label>
-              <Textarea
-                id="stand-in-note"
-                rows={2}
-                maxLength={300}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
+          )}
+        </Panel>
+        <Panel className="flex flex-col gap-4 p-5">
+          {data && (
+            <div className="space-y-4">
+              <StandInList
+                title={t("approvals.standIn.yours")}
+                rows={data.given}
+                show="to"
+                onEnd={(id) => end.mutate(id)}
+                busy={end.isPending}
               />
+              <StandInList
+                title={t("approvals.standIn.forYou")}
+                rows={data.received}
+                show="from"
+                onEnd={(id) => end.mutate(id)}
+                busy={end.isPending}
+              />
+              <StandInList
+                title={t("approvals.standIn.others")}
+                rows={data.others}
+                show="both"
+                onEnd={(id) => end.mutate(id)}
+                busy={end.isPending}
+              />
+              {!data.given.length && !data.received.length && !data.others.length && (
+                <p className="text-sm text-muted-foreground">{t("approvals.standIn.none")}</p>
+              )}
             </div>
-            <Button className="w-full rounded-lg" disabled={!ready} onClick={() => create.mutate()}>
-              {t("approvals.standIn.save")}
-            </Button>
-          </div>
-        )}
-      </Panel>
-      <Panel className="flex flex-col gap-4 p-5">
-        {data && (
-          <div className="space-y-4">
-            <StandInList
-              title={t("approvals.standIn.yours")}
-              rows={data.given}
-              show="to"
-              onEnd={(id) => end.mutate(id)}
-              busy={end.isPending}
-            />
-            <StandInList
-              title={t("approvals.standIn.forYou")}
-              rows={data.received}
-              show="from"
-              onEnd={(id) => end.mutate(id)}
-              busy={end.isPending}
-            />
-            <StandInList
-              title={t("approvals.standIn.others")}
-              rows={data.others}
-              show="both"
-              onEnd={(id) => end.mutate(id)}
-              busy={end.isPending}
-            />
-            {!data.given.length && !data.received.length && !data.others.length && (
-              <p className="text-sm text-muted-foreground">{t("approvals.standIn.none")}</p>
-            )}
-          </div>
-        )}
-      </Panel>
-    </div>
+          )}
+        </Panel>
+      </div>
+    </>
+  )
+}
+
+/** The last read of the stand-ins failed: what is shown is the earlier one, and it keeps saying how old it is. */
+function StaleLine({ since }: { since: number }) {
+  const { t } = useTranslation()
+  useTick()
+  return (
+    <Notice tone="warn">
+      <AlertTriangle />
+      {t("approvals.standIn.refreshFailed", { time: formatTimeAgo(since) })}
+    </Notice>
   )
 }
 
@@ -259,7 +278,7 @@ function StandInList({
 /** "End" acts on the second press — a stand-in is never ended by one stray tap. */
 function EndButton({ busy, about, onEnd }: { busy: boolean; about: string; onEnd: () => void }) {
   const { t } = useTranslation()
-  const { asking, press } = useConfirmPress(onEnd)
+  const { asking, press, hintId } = useConfirmPress(onEnd)
   const label = asking ? t("approvals.standIn.confirmEndLabel") : t("approvals.standIn.end")
   return (
     <>
@@ -270,10 +289,12 @@ function EndButton({ busy, about, onEnd }: { busy: boolean; about: string; onEnd
         disabled={busy}
         onClick={press}
         aria-label={`${label} · ${about}`}
+        aria-pressed={asking}
+        aria-describedby={hintId}
       >
         {asking ? t("approvals.standIn.confirmEnd") : t("approvals.standIn.end")}
       </Button>
-      <ConfirmHint asking={asking} />
+      <ConfirmHint id={hintId} asking={asking} />
     </>
   )
 }

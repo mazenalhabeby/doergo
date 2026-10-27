@@ -13,6 +13,7 @@ import { useRouteAccess } from "@/hooks/use-route-access"
 export { itemKey } from "../_lib/approval-keys"
 import { KIND_KEYS, itemKey, type Filter } from "../_lib/approval-keys"
 import { useApprovalDays } from "./use-approval-days"
+import { listOrder } from "../_lib/list-order"
 
 export type ApprovalsTab = "decide" | "rules" | "stand"
 
@@ -107,8 +108,10 @@ export function useApprovalsPage() {
     () => setSelected((s) => (returnTo && s === returnTo.item ? returnTo.day : null)),
     [returnTo],
   )
-  // Bumped when the reader gives the first of two approvals: the open form closes (the panel is keyed on it).
-  const [firstSteps, setFirstSteps] = useState(0)
+  // Bumped per ITEM when the reader gives the first of two approvals: that item's form closes (its panel is keyed
+  // on it). Per item, so an answer arriving after the reader moved on never resets the panel now open.
+  const [firstSteps, setFirstSteps] = useState<Record<string, number>>({})
+  const firstStepsOf = useCallback((key: string) => firstSteps[key] ?? 0, [firstSteps])
 
   // The first item is chosen for you on a wide screen; a narrow one starts on the list.
   // A grouped item is opened from its day ("Review"), so it is found in the whole list.
@@ -135,16 +138,47 @@ export function useApprovalsPage() {
         return
       if (el?.closest(USES_ARROWS)) return
       if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return
-      const at = visible.findIndex((i) => itemKey(i) === selected)
-      const next = visible[Math.min(visible.length - 1, Math.max(0, at + (e.key === "ArrowDown" ? 1 : -1)))]
-      if (next) {
-        e.preventDefault()
-        setSelected(itemKey(next))
-      }
+      // The list as drawn — each group's days, then its items — so a day is walked through, never skipped.
+      const order = listOrder(dayState.visibleDays, visible)
+      const at = order.indexOf(selected ?? "")
+      const next = order[Math.min(order.length - 1, Math.max(0, at + (e.key === "ArrowDown" ? 1 : -1)))]
+      if (!next) return
+      e.preventDefault()
+      setSelected(next)
+      // Roving focus: a keyboard on the list stays on it, on the row now chosen (drawn on the next frame).
+      if (el?.closest("[data-approval-key]"))
+        requestAnimationFrame(() =>
+          document.querySelector<HTMLElement>(`[data-approval-key="${CSS.escape(next)}"]`)?.focus(),
+        )
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [visible, selected, shown])
+  }, [visible, dayState.visibleDays, selected, shown])
+
+  /**
+   * Where the panel goes once an item is decided — chosen BEFORE the list drops it, so it moves on instead of
+   * emptying. An item opened from a day stays in that day: its next item (Back returns to the day); the day's
+   * last item closes the panel. Anything else goes to the next in line.
+   */
+  const nextAfter = (d: ApprovalDecision): string | null => {
+    const key = itemKey(d)
+    const day = returnTo?.item === key ? dayState.days.find((x) => x.key === returnTo.day) : undefined
+    if (day && returnTo) {
+      const members = dayState.membersOf(day)
+      const at = members.findIndex((i) => itemKey(i) === key)
+      const rest = members.filter((i) => itemKey(i) !== key)
+      const next = rest[Math.max(0, Math.min(at, rest.length - 1))]
+      if (next) {
+        // Back from the next one still returns to the day.
+        setReturnTo({ day: returnTo.day, item: itemKey(next) })
+        return itemKey(next)
+      }
+      return null
+    }
+    const at = visible.findIndex((i) => itemKey(i) === key)
+    const next = at < 0 ? undefined : (visible[at + 1] ?? visible[at - 1])
+    return next ? itemKey(next) : null
+  }
 
   const decide = useMutation({
     mutationFn: (d: ApprovalDecision) => approvalsApi.decide(d),
@@ -153,14 +187,12 @@ export function useApprovalsPage() {
       if (res.stage === "FIRST_STEP") {
         // Step 1 of 2: theirs is in; the item stays, now waiting for the second person.
         notify.success(t("approvals.step.firstDone", { role: res.waitingFor ?? "" }))
-        setFirstSteps((n) => n + 1)
+        const key = itemKey(d)
+        setFirstSteps((m) => ({ ...m, [key]: (m[key] ?? 0) + 1 }))
         qc.invalidateQueries({ queryKey: keys.approvals.all() })
         return
       }
-      // Next in line BEFORE the list drops it, so the panel moves on instead of emptying.
-      const at = visible.findIndex((i) => i.kind === d.kind && i.id === d.id)
-      const next = visible[at + 1] ?? visible[at - 1]
-      setSelected(next ? itemKey(next) : null)
+      setSelected(nextAfter(d))
       qc.setQueryData<ApprovalInbox>(keys.approvals.list(), (old) =>
         old ? { ...old, items: old.items.filter((i) => !(i.kind === d.kind && i.id === d.id)) } : old,
       )
@@ -219,7 +251,7 @@ export function useApprovalsPage() {
     currentDay,
     review,
     back,
-    firstSteps,
+    firstStepsOf,
     ...dayState,
   }
 }

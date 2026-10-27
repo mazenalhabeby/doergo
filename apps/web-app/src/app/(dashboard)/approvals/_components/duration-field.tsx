@@ -6,14 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatRequestMinutes } from "@/lib/requests"
 import { cn } from "@/lib/utils"
-import { durationFields, durationValue } from "../_lib/rule-limit"
-
-/** The longest time one decision may count (the server's own ceiling): 24 h. */
-export const DURATION_MAX_MINUTES = 1440
+import { durationFieldsOf, durationMinutes, type DurationFields } from "@hbcfield/shared/client"
 
 /**
  * The time a decision counts (overtime, extra time, time outside the shift), typed as hours and minutes — the
- * same two fields, and the same reading of them, as a rule's limit (rule-limit.ts: "1,5" h is 1 h 30 min). It
+ * same two fields, and the same reading of them (shared duration-input.ts: "1,5" h is 1 h 30 min), as the phone. It
  * reports total minutes, or null when a field cannot be read. Keyed by the item, it starts on that item's own.
  */
 export function DurationField({
@@ -28,17 +25,16 @@ export function DurationField({
   onChange: (minutes: number | null) => void
 }) {
   const { t } = useTranslation()
-  const [hm, setHm] = useState(() => durationFields(String(initialMinutes)))
-  const total = durationValue(hm.h, hm.m)
+  const [hm, setHm] = useState(() => durationFieldsOf(initialMinutes))
+  const total = durationMinutes(hm)
   // Decimal hours ("1,5") are read back as the time they mean, so nobody approves 1 h 50 min by mistake.
   const echo =
     total && /[.,]/.test(hm.h)
-      ? t("approvals.durationEquals", { time: formatRequestMinutes(Number(total), (k, o) => t(k, o)) })
+      ? t("approvals.durationEquals", { time: formatRequestMinutes(total, (k, o) => t(k, o)) })
       : null
-  const set = (next: { h: string; m: string }) => {
+  const set = (next: DurationFields) => {
     setHm(next)
-    const v = durationValue(next.h, next.m)
-    onChange(v === null ? null : Number(v || 0))
+    onChange(durationMinutes(next))
   }
   // Text with a number keyboard, never type="number": Safari reads a decimal comma there as empty.
   const field = (part: "h" | "m") => (

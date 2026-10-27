@@ -1,6 +1,7 @@
-import { durationInRange, durationMinutes, durationText, readDurationPart, minutesText } from '../approval-duration';
+import { durationFieldsOf, durationInRange, durationMinutes, readDurationPart } from '@hbcfield/shared/client';
+import { minutesText } from '../approval-duration';
 
-describe('approval duration — hours + minutes', () => {
+describe('approval duration — hours + minutes (shared reading)', () => {
   it('reads decimal hours with a comma or a dot', () => {
     expect(durationMinutes({ h: '1,5', m: '' })).toBe(90);
     expect(durationMinutes({ h: '1.5', m: '' })).toBe(90);
@@ -27,10 +28,10 @@ describe('approval duration — hours + minutes', () => {
   });
 
   it('shows whole minutes as hours + minutes', () => {
-    expect(durationText(90)).toEqual({ h: '1', m: '30' });
-    expect(durationText(120)).toEqual({ h: '2', m: '' });
-    expect(durationText(30)).toEqual({ h: '', m: '30' });
-    expect(durationText(0)).toEqual({ h: '', m: '' });
+    expect(durationFieldsOf(90)).toEqual({ h: '1', m: '30' });
+    expect(durationFieldsOf(120)).toEqual({ h: '2', m: '' });
+    expect(durationFieldsOf(30)).toEqual({ h: '', m: '30' });
+    expect(durationFieldsOf(0)).toEqual({ h: '', m: '' });
   });
 
   it('says a duration in the reader’s words — hours + minutes, never “1h 30m”', () => {

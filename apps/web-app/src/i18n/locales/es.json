@@ -8357,7 +8357,11 @@
     "ENTRY_ALREADY_CLOSED": "Este turno ya se cerró mientras tanto: ábralo de nuevo para ver la hora real.",
     "OUTSIDE_ALREADY_DECIDED": "Este tiempo ya está decidido.",
     "OUTSIDE_NOTHING": "No hay tiempo fuera del turno que decidir.",
-    "FIX_MISSING": "Se necesita su ubicación para fichar en {{location}}. Permita el acceso a la ubicación y vuelva a intentarlo."
+    "FIX_MISSING": "Se necesita su ubicación para fichar en {{location}}. Permita el acceso a la ubicación y vuelva a intentarlo.",
+    "CHANGED_MEANWHILE": "Esto cambió mientras usted decidía. Vuelva a mirarlo y decida.",
+    "CLOCK_OUT_IN_FUTURE": "Una salida no puede estar en el futuro.",
+    "OVERTIME_ALREADY_DECIDED": "Alguien ya decidió estas horas extra.",
+    "TIME_OFF_DECIDED": "Esta solicitud ya fue decidida."
   },
   "signLink": {
     "tabs": {
@@ -9830,7 +9834,8 @@
       "maxDays": "Como máximo {{count}} días seguidos.",
       "tooLong": "Demasiado largo: como máximo {{count}} días seguidos.",
       "confirmEnd": "¿Terminar?",
-      "confirmEndLabel": "¿Terminar esta sustitución? Pulsa otra vez para confirmar"
+      "confirmEndLabel": "¿Terminar esta sustitución? Pulsa otra vez para confirmar",
+      "refreshFailed": "No se pudieron actualizar las sustituciones — así estaban {{time}}."
     },
     "step": {
       "firstDone": "Aprobado — ahora espera a {{role}}.",
@@ -9889,7 +9894,7 @@
       "count_other": "{{count}} decisiones",
       "approve": "Aprobar el día",
       "review": "Revisar",
-      "needsMinutes": "El tiempo extra y las horas extra necesitan minutos: ábrelos uno a uno.",
+      "needsMinutes": "Para el tiempo extra y las horas extra, indique cuánto tiempo se cuenta: ábralos uno a uno.",
       "nothingToApprove": "Aquí no se puede aprobar nada de una vez: abre cada elemento.",
       "partly": "Aprobado — {{what}} aún necesita a {{role}}.",
       "approved": "Día aprobado para {{name}}",

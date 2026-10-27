@@ -3274,7 +3274,7 @@
       "FIX_MISSING": "Der Standort konnte nicht bestimmt werden.",
       "REPORT_EXISTS": "Für diesen Auftrag gibt es bereits einen Servicebericht, daher wurde Ihrer nicht hinzugefügt.",
       "WAITING_FOR_WIFI": "Wartet auf WLAN – Sie haben gewählt, Fotos nur über WLAN zu senden.",
-      "TIME_OFF_DECIDED": "Dieser Antrag wurde bereits entschieden und kann nicht mehr storniert werden.",
+      "TIME_OFF_DECIDED": "Dieser Antrag wurde bereits entschieden.",
       "NO_SHIFT_TODAY": "Sie haben heute keine Schicht, und dieser Arbeitsbereich erlaubt das Einstempeln nur mit Schicht.",
       "TOO_FAR_TO_ARRIVE": "Sie sind {{distance}} vom Einsatzort entfernt. Um die Ankunft zu melden, müssen Sie sich im Umkreis von {{radius}} befinden. Bitte gehen Sie näher heran und versuchen Sie es erneut.",
       "TOO_FAR_TO_START": "Sie sind {{distance}} vom Einsatzort entfernt. Um den Auftrag zu starten, müssen Sie sich im Umkreis von {{radius}} befinden. Bitte gehen Sie näher heran und versuchen Sie es erneut.",
@@ -3328,7 +3328,10 @@
       "EXTRA_TIME_NO_SHIFT": "Es gibt kein geplantes Ende zu verlängern – diese Zeit zählt bereits vollständig.",
       "ENTRY_STILL_OPEN": "Diese Schicht läuft noch – sie kann entschieden werden, sobald ausgestempelt ist.",
       "OUTSIDE_ALREADY_DECIDED": "Über diese Zeit wurde bereits entschieden.",
-      "OUTSIDE_NOTHING": "Es gibt keine Zeit außerhalb der Schicht zu entscheiden."
+      "OUTSIDE_NOTHING": "Es gibt keine Zeit außerhalb der Schicht zu entscheiden.",
+      "CHANGED_MEANWHILE": "Das hat sich geändert, während Sie entschieden haben. Bitte noch einmal ansehen und entscheiden.",
+      "CLOCK_OUT_IN_FUTURE": "Ein Ausstempeln kann nicht in der Zukunft liegen.",
+      "OVERTIME_ALREADY_DECIDED": "Über diese Überstunden hat bereits jemand entschieden."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -5157,6 +5160,7 @@
     "refresh": "Aktualisieren",
     "updated": "Aktualisiert {{time}}",
     "loadFailed": "Ihre Freigaben konnten nicht geladen werden",
+    "refreshFailed": "Aktualisieren fehlgeschlagen — Sie sehen den zuletzt geladenen Stand. Zum Wiederholen nach unten ziehen.",
     "groups": {
       "NOW": "Kann nicht warten",
       "TODAY": "Heute",
@@ -5276,6 +5280,8 @@
     "someone": "Jemand",
     "empty": "Nichts wartet auf Sie",
     "emptyHint": "Neue Anfragen erscheinen hier, sobald sie eingehen.",
+    "emptyKind": "Bei „{{kind}}“ wartet nichts auf Sie",
+    "showAll": "Alle anzeigen",
     "pick": "Wählen Sie einen Eintrag, um die Details zu sehen",
     "unavailable": "Nicht geladen: {{kinds}}. Bitte aktualisieren.",
     "yes": "Ja",
@@ -5395,7 +5401,7 @@
       "count_other": "{{count}} Entscheidungen",
       "approve": "Tag bestätigen",
       "review": "Prüfen",
-      "needsMinutes": "Mehrarbeit und Überstunden brauchen Minuten — öffnen Sie sie einzeln.",
+      "needsMinutes": "Mehrarbeit und Überstunden: Öffnen Sie jeden Eintrag einzeln und geben Sie ein, wie viel Zeit zählt.",
       "nothingToApprove": "Hier lässt sich nichts auf einmal bestätigen — öffnen Sie jeden Eintrag.",
       "partly": "Genehmigt — {{what}} braucht noch {{role}}.",
       "approved": "Tag für {{name}} bestätigt",

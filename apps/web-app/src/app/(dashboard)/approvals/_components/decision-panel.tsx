@@ -1,12 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ArrowUpRight, Check, Loader2, X } from "lucide-react"
 import {
   approvalActionsFor,
   approvalWebPath,
+  durationInRange,
   APPROVAL_KIND_SPECS,
   type ApprovalActionSpec,
   type ApprovalDecision,
@@ -25,8 +26,9 @@ import { FactRow } from "@/components/page/page-kit"
 import { WhoElse } from "./who-else"
 import { ViewFile } from "./view-file"
 import { NoShowDecision } from "./no-show-decision"
-import { DurationField, DURATION_MAX_MINUTES } from "./duration-field"
+import { DurationField } from "./duration-field"
 import { nameParts } from "./name-parts"
+import { ConfirmHint } from "./confirm-hint"
 import { ruleLinkForItem } from "../_lib/rule-link"
 import { Icon } from "@/components/ui/icon"
 
@@ -62,6 +64,7 @@ export function DecisionPanel({
   const [reason, setReason] = useState("")
   const [minutes, setMinutes] = useState<number | null>(30)
   const [expiresOn, setExpiresOn] = useState("")
+  const hintId = useId()
 
   // A different item starts clean — a reason typed for one must never be sent for the next. Keyed on the item
   // alone: a running shift's facts are rebuilt on every refresh, and the form must not close under the typing.
@@ -72,7 +75,7 @@ export function DecisionPanel({
 
   const needsForm = (a: ApprovalActionSpec) => a.reason !== "none" || !!a.input
   const reasonMissing = armed?.reason === "required" && !reason.trim()
-  const minutesBad = armed?.input === "minutes" && !(minutes != null && minutes >= 1 && minutes <= DURATION_MAX_MINUTES)
+  const minutesBad = armed?.input === "minutes" && !durationInRange(minutes)
 
   const send = (a: ApprovalActionSpec) => {
     if (needsForm(a) && armed?.id !== a.id) {
@@ -197,9 +200,17 @@ export function DecisionPanel({
                 key={a.id}
                 size="pillLg"
                 variant={a.tone === "danger" ? (isArmed ? "destructive" : "outline") : "default"}
-                disabled={busy || blocked}
+                // Not `disabled` while the form is incomplete: the button keeps the keyboard focus (send() refuses).
+                disabled={busy}
+                aria-disabled={blocked || undefined}
+                // A two-press action says it is armed — pressed, with "press again" read as its description.
+                aria-pressed={needsForm(a) ? isArmed : undefined}
+                aria-describedby={isArmed ? hintId : undefined}
                 onClick={() => send(a)}
-                className={cn(a.tone === "danger" && !isArmed && "text-destructive hover:text-destructive")}
+                className={cn(
+                  a.tone === "danger" && !isArmed && "text-destructive hover:text-destructive",
+                  blocked && "cursor-not-allowed opacity-50",
+                )}
               >
                 {busy && isArmed ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -217,6 +228,7 @@ export function DecisionPanel({
               {t("common.cancel")}
             </Button>
           )}
+          <ConfirmHint id={hintId} asking={!!armed} />
         </div>
       )}
 

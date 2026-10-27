@@ -8357,7 +8357,11 @@
     "ENTRY_ALREADY_CLOSED": "Ce poste a été clôturé entre-temps – rouvrez-le pour voir l'heure réelle.",
     "OUTSIDE_ALREADY_DECIDED": "Ce temps a déjà été décidé.",
     "OUTSIDE_NOTHING": "Il n'y a pas de temps hors du poste à décider.",
-    "FIX_MISSING": "Votre position est nécessaire pour pointer à {{location}}. Autorisez l'accès à la position et réessayez."
+    "FIX_MISSING": "Votre position est nécessaire pour pointer à {{location}}. Autorisez l'accès à la position et réessayez.",
+    "CHANGED_MEANWHILE": "Cela a changé pendant que vous décidiez. Regardez à nouveau, puis décidez.",
+    "CLOCK_OUT_IN_FUTURE": "Un pointage de sortie ne peut pas être dans le futur.",
+    "OVERTIME_ALREADY_DECIDED": "Quelqu’un a déjà décidé de ces heures sup.",
+    "TIME_OFF_DECIDED": "Cette demande a déjà été décidée."
   },
   "signLink": {
     "tabs": {
@@ -9830,7 +9834,8 @@
       "maxDays": "Au plus {{count}} jours d’affilée.",
       "tooLong": "Trop long — au plus {{count}} jours d’affilée.",
       "confirmEnd": "Terminer ?",
-      "confirmEndLabel": "Terminer ce remplacement ? Appuyez à nouveau pour confirmer"
+      "confirmEndLabel": "Terminer ce remplacement ? Appuyez à nouveau pour confirmer",
+      "refreshFailed": "Impossible d’actualiser les remplacements — voici ce qu’ils étaient {{time}}."
     },
     "step": {
       "firstDone": "Validé — en attente de {{role}}.",
@@ -9889,7 +9894,7 @@
       "count_other": "{{count}} décisions",
       "approve": "Valider la journée",
       "review": "Examiner",
-      "needsMinutes": "Le temps supplémentaire et les heures sup. demandent des minutes : ouvrez-les un par un.",
+      "needsMinutes": "Pour le temps supplémentaire et les heures sup., indiquez combien de temps compter : ouvrez-les un par un.",
       "nothingToApprove": "Rien ici ne peut être validé d’un coup : ouvrez chaque élément.",
       "partly": "Approuvé — {{what}} attend encore {{role}}.",
       "approved": "Journée validée pour {{name}}",

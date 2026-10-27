@@ -8357,7 +8357,11 @@
     "ENTRY_ALREADY_CLOSED": "Questo turno è stato chiuso nel frattempo: riaprilo per vedere l'ora reale.",
     "OUTSIDE_ALREADY_DECIDED": "Questo tempo è già stato deciso.",
     "OUTSIDE_NOTHING": "Non c'è tempo fuori dal turno da decidere.",
-    "FIX_MISSING": "Serve la tua posizione per timbrare presso {{location}}. Consenti l'accesso alla posizione e riprova."
+    "FIX_MISSING": "Serve la tua posizione per timbrare presso {{location}}. Consenti l'accesso alla posizione e riprova.",
+    "CHANGED_MEANWHILE": "Questo è cambiato mentre decideva. Lo guardi di nuovo e decida.",
+    "CLOCK_OUT_IN_FUTURE": "Una timbratura di uscita non può essere nel futuro.",
+    "OVERTIME_ALREADY_DECIDED": "Qualcuno ha già deciso su questi straordinari.",
+    "TIME_OFF_DECIDED": "Questa richiesta è già stata decisa."
   },
   "signLink": {
     "tabs": {
@@ -9830,7 +9834,8 @@
       "maxDays": "Al massimo {{count}} giorni di fila.",
       "tooLong": "Troppo lungo: al massimo {{count}} giorni di fila.",
       "confirmEnd": "Terminare?",
-      "confirmEndLabel": "Terminare questa sostituzione? Premi di nuovo per confermare"
+      "confirmEndLabel": "Terminare questa sostituzione? Premi di nuovo per confermare",
+      "refreshFailed": "Impossibile aggiornare le sostituzioni — ecco com'erano {{time}}."
     },
     "step": {
       "firstDone": "Approvato — ora attende {{role}}.",
@@ -9889,7 +9894,7 @@
       "count_other": "{{count}} decisioni",
       "approve": "Approva la giornata",
       "review": "Esamina",
-      "needsMinutes": "Tempo extra e straordinari richiedono i minuti: aprili uno per uno.",
+      "needsMinutes": "Per tempo extra e straordinari, indichi quanto tempo contare: li apra uno per uno.",
       "nothingToApprove": "Qui niente si approva in un colpo solo: apri ogni elemento.",
       "partly": "Approvato — {{what}} richiede ancora {{role}}.",
       "approved": "Giornata approvata per {{name}}",

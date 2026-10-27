@@ -1,5 +1,6 @@
 "use client"
 
+import type { KeyboardEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { CheckCheck, ChevronRight } from "lucide-react"
 import { kindNeedsMinutes, type ApprovalDay, type ApprovalItem } from "@hbcfield/shared/client"
@@ -57,7 +58,11 @@ export function DayPanel({
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("approvals.day.members")} · {t("approvals.day.count", { count: members.length })}
         </p>
-        <ul className="divide-y divide-border overflow-hidden rounded-[14px] border border-border">
+        <ul
+          className="divide-y divide-border overflow-hidden rounded-[14px] border border-border"
+          // ↑ / ↓ move between the day's items (the focus follows) — kept here, so the inbox list does not walk away.
+          onKeyDown={walkButtons}
+        >
           {members.map((m) => {
             const text = describeItem(m, t, orgCurrency)
             return (
@@ -87,4 +92,18 @@ export function DayPanel({
       )}
     </div>
   )
+}
+
+/** Roving focus over a list's buttons: ↑ / ↓ to the previous / next, Home / End to the first / last. */
+function walkButtons(e: KeyboardEvent<HTMLElement>) {
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return
+  const buttons = [...e.currentTarget.querySelectorAll<HTMLButtonElement>("button")]
+  const at = buttons.indexOf(document.activeElement as HTMLButtonElement)
+  if (at < 0) return
+  const last = buttons.length - 1
+  const to =
+    e.key === "Home" ? 0 : e.key === "End" ? last : Math.min(last, Math.max(0, at + (e.key === "ArrowDown" ? 1 : -1)))
+  e.preventDefault()
+  e.stopPropagation()
+  buttons[to]?.focus()
 }

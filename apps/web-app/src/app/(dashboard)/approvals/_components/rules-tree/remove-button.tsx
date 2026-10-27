@@ -24,7 +24,7 @@ type RemoveProps = { label: string; confirmLabel: string; busy?: boolean; onRemo
 /** A rule's delete: asks on the first press, deletes on the second. */
 export function RemoveButton({ label, confirmLabel, busy, onRemove }: RemoveProps) {
   const { t } = useTranslation()
-  const { asking, press } = useConfirmPress(onRemove)
+  const { asking, press, hintId } = useConfirmPress(onRemove)
   return (
     <>
       <button
@@ -32,11 +32,13 @@ export function RemoveButton({ label, confirmLabel, busy, onRemove }: RemoveProp
         onClick={press}
         disabled={busy}
         aria-label={asking ? confirmLabel : label}
+        aria-pressed={asking}
+        aria-describedby={hintId}
         className={cn(BIN, "disabled:pointer-events-none disabled:opacity-50", asking && ASKING)}
       >
         {asking ? t("approvals.tree.confirmRemove") : <Icon name="trash" size={15} />}
       </button>
-      <ConfirmHint asking={asking} />
+      <ConfirmHint id={hintId} asking={asking} />
     </>
   )
 }

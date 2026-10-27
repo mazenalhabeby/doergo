@@ -1,9 +1,15 @@
 'use client';
 
-import { APPROVAL_KIND_SPECS, approvalActionsFor, describeApproval, type ApprovalT } from '@hbcfield/shared/client';
+import {
+  APPROVAL_KIND_SPECS,
+  approvalActionsFor,
+  describeApproval,
+  durationInRange,
+  durationMinutes,
+  type ApprovalT,
+} from '@hbcfield/shared/client';
 import { formatDay } from '@/lib/money';
 import { ISO_DAY } from './approval-detail-helpers';
-import { durationInRange, durationMinutes } from './approval-duration';
 import type { useApprovalDetail } from './use-approval-detail';
 import { minutesText } from './approval-duration';
 

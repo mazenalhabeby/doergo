@@ -3,7 +3,8 @@ import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
 import { AText, GlassInput, SectionLabel } from '@/components/amazen';
-import { durationInRange, durationMinutes, type DurationText, minutesText } from './approval-duration';
+import { durationInRange, durationMinutes, type DurationFields } from '@hbcfield/shared/client';
+import { minutesText } from './approval-duration';
 
 /**
  * The time a decision counts, typed as hours and minutes (the web's DurationField): hours on a decimal pad
@@ -14,8 +15,8 @@ export function ApprovalDurationField({
   value,
   onChange,
 }: {
-  value: DurationText;
-  onChange: (v: DurationText) => void;
+  value: DurationFields;
+  onChange: (v: DurationFields) => void;
 }) {
   const { t } = useTranslation();
   const { amazen } = useTheme();

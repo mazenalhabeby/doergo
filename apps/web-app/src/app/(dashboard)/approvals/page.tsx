@@ -74,7 +74,7 @@ export default function ApprovalsPage() {
     currentDay,
     review,
     back,
-    firstSteps,
+    firstStepsOf,
     visibleDays,
     membersOf,
     approveDay,
@@ -100,6 +100,7 @@ export default function ApprovalsPage() {
           covering={covering}
           unavailable={unavailable}
           staleSince={isError && hasData ? dataUpdatedAt : null}
+          count={isLoading ? null : items.length}
         />
       )}
 
@@ -244,7 +245,7 @@ export default function ApprovalsPage() {
                     <BackButton onClick={back} />
                     <DecisionPanel
                       // A first of two approvals given: the form closes and the panel reads the item afresh.
-                      key={`${itemKey(current)}:${firstSteps}`}
+                      key={`${itemKey(current)}:${firstStepsOf(itemKey(current))}`}
                       item={current}
                       text={describeItem(current, t, user?.orgCurrency)}
                       busy={decide.isPending}

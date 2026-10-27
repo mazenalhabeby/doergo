@@ -17,7 +17,16 @@ import { useAuth } from '@/contexts/auth-context';
 import { isExternalMember } from '@/lib/member-reach';
 import { formatDay } from '@/lib/money';
 import { useResponsive } from '@/lib/responsive';
-import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, SectionLabel } from '@/components/amazen';
+import {
+  AText,
+  FilterPill,
+  FilterRow,
+  GhostButton,
+  Ground,
+  HeaderBack,
+  ScreenHeader,
+  SectionLabel,
+} from '@/components/amazen';
 import { centeredContent } from '@/components/screen-container';
 import { WellRow } from '../register/well-row';
 import { approvalKey, loadApprovals } from './approvals-store';
@@ -68,12 +77,16 @@ export function ApprovalsScreen() {
       setUnavailable(res.unavailable);
       setFailed(false);
     } catch {
+      // Never loaded: the error state with Retry. Loaded before: the list stays, with a warning line.
       setFailed(true);
-      setItems((x) => x ?? []);
     } finally {
       setRefreshing(false);
     }
   }, []);
+  const retry = () => {
+    setFailed(false);
+    void load('first');
+  };
   // Back from a decision — the item is gone, the counts moved.
   useFocusEffect(
     useCallback(() => {
@@ -124,17 +137,18 @@ export function ApprovalsScreen() {
 
   const header = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(2) }}>
-      {counts.size > 1 ? (
+      {/* Filtered (often from a notification): the pills stay, so "All" is always one tap away. */}
+      {counts.size > 1 || filter !== 'all' ? (
         <FilterRow>
           <FilterPill
             label={`${t('approvals.all')} ${items?.length ?? 0}`}
             on={filter === 'all'}
             onPress={() => setFilter('all')}
           />
-          {APPROVAL_KINDS.filter((k) => counts.has(k)).map((k) => (
+          {APPROVAL_KINDS.filter((k) => counts.has(k) || k === filter).map((k) => (
             <FilterPill
               key={k}
-              label={`${t(`approvals.kinds.${k}`)} ${counts.get(k)}`}
+              label={`${t(`approvals.kinds.${k}`)} ${counts.get(k) ?? 0}`}
               on={filter === k}
               onPress={() => setFilter(k)}
             />
@@ -146,10 +160,10 @@ export function ApprovalsScreen() {
           {t('approvals.standIn.covering', { names: covering.join(', ') })}
         </AText>
       ) : null}
-      {unavailable.length || failed ? (
+      {items && (unavailable.length || failed) ? (
         <AText variant="caption" tone="warn">
           {failed
-            ? t('approvals.loadFailed')
+            ? t('approvals.refreshFailed')
             : t('approvals.unavailable', { kinds: unavailable.map((k) => t(`approvals.kinds.${k}`)).join(', ') })}
         </AText>
       ) : null}
@@ -190,8 +204,22 @@ export function ApprovalsScreen() {
         )}
         ListEmptyComponent={
           <View style={{ paddingVertical: amazen.space(10), alignItems: 'center', gap: amazen.space(1.5) }}>
-            {!items ? (
+            {!items && failed ? (
+              <>
+                <AText variant="body" tone="strong" style={{ textAlign: 'center' }}>
+                  {t('approvals.loadFailed')}
+                </AText>
+                <GhostButton label={t('common.retry')} onPress={retry} />
+              </>
+            ) : !items ? (
               <ActivityIndicator color={c.accent} />
+            ) : filter !== 'all' && items.length > 0 ? (
+              <>
+                <AText variant="body" tone="strong" style={{ textAlign: 'center' }}>
+                  {t('approvals.emptyKind', { kind: t(`approvals.kinds.${filter}`) })}
+                </AText>
+                <GhostButton label={t('approvals.showAll')} onPress={() => setFilter('all')} />
+              </>
             ) : (
               <>
                 <AText variant="body" tone="strong" style={{ textAlign: 'center' }}>

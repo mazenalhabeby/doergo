@@ -25,7 +25,13 @@ export function ApprovalRow({
   const lead = text.facts[0]
   return (
     <li>
-      <button type="button" onClick={onSelect} aria-current={active ? "true" : undefined} className={ROW}>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={active ? "true" : undefined}
+        data-approval-key={`${item.kind}:${item.id}`}
+        className={ROW}
+      >
         <UserAvatar
           soft
           {...nameParts(item.subject.name)}

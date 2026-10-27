@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { formatDay } from '@/lib/money';
 import { approvalsApi } from '@/lib/api';
 import { useToast } from '@/island/island-context';
-import { caught } from '@/lib/caught';
+import { refusalText } from '@/lib/distance';
 import { AText, Chip, PrimaryButton } from '@/components/amazen';
 import { WellRow } from '../register/well-row';
 import { approvalKey } from './approvals-store';
@@ -42,7 +42,11 @@ export function ApprovalDayRow({
   const tt = t as unknown as ApprovalT;
   const toast = useToast();
 
+  // One send at a time: a second tap while the first is on its way does nothing.
+  const sending = useRef(false);
   const approve = async () => {
+    if (sending.current) return;
+    sending.current = true;
     setBusy(true);
     try {
       const res = await approvalsApi.decideDay(day.approvable);
@@ -56,7 +60,7 @@ export function ApprovalDayRow({
         toast.error(
           t('approvals.day.stopped', {
             what: t(`approvals.kinds.${failed.kind}`),
-            reason: failed.message ?? failed.code ?? '',
+            reason: refusalText(t, failed, failed.code ?? ''),
           }),
         );
       } else {
@@ -64,8 +68,9 @@ export function ApprovalDayRow({
       }
       onDone();
     } catch (e) {
-      toast.error(caught(e).message || t('approvals.loadFailed'));
+      toast.error(refusalText(t, (e ?? {}) as { code?: string; message?: string }, t('approvals.loadFailed')));
     } finally {
+      sending.current = false;
       setBusy(false);
     }
   };
@@ -129,7 +134,12 @@ export function ApprovalDayRow({
             </AText>
           ) : null}
           {day.approvable.length ? (
-            <PrimaryButton label={t('approvals.day.approve')} onPress={() => void approve()} disabled={busy} />
+            <PrimaryButton
+              label={t('approvals.day.approve')}
+              onPress={() => void approve()}
+              loading={busy}
+              disabled={busy}
+            />
           ) : (
             <AText variant="caption" tone="muted">
               {t('approvals.day.nothingToApprove')}

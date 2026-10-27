@@ -1,6 +1,8 @@
 import type { TFunction } from "i18next"
 import {
   RULE_LIMITS,
+  durationFieldsOf,
+  durationMinutes,
   formatMoney,
   ruleLimitOf,
   type ApprovalRuleInput,
@@ -45,8 +47,7 @@ function moneyInput(cents: number): string {
  */
 export function durationFields(minutes: string): { h: string; m: string } {
   if (minutes.trim() === "") return { h: "", m: "" }
-  const n = Math.max(0, Math.round(Number(minutes) || 0))
-  return { h: n >= 60 ? String(Math.floor(n / 60)) : "", m: n % 60 ? String(n % 60) : "" }
+  return durationFieldsOf(Number(minutes) || 0)
 }
 
 /**
@@ -96,14 +97,13 @@ function readMoney(s: string): number | null {
 }
 
 /**
- * The hours and minutes fields back into total minutes. Hours may be decimal ("1.5" or "1,5" is 90 min); an empty
- * field counts as nothing; a total of 0 — both empty, or only zeros — is no limit (""). Null when either field
- * cannot be read: never "no limit".
+ * The hours and minutes fields back into total minutes — the shared reading (`durationMinutes`), as a decision's.
+ * Hours may be decimal ("1.5" or "1,5" is 90 min); an empty field counts as nothing; a total of 0 — both empty,
+ * or only zeros — is no limit (""). Null when either field cannot be read: never "no limit".
  */
 export function durationValue(h: string, m: string): string | null {
-  const [hours, minutes] = [readLimitNumber(h), readLimitNumber(m)]
-  if (hours === null || minutes === null) return null
-  const total = Math.round((hours || 0) * 60 + (minutes || 0))
+  const total = durationMinutes({ h, m })
+  if (total === null) return null
   return total > 0 ? String(total) : ""
 }
 

@@ -13,7 +13,13 @@ export function DayRow({ day, active, onSelect }: { day: ApprovalDay; active: bo
   const { t, i18n } = useTranslation()
   return (
     <li>
-      <button type="button" onClick={onSelect} aria-current={active ? "true" : undefined} className={ROW}>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={active ? "true" : undefined}
+        data-approval-key={day.key}
+        className={ROW}
+      >
         <UserAvatar
           soft
           {...nameParts(day.subject.name)}

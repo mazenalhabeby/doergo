@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next"
 import type { ApprovalKind } from "@hbcfield/shared/client"
 import { formatTimeAgo } from "@/lib/format-date"
 import { Notice } from "@/components/page/page-kit"
+import { useTick } from "../_hooks/use-tick"
+import { InboxAnnouncer } from "./inbox-announcer"
 
 /**
  * The lines above the inbox, on its own tab only: whose decisions the reader covers today, the kinds that could
@@ -14,15 +16,21 @@ export function InboxNotices({
   covering,
   unavailable,
   staleSince,
+  count,
 }: {
   covering: string[]
   unavailable: ApprovalKind[]
   /** When the list on screen was read, if the latest refresh failed; null otherwise. */
   staleSince: number | null
+  /** How many wait, once read (null while loading) — said aloud only when it CHANGES. */
+  count: number | null
 }) {
   const { t } = useTranslation()
+  // "The list as it was 5 minutes ago" keeps counting, as "Updated …" does.
+  useTick()
   return (
     <>
+      <InboxAnnouncer count={count} />
       {staleSince != null && (
         <Notice tone="warn">
           <AlertTriangle />

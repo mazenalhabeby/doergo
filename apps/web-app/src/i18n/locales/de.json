@@ -8357,7 +8357,11 @@
     "ENTRY_ALREADY_CLOSED": "Diese Schicht wurde inzwischen ausgestempelt – öffnen Sie sie erneut, um die echte Zeit zu sehen.",
     "OUTSIDE_ALREADY_DECIDED": "Über diese Zeit wurde bereits entschieden.",
     "OUTSIDE_NOTHING": "Es gibt keine Zeit außerhalb der Schicht zu entscheiden.",
-    "FIX_MISSING": "Für das Einstempeln bei {{location}} wird Ihr Standort benötigt. Erlauben Sie den Standortzugriff und versuchen Sie es erneut."
+    "FIX_MISSING": "Für das Einstempeln bei {{location}} wird Ihr Standort benötigt. Erlauben Sie den Standortzugriff und versuchen Sie es erneut.",
+    "CHANGED_MEANWHILE": "Das hat sich geändert, während Sie entschieden haben. Sehen Sie es sich noch einmal an und entscheiden Sie.",
+    "CLOCK_OUT_IN_FUTURE": "Ein Ausstempeln kann nicht in der Zukunft liegen.",
+    "OVERTIME_ALREADY_DECIDED": "Jemand hat über diese Überstunden bereits entschieden.",
+    "TIME_OFF_DECIDED": "Über diesen Antrag wurde bereits entschieden."
   },
   "signLink": {
     "tabs": {
@@ -9626,7 +9630,7 @@
     "refresh": "Aktualisieren",
     "updated": "Aktualisiert {{time}}",
     "loadFailed": "Ihre Freigaben konnten nicht geladen werden",
-    "refreshFailed": "Ihre Freigaben konnten nicht aktualisiert werden — das ist die Liste von {{time}}.",
+    "refreshFailed": "Ihre Freigaben konnten nicht aktualisiert werden — angezeigt ist der Stand: {{time}}.",
     "groups": {
       "NOW": "Kann nicht warten",
       "TODAY": "Heute",
@@ -9830,7 +9834,8 @@
       "maxDays": "Höchstens {{count}} Tage am Stück.",
       "tooLong": "Zu lang — höchstens {{count}} Tage am Stück.",
       "confirmEnd": "Beenden?",
-      "confirmEndLabel": "Diese Vertretung beenden? Zum Bestätigen noch einmal drücken"
+      "confirmEndLabel": "Diese Vertretung beenden? Zum Bestätigen noch einmal drücken",
+      "refreshFailed": "Die Vertretungen konnten nicht aktualisiert werden — angezeigt ist der Stand: {{time}}."
     },
     "step": {
       "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
@@ -9889,7 +9894,7 @@
       "count_other": "{{count}} Entscheidungen",
       "approve": "Tag bestätigen",
       "review": "Prüfen",
-      "needsMinutes": "Mehrarbeit und Überstunden brauchen Minuten — öffnen Sie sie einzeln.",
+      "needsMinutes": "Bei Mehrarbeit und Überstunden geben Sie ein, wie viel Zeit zählt — öffnen Sie sie einzeln.",
       "nothingToApprove": "Hier lässt sich nichts auf einmal bestätigen — öffnen Sie jeden Eintrag.",
       "partly": "Genehmigt — {{what}} braucht noch {{role}}.",
       "approved": "Tag für {{name}} bestätigt",

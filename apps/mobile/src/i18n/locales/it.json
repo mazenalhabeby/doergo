@@ -3274,7 +3274,7 @@
       "FIX_MISSING": "Impossibile determinare la posizione.",
       "REPORT_EXISTS": "Questo lavoro ha già un rapporto di servizio, quindi il tuo non è stato aggiunto.",
       "WAITING_FOR_WIFI": "In attesa del Wi-Fi: hai scelto di inviare le foto solo con Wi-Fi.",
-      "TIME_OFF_DECIDED": "Questa richiesta è già stata decisa e non può più essere annullata.",
+      "TIME_OFF_DECIDED": "Questa richiesta è già stata decisa.",
       "NO_SHIFT_TODAY": "Oggi non hai un turno e questo spazio consente di timbrare solo con un turno.",
       "TOO_FAR_TO_ARRIVE": "Sei a {{distance}} dal luogo dell'intervento. Devi essere entro {{radius}} per segnare l'arrivo. Avvicinati e riprova.",
       "TOO_FAR_TO_START": "Sei a {{distance}} dal luogo dell'intervento. Devi essere entro {{radius}} per iniziare il lavoro. Avvicinati e riprova.",
@@ -3328,7 +3328,10 @@
       "EXTRA_TIME_NO_SHIFT": "Non c'è una fine prevista da prolungare: tutto questo tempo conta già.",
       "ENTRY_STILL_OPEN": "Questo turno è ancora in corso: si potrà decidere dopo la timbratura d'uscita.",
       "OUTSIDE_ALREADY_DECIDED": "Questo tempo è già stato deciso.",
-      "OUTSIDE_NOTHING": "Non c'è tempo fuori dal turno da decidere."
+      "OUTSIDE_NOTHING": "Non c'è tempo fuori dal turno da decidere.",
+      "CHANGED_MEANWHILE": "È cambiato mentre decidevi. Guardalo di nuovo e decidi.",
+      "CLOCK_OUT_IN_FUTURE": "Un'uscita non può essere nel futuro.",
+      "OVERTIME_ALREADY_DECIDED": "Qualcuno ha già deciso questi straordinari."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -5157,6 +5160,7 @@
     "refresh": "Aggiorna",
     "updated": "Aggiornato {{time}}",
     "loadFailed": "Impossibile caricare le sue approvazioni",
+    "refreshFailed": "Aggiornamento non riuscito: vede quanto caricato prima. Trascini verso il basso per riprovare.",
     "groups": {
       "NOW": "Non può aspettare",
       "TODAY": "Oggi",
@@ -5276,6 +5280,8 @@
     "someone": "Qualcuno",
     "empty": "Nulla attende una sua decisione",
     "emptyHint": "Le nuove richieste compaiono qui appena arrivano.",
+    "emptyKind": "Nulla di «{{kind}}» attende una sua decisione",
+    "showAll": "Mostra tutto",
     "pick": "Scelga un elemento per vedere i dettagli",
     "unavailable": "Impossibile caricare: {{kinds}}. Aggiorni.",
     "yes": "Sì",
@@ -5395,7 +5401,7 @@
       "count_other": "{{count}} decisioni",
       "approve": "Approva la giornata",
       "review": "Esamina",
-      "needsMinutes": "Tempo extra e straordinari richiedono i minuti: aprili uno per uno.",
+      "needsMinutes": "Tempo extra e straordinari: li apra uno per uno e indichi quanto tempo conteggiare.",
       "nothingToApprove": "Qui niente si approva in un colpo solo: apri ogni elemento.",
       "partly": "Approvato — {{what}} richiede ancora {{role}}.",
       "approved": "Giornata approvata per {{name}}",

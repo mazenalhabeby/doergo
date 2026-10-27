@@ -3274,7 +3274,7 @@
       "FIX_MISSING": "The location couldn't be determined.",
       "REPORT_EXISTS": "This job already has a service report, so yours wasn't added.",
       "WAITING_FOR_WIFI": "Waiting for Wi-Fi — you chose to send photos only on Wi-Fi.",
-      "TIME_OFF_DECIDED": "This request was already decided, so it can no longer be cancelled.",
+      "TIME_OFF_DECIDED": "This request was already decided.",
       "NO_SHIFT_TODAY": "You have no shift today, and this workspace only allows clocking in with a shift.",
       "TOO_FAR_TO_ARRIVE": "You are {{distance}} from the job site. You need to be within {{radius}} to mark it as arrived. Please move closer and try again.",
       "TOO_FAR_TO_START": "You are {{distance}} from the job site. You need to be within {{radius}} to start the job. Please move closer and try again.",
@@ -3328,7 +3328,10 @@
       "EXTRA_TIME_NO_SHIFT": "There is no planned end to extend — all of this time counts already.",
       "ENTRY_STILL_OPEN": "This shift is still running — it can be decided once it is clocked out.",
       "OUTSIDE_ALREADY_DECIDED": "This time was already decided.",
-      "OUTSIDE_NOTHING": "There is no time outside the shift to decide."
+      "OUTSIDE_NOTHING": "There is no time outside the shift to decide.",
+      "CHANGED_MEANWHILE": "This changed while you were deciding. Look again and decide.",
+      "CLOCK_OUT_IN_FUTURE": "A clock-out cannot be in the future.",
+      "OVERTIME_ALREADY_DECIDED": "Somebody already decided this overtime."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -5157,6 +5160,7 @@
     "refresh": "Refresh",
     "updated": "Updated {{time}}",
     "loadFailed": "Couldn't load your approvals",
+    "refreshFailed": "Couldn't refresh — showing what was loaded before. Pull down to try again.",
     "groups": {
       "NOW": "Can't wait",
       "TODAY": "Today",
@@ -5276,6 +5280,8 @@
     "someone": "Someone",
     "empty": "Nothing waiting for you",
     "emptyHint": "New requests appear here the moment they arrive.",
+    "emptyKind": "Nothing of “{{kind}}” is waiting for you",
+    "showAll": "Show all",
     "pick": "Choose an item to see the details",
     "unavailable": "Couldn't load: {{kinds}}. Try refreshing.",
     "yes": "Yes",
@@ -5395,7 +5401,7 @@
       "count_other": "{{count}} things to decide",
       "approve": "Approve day",
       "review": "Review",
-      "needsMinutes": "Extra time and overtime need minutes — open them one by one.",
+      "needsMinutes": "Extra time and overtime: open each one and enter how much time to count.",
       "nothingToApprove": "Nothing here can be approved in one go — open each item.",
       "partly": "Approved — {{what}} still needs {{role}}.",
       "approved": "Day approved for {{name}}",

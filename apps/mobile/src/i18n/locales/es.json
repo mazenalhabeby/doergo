@@ -3274,7 +3274,7 @@
       "FIX_MISSING": "No se pudo determinar la ubicación.",
       "REPORT_EXISTS": "Este trabajo ya tiene un informe de servicio, así que el suyo no se añadió.",
       "WAITING_FOR_WIFI": "Esperando Wi-Fi: eligió enviar fotos solo con Wi-Fi.",
-      "TIME_OFF_DECIDED": "Esta solicitud ya fue resuelta, así que ya no se puede cancelar.",
+      "TIME_OFF_DECIDED": "Esta solicitud ya fue resuelta.",
       "NO_SHIFT_TODAY": "Hoy no tienes turno y este espacio solo permite fichar con turno.",
       "TOO_FAR_TO_ARRIVE": "Estás a {{distance}} del lugar del trabajo. Tienes que estar a menos de {{radius}} para marcar la llegada. Acércate e inténtalo de nuevo.",
       "TOO_FAR_TO_START": "Estás a {{distance}} del lugar del trabajo. Tienes que estar a menos de {{radius}} para empezar el trabajo. Acércate e inténtalo de nuevo.",
@@ -3328,7 +3328,10 @@
       "EXTRA_TIME_NO_SHIFT": "No hay un final previsto que ampliar: todo este tiempo ya cuenta.",
       "ENTRY_STILL_OPEN": "Este turno sigue en curso: se puede decidir cuando se fiche la salida.",
       "OUTSIDE_ALREADY_DECIDED": "Este tiempo ya está decidido.",
-      "OUTSIDE_NOTHING": "No hay tiempo fuera del turno que decidir."
+      "OUTSIDE_NOTHING": "No hay tiempo fuera del turno que decidir.",
+      "CHANGED_MEANWHILE": "Esto cambió mientras decidías. Vuelve a mirarlo y decide.",
+      "CLOCK_OUT_IN_FUTURE": "Una salida no puede estar en el futuro.",
+      "OVERTIME_ALREADY_DECIDED": "Alguien ya decidió estas horas extra."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",
@@ -5157,6 +5160,7 @@
     "refresh": "Actualizar",
     "updated": "Actualizado {{time}}",
     "loadFailed": "No se pudieron cargar sus aprobaciones",
+    "refreshFailed": "No se pudo actualizar: ve lo último que se cargó. Deslice hacia abajo para reintentar.",
     "groups": {
       "NOW": "No puede esperar",
       "TODAY": "Hoy",
@@ -5276,6 +5280,8 @@
     "someone": "Alguien",
     "empty": "Nada espera su decisión",
     "emptyHint": "Las nuevas solicitudes aparecen aquí en cuanto llegan.",
+    "emptyKind": "Nada de «{{kind}}» espera su decisión",
+    "showAll": "Mostrar todo",
     "pick": "Elija un elemento para ver los detalles",
     "unavailable": "No se pudo cargar: {{kinds}}. Actualice.",
     "yes": "Sí",
@@ -5395,7 +5401,7 @@
       "count_other": "{{count}} decisiones",
       "approve": "Aprobar el día",
       "review": "Revisar",
-      "needsMinutes": "El tiempo extra y las horas extra necesitan minutos: ábrelos uno a uno.",
+      "needsMinutes": "Tiempo extra y horas extra: abra cada uno e indique cuánto tiempo se cuenta.",
       "nothingToApprove": "Aquí no se puede aprobar nada de una vez: abre cada elemento.",
       "partly": "Aprobado — {{what}} aún necesita a {{role}}.",
       "approved": "Día aprobado para {{name}}",

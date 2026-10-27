@@ -3274,7 +3274,7 @@
       "FIX_MISSING": "La position n'a pas pu être déterminée.",
       "REPORT_EXISTS": "Cette intervention a déjà un rapport, le vôtre n'a donc pas été ajouté.",
       "WAITING_FOR_WIFI": "En attente du Wi-Fi : vous avez choisi d'envoyer les photos uniquement en Wi-Fi.",
-      "TIME_OFF_DECIDED": "Cette demande a déjà été traitée et ne peut plus être annulée.",
+      "TIME_OFF_DECIDED": "Cette demande a déjà été traitée.",
       "NO_SHIFT_TODAY": "Vous n'avez pas de service aujourd'hui, et cet espace n'autorise le pointage qu'avec un service.",
       "TOO_FAR_TO_ARRIVE": "Vous êtes à {{distance}} du lieu d'intervention. Vous devez être à moins de {{radius}} pour signaler votre arrivée. Rapprochez-vous et réessayez.",
       "TOO_FAR_TO_START": "Vous êtes à {{distance}} du lieu d'intervention. Vous devez être à moins de {{radius}} pour démarrer l'intervention. Rapprochez-vous et réessayez.",
@@ -3328,7 +3328,10 @@
       "EXTRA_TIME_NO_SHIFT": "Il n'y a pas de fin prévue à prolonger – tout ce temps compte déjà.",
       "ENTRY_STILL_OPEN": "Ce poste est toujours en cours – il pourra être décidé une fois le départ pointé.",
       "OUTSIDE_ALREADY_DECIDED": "Ce temps a déjà été décidé.",
-      "OUTSIDE_NOTHING": "Il n'y a pas de temps hors du poste à décider."
+      "OUTSIDE_NOTHING": "Il n'y a pas de temps hors du poste à décider.",
+      "CHANGED_MEANWHILE": "Ceci a changé pendant votre décision. Regardez à nouveau et décidez.",
+      "CLOCK_OUT_IN_FUTURE": "Un pointage de sortie ne peut pas être dans le futur.",
+      "OVERTIME_ALREADY_DECIDED": "Quelqu’un a déjà décidé de ces heures sup."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -5157,6 +5160,7 @@
     "refresh": "Actualiser",
     "updated": "Mis à jour {{time}}",
     "loadFailed": "Impossible de charger vos validations",
+    "refreshFailed": "Actualisation impossible — vous voyez ce qui a été chargé avant. Tirez vers le bas pour réessayer.",
     "groups": {
       "NOW": "Ne peut pas attendre",
       "TODAY": "Aujourd’hui",
@@ -5276,6 +5280,8 @@
     "someone": "Quelqu’un",
     "empty": "Rien n’attend votre décision",
     "emptyHint": "Les nouvelles demandes apparaissent ici dès leur arrivée.",
+    "emptyKind": "Rien de « {{kind}} » n’attend votre décision",
+    "showAll": "Tout afficher",
     "pick": "Choisissez un élément pour voir les détails",
     "unavailable": "Chargement impossible : {{kinds}}. Actualisez.",
     "yes": "Oui",
@@ -5395,7 +5401,7 @@
       "count_other": "{{count}} décisions",
       "approve": "Valider la journée",
       "review": "Examiner",
-      "needsMinutes": "Le temps supplémentaire et les heures sup. demandent des minutes : ouvrez-les un par un.",
+      "needsMinutes": "Temps supplémentaire et heures sup. : ouvrez-les un par un et indiquez combien de temps compter.",
       "nothingToApprove": "Rien ici ne peut être validé d’un coup : ouvrez chaque élément.",
       "partly": "Approuvé — {{what}} attend encore {{role}}.",
       "approved": "Journée validée pour {{name}}",
