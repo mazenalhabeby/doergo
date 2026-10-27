@@ -22,34 +22,18 @@ export async function spaceRows(prisma: PrismaService, organizationId: string, i
   return new Map(rows.map((s) => [s.id, { name: s.name, timezone: s.timezone }]));
 }
 
-/** Each open row's run — read from every instance of the same shifts, two months back. */
+/**
+ * Each open row's run — read from every instance of the same shifts, two months back. One query.
+ *
+ * `answered`: the run an OFFICE RULE judges — a day a PERSON already answered (excused or absent) still counts
+ * as missed, so marking one day absent, excusing the rest alone and reopening it cannot cut a five-day run into
+ * pieces under the rule. A day the system closed (they were there, on leave …) still breaks it.
+ */
 export async function runsFor(
   prisma: PrismaService,
   open: Pick<Instance, 'id' | 'userId' | 'spaceId' | 'shiftId'>[],
   now: Date,
-) {
-  if (!open.length) return new Map<string, NoShowRun>();
-  const all = await prisma.shiftInstance.findMany({
-    where: {
-      userId: { in: [...new Set(open.map((r) => r.userId))] },
-      shiftId: { in: [...new Set(open.map((r) => r.shiftId))] },
-      expectedClockInAt: { gte: new Date(now.getTime() - RUN_DAYS * DAY), lte: now },
-    },
-    select: { id: true, userId: true, spaceId: true, shiftId: true, localDate: true, state: true },
-  });
-  return noShowRuns(all);
-}
-
-/**
- * The run an office rule judges: the same consecutive days, but a day a PERSON already answered (excused or
- * absent) still counts as missed — marking one day absent, excusing the rest alone and reopening the absent day
- * must not cut a five-day run into pieces under the rule. A day the system closed (they were there, on leave …)
- * still breaks it. One query, like `runsFor`.
- */
-export async function ruleRunsFor(
-  prisma: PrismaService,
-  open: Pick<Instance, 'id' | 'userId' | 'spaceId' | 'shiftId'>[],
-  now: Date,
+  answered = false,
 ) {
   if (!open.length) return new Map<string, NoShowRun>();
   const all = await prisma.shiftInstance.findMany({
@@ -68,10 +52,17 @@ export async function ruleRunsFor(
       closedAutomatically: true,
     },
   });
-  const answered = (r: (typeof all)[number]) =>
+  const byPerson = (r: (typeof all)[number]) =>
     (r.state === 'EXCUSED' || r.state === 'ABSENT') && !r.closedAutomatically;
-  return noShowRuns(all.map((r) => (answered(r) ? { ...r, state: NO_SHOW_OPEN_STATES[0] } : r)));
+  return noShowRuns(answered ? all.map((r) => (byPerson(r) ? { ...r, state: NO_SHOW_OPEN_STATES[0] } : r)) : all);
 }
+
+/** The run an office rule judges (`runsFor` with the days a person answered). */
+export const ruleRunsFor = (
+  prisma: PrismaService,
+  open: Pick<Instance, 'id' | 'userId' | 'spaceId' | 'shiftId'>[],
+  now: Date,
+) => runsFor(prisma, open, now, true);
 
 /** Missed this month (open + absent), per person and month — one query. */
 export async function monthFacts(prisma: PrismaService, open: Instance[]) {

@@ -271,7 +271,7 @@ export class ProposalReviewService {
     if (!facts) return null;
     const { raisedById, holderUserId, ...ruleFacts } = facts;
     for (const subjectId of new Set([raisedById, holderUserId]))
-      await assertNotSelfDecision(this.prisma as never, {
+      await assertNotSelfDecision(this.prisma, {
         deciderId: data.userId,
         subjectId,
         organizationId: data.organizationId,

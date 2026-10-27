@@ -62,7 +62,7 @@ describe('closeAbandonedShifts', () => {
     svc.countedTime = { columnsFor: jest.fn().mockResolvedValue({ countedStartAt: at('14T08:00'), countedEndAt: at('14T17:00'), paidMinutes: 510 }) };
     svc.notificationClient = { emit: jest.fn() };
     // The one close, over the same doubles (no automatic clock: absent, nothing is automatic).
-    svc.closer = new ShiftCloser(svc.prisma, svc.notificationClient, undefined as any, svc.countedTime);
+    svc.closer = new ShiftCloser(svc.prisma, svc.notificationClient, undefined as any, svc.countedTime, noOfficeRules());
     return { svc, tx };
   }
   const entry = (over: any = {}) => ({
@@ -180,7 +180,7 @@ describe('"when did you leave?" on a shift closed with a temporary time', () => 
       toleranceFor: jest.fn().mockResolvedValue(10),
     };
     svc.notificationClient = { emit: jest.fn() };
-    svc.closer = new ShiftCloser(svc.prisma, svc.notificationClient, undefined as any, svc.countedTime);
+    svc.closer = new ShiftCloser(svc.prisma, svc.notificationClient, undefined as any, svc.countedTime, noOfficeRules());
     svc.closer.sendPendingApprovalAlert = jest.fn();
     return svc;
   }

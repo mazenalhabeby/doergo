@@ -84,7 +84,7 @@ export class EntryRecordService {
       own record that edit and approve already refuse. Somebody else does it
       (self-decision.ts).
     */
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.editorId,
       subjectId: entry.userId,
       organizationId: data.organizationId,

@@ -3,7 +3,8 @@ import {
   NO_SHOW_OPEN_STATES,
   noShowRuns,
   type NoShowRun,
-  handChangedMinutes,
+  hoursRuleFacts,
+  spaceIdsOf,
   isUrgentPriority,
   personName,
   peopleNames,
@@ -26,7 +27,7 @@ export const MAX_ITEMS = 500;
 
 /**
  * The items of the four newer rule kinds, as office rules read them (rule-facts.reader.ts holds the first three).
- * Each builds its facts with the SAME helper its approve path hands the gate (handChangedMinutes, the run of
+ * Each builds its facts with the SAME helper its approve path hands the gate (hoursRuleFacts, the run of
  * missed days, the proposal's place, isUrgentPriority), so the sweep and the page see what the gate sees.
  */
 
@@ -68,7 +69,7 @@ export async function hoursItems(prisma: PrismaService, organizationId: string, 
     since: e.clockOutAt ?? e.clockInAt,
     subjectId: e.userId,
     subjectName: personName(e.user),
-    facts: { spaceIds: [e.locationId], minutes: handChangedMinutes(e) },
+    facts: hoursRuleFacts(e),
   }));
 }
 
@@ -119,7 +120,7 @@ export async function noShowItems(prisma: PrismaService, organizationId: string,
       since: i.expectedClockInAt,
       subjectId: i.userId,
       subjectName: names.get(i.userId) ?? '',
-      facts: { spaceIds: i.spaceId ? [i.spaceId] : [], days: (ruleRuns ?? runs).get(i.id)?.count ?? 1 },
+      facts: { spaceIds: spaceIdsOf(i.spaceId), days: (ruleRuns ?? runs).get(i.id)?.count ?? 1 },
     }));
 }
 
@@ -220,7 +221,7 @@ export async function clientRequestItems(prisma: PrismaService, organizationId: 
       // The asker is a client, not a member: nobody to leave out of the reminders.
       subjectId: null,
       subjectName: t.customer?.name ?? '',
-      facts: { spaceIds: spaceId ? [spaceId] : [], urgent: isUrgentPriority(t.priority) },
+      facts: { spaceIds: spaceIdsOf(spaceId), urgent: isUrgentPriority(t.priority) },
     };
   });
 }

@@ -25,7 +25,7 @@ export class ExtraTimeApprovalService {
     @Inject(SERVICE_NAMES.NOTIFICATION)
     private readonly notificationClient: ClientProxy,
     private readonly countedTime: CountedTimeService,
-    // Office rules (a threshold → a second approval). Global in the app; absent only in narrow unit tests.
+    // Office rules: past a limit, more people approve (the one door, `decide`).
     private readonly rules: ApprovalRulesService,
   ) {}
 
@@ -84,6 +84,15 @@ export class ExtraTimeApprovalService {
     });
     // Approvals half-way for an EARLIER round of this shift (one that expired or was declined) are not this one's.
     if (round) await this.rules.clearBefore(data.organizationId, 'overtime', entry.id, round.createdAt);
+    // No round asked for (extra time approved straight from the shift): it is written as one, or the next decision
+    // on this shift would count it as nothing — 50-minute approvals, one after another, past a one-hour rule.
+    const lastCycle = round
+      ? null
+      : await this.prisma.overtimeRequest.findFirst({
+          where: { timeEntryId: entry.id },
+          orderBy: { cycle: 'desc' },
+          select: { cycle: true },
+        });
 
     // Office rules: past a threshold this approval is one of several, and the shift waits for the others.
     const decided = await this.rules.decide(
@@ -149,7 +158,25 @@ export class ExtraTimeApprovalService {
                   },
                 }),
               ]
-            : []),
+            : [
+                this.prisma.overtimeRequest.create({
+                  data: {
+                    timeEntryId: entry.id,
+                    cycle: (lastCycle?.cycle ?? 0) + 1,
+                    technicianId: entry.userId,
+                    locationId: entry.locationId,
+                    organizationId: data.organizationId,
+                    status: 'APPROVED',
+                    approvalMethod: automatic ? 'AUTOMATIC' : 'MANAGER',
+                    approvedById: data.approverId,
+                    approvedAt: now,
+                    approverNotes: data.notes ?? null,
+                    maxDurationMinutes: minutes,
+                    overtimeStartAt: entry.expectedClockOutAt ?? now,
+                    overtimeEndAt: newExpected,
+                  },
+                }),
+              ]),
         ]);
 
         // Closed: the timesheet already counted it — count it again with the approval.
@@ -195,7 +222,7 @@ export class ExtraTimeApprovalService {
   async assertNotSelfOvertimeDecision(approverId: string, subjectId: string, organizationId: string): Promise<void> {
     // The rule itself lives in self-decision.ts, shared with every other flow
     // that decides somebody's item (entries, corrections, leave, expenses).
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: approverId,
       subjectId,
       organizationId,

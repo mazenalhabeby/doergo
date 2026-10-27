@@ -1,6 +1,6 @@
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { Injectable, NotFoundException, Logger, Optional } from '@nestjs/common';
-import { zoneOf, success, personPasses, handChangedMinutes } from '@hbcfield/shared';
+import { zoneOf, success, personPasses, hoursRuleFacts, type RuleFacts } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm } from '@hbcfield/shared';
 import { scopeAllows } from '@hbcfield/shared';
@@ -55,7 +55,7 @@ export class ManualEntriesService {
       throw new NotFoundException('Work site not found');
     }
     // Back-filling hours onto your OWN record is writing your own pay.
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.editorId,
       subjectId: data.userId,
       organizationId: data.organizationId,
@@ -107,8 +107,7 @@ export class ManualEntriesService {
 
     if (toCreate.length) {
       // A rule asking more people about this many hours: the entries wait, the office's entry being the first approval.
-      const length = (e: ManualEntryRow) => handChangedMinutes(e);
-      const facts = (e: ManualEntryRow) => ({ spaceIds: [data.locationId], minutes: length(e) });
+      const facts = (e: ManualEntryRow) => hoursRuleFacts({ ...e, locationId: data.locationId });
       const ruled = new Set<ManualEntryRow>();
       // The rules read ONCE for the whole back-fill, however many days.
       const asks = await this.rules.needsMoreFor(data.organizationId, 'hours', toCreate.map(facts));
@@ -143,11 +142,7 @@ export class ManualEntriesService {
   }
 
   /** Each typed-in day a rule asks about: the office's entry is the first approval; an administrator's finishes it. */
-  private async askRules(
-    data: ManualEntriesInput,
-    rows: ManualEntryRow[],
-    facts: (e: ManualEntryRow) => { spaceIds: string[]; minutes: number },
-  ) {
+  private async askRules(data: ManualEntriesInput, rows: ManualEntryRow[], facts: (e: ManualEntryRow) => RuleFacts) {
     const created = await this.prisma.timeEntry.findMany({
       where: {
         userId: data.userId,
@@ -156,35 +151,26 @@ export class ManualEntriesService {
       },
       select: { id: true, clockInAt: true },
     });
-    let told = false;
-    for (const e of rows) {
-      const id = created.find((c) => c.clockInAt.getTime() === (e.clockInAt as Date).getTime())?.id;
-      if (!id) continue;
-      // The next approvers hear about the batch once, not once a day.
-      const quiet = told;
-      told = true;
-      await this.rules.decide(
-        {
-          quiet,
-          organizationId: data.organizationId,
-          kind: 'hours',
-          itemId: id,
-          facts: facts(e),
-          deciderId: data.editorId,
-          subjectId: data.userId,
+    const ids = new Map(created.map((c) => [c.clockInAt.getTime(), c.id]));
+    const items = rows.flatMap((e) => {
+      const itemId = ids.get((e.clockInAt as Date).getTime());
+      return itemId ? [{ itemId, facts: facts(e) }] : [];
+    });
+    // The whole back-fill judged at once (a year of days is a fixed number of queries); the next approvers hear once.
+    const finished = await this.rules.firstOfMany(
+      { organizationId: data.organizationId, kind: 'hours', deciderId: data.editorId, subjectId: data.userId },
+      items,
+    );
+    if (finished.length)
+      await this.prisma.timeEntry.updateMany({
+        where: { id: { in: finished }, approvalStatus: 'PENDING' },
+        data: {
+          approvalStatus: 'APPROVED',
+          approvedById: data.editorId,
+          approvedAt: new Date(),
+          approvalNotes: 'Added by admin',
         },
-        () =>
-          this.prisma.timeEntry.update({
-            where: { id },
-            data: {
-              approvalStatus: 'APPROVED',
-              approvedById: data.editorId,
-              approvedAt: new Date(),
-              approvalNotes: 'Added by admin',
-            },
-          }),
-      );
-    }
+      });
   }
 
   /*

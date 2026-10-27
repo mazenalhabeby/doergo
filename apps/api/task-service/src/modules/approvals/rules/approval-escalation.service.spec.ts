@@ -27,6 +27,7 @@ describe('ApprovalEscalationService.sweep', () => {
   let notices: Array<{ kind: string; itemId: string; stage: string }>;
   const prisma: any = {
     approvalRule: { findMany: jest.fn() },
+    approvalStep: { findMany: jest.fn(async () => openSteps) },
     assetMoney: { findMany: jest.fn() },
     asset: { findMany: jest.fn().mockResolvedValue([{ id: 'a1', category: { spaceId: 's1' } }]) },
     // Two reads: the people an item is about, and the holders of the escalation role (`roleHolderIds`, an OR).
@@ -45,6 +46,7 @@ describe('ApprovalEscalationService.sweep', () => {
     },
   };
   let holders = ['fin1'];
+  let openSteps: unknown[] = [];
   const route: any = {
     route: jest.fn().mockResolvedValue({
       deciders: [
@@ -73,6 +75,7 @@ describe('ApprovalEscalationService.sweep', () => {
   beforeEach(() => {
     notices = [];
     holders = ['fin1'];
+    openSteps = [];
     jest.clearAllMocks();
     prisma.approvalRule.findMany.mockResolvedValue([rule]);
   });
@@ -85,6 +88,19 @@ describe('ApprovalEscalationService.sweep', () => {
       expect.objectContaining({ recipientIds: ['mgr'], stage: 'REMIND', itemId: 'e1', subjectName: 'Dan D' }),
     );
     expect(await svc.sweep(now)).toBe(0);
+  });
+
+  it('half-way through its approvals: the reminder goes to whom it still waits for, never to who approved', async () => {
+    openSteps = [{ itemId: 'e5', requiredRoleIds: ['finance'], doneRoleIds: [], approverIds: ['mgr'] }];
+    prisma.assetMoney.findMany.mockResolvedValue([slip('e5', 5, 30000)]);
+    expect(await svc.sweep(now)).toBe(1);
+    expect(notifications.emit).toHaveBeenCalledWith(
+      'approval_reminder',
+      expect.objectContaining({ recipientIds: ['fin1'], stage: 'REMIND', itemId: 'e5' }),
+    );
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: { notIn: ['mgr', 'driver'] } }) }),
+    );
   });
 
   it('after the escalation hours: passed to the role, once — and no reminder after that', async () => {

@@ -15,7 +15,7 @@ import { SPACE_BRIEF, requestFacts } from './technicians-helpers';
 import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { CoverService } from './cover.service';
-import { requestRuleFacts, requestsCoverShort, type RequestRuleRow } from '../approvals/rules/request-rule-facts';
+import { requestFactsFor, type RequestRuleRow } from '../approvals/rules/request-rule-facts';
 import { workingDaysOf } from './member-requests';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
 import { alreadyDecided } from '../approvals/rules/already-decided';
@@ -89,7 +89,7 @@ export class TimeOffDecisionService {
     // Nobody decides their own leave, either way — the overtime rule
     // (attendance/core/self-decision.ts). Withdrawing your own request is
     // `cancelTimeOff`, not a decision.
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: approverId,
       subjectId: timeOff.technicianId,
       organizationId,
@@ -102,7 +102,7 @@ export class TimeOffDecisionService {
         ? await this.recountedWorkingDays(organizationId, timeOff.technicianId, timeOff.startDate, timeOff.endDate)
         : undefined;
 
-    // Office rules: past a threshold this approval is step 1 of 2 and the request stays pending.
+    // Office rules: past a threshold this approval may be one of several and the request stays pending.
     if (!approved) await this.rules.clear(organizationId, 'request', timeOffId);
     // Conditional on still waiting: a refusal landing at the same moment is never overwritten (already-decided.ts).
     const write = () =>
@@ -127,16 +127,13 @@ export class TimeOffDecisionService {
     let updated: Awaited<ReturnType<typeof write>>;
     if (approved) {
       // The one reader of a request's facts, shared with the sweep and the rules page; cover only when a rule asks.
-      const row = { ...timeOff, kind: timeOff.kind as string } as unknown as RequestRuleRow;
-      const coverShort =
-        (await this.rules.asksAboutCover(organizationId)) &&
-        ((await requestsCoverShort(this.cover, organizationId, [row])).get(timeOff.id) ?? false);
+      const row: RequestRuleRow = timeOff;
       const decided = await this.rules.decide(
         {
           organizationId,
           kind: 'request',
           itemId: timeOffId,
-          facts: requestRuleFacts(row, coverShort, workingDays),
+          facts: await requestFactsFor(this.rules, this.cover, organizationId, row, workingDays),
           deciderId: approverId,
           subjectId: timeOff.technicianId,
         },

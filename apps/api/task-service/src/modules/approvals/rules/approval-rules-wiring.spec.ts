@@ -11,7 +11,9 @@ import path from 'path';
 */
 const MODULES = path.join(__dirname, '..', '..');
 const read = (rel: string) => fs.readFileSync(path.join(MODULES, rel), 'utf8');
-const decides = (kind: string) => new RegExp(`rules\\.decide\\(\\s*\\{[\\s\\S]{0,240}kind: '${kind}'`, 'g');
+// `firstOfMany` is decide() for a batch of NEW items (days typed in together) — the same judging, at once.
+const decides = (kind: string) =>
+  new RegExp(`rules\\.(?:decide|firstOfMany)\\(\\s*\\{[\\s\\S]{0,240}kind: '${kind}'`, 'g');
 const clears = (kind: string) => new RegExp(`rules\\.clear\\([^)]*'${kind}'`);
 
 // [file, kind, does it also refuse (and must drop the step)?]
@@ -42,7 +44,7 @@ describe('every approve path asks the office rules through decide()', () => {
       const src = read(file);
       expect(src).toMatch(decides(kind));
       // Nothing in an approve path asks the gate directly: decide() is what re-opens a step a failed write used.
-      expect(src).not.toMatch(/rules\.(gate|firstStep)\(/);
+      expect(src).not.toMatch(/rules\.gate\(/);
       if (refuses) expect(src).toMatch(clears(kind));
     });
   }

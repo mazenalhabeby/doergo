@@ -89,9 +89,7 @@ export const updateTimeOff = rpc<{
   endDate?: string;
   reason?: string | null;
 }>('update_time_off');
-export const adminDeleteTimeOff = rpc<{ editorId: string; organizationId: string; timeOffId: string }>(
-  'admin_delete_time_off',
-);
+export const adminDeleteTimeOff = rpc<{ organizationId: string; timeOffId: string }>('admin_delete_time_off');
 export const addTimeOff = rpc<{
   editorId: string;
   organizationId: string;

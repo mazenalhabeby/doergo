@@ -9,7 +9,7 @@ import { OutsideShiftService } from './outside-shift.service';
 import { OutsideShiftController } from './outside-shift.controller';
 
 /**
- * Extra time and overtime rounds on a running shift: asking, deciding, the second step — and time
+ * Extra time and overtime rounds on a running shift: asking, deciding, the office rules' approvals — and time
  * worked outside the planned shift, decided once (outside-shift.service.ts).
  */
 @Module({

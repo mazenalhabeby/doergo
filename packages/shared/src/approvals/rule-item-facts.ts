@@ -4,6 +4,8 @@
  * at the moment of approving and another way in its numbers.
  */
 
+import { spaceIdsOf, type RuleFacts } from './approval-rules';
+
 type When = Date | string | null | undefined;
 
 const ms = (v: When) => (v == null ? null : new Date(v).getTime());
@@ -33,3 +35,15 @@ export function handChangedMinutes(e: {
 
 /** A client request is urgent when its priority is. */
 export const isUrgentPriority = (priority: string | null | undefined) => priority === 'URGENT';
+
+/** Changed hours as a rule judges them: the entry's workspace and the minutes changed by hand. */
+export function hoursRuleFacts(
+  e: Parameters<typeof handChangedMinutes>[0] & { locationId?: string | null },
+): RuleFacts {
+  return { spaceIds: spaceIdsOf(e.locationId), minutes: handChangedMinutes(e) };
+}
+
+/** An expense as a rule judges it: the workspace of its asset's kind, and the amount. */
+export function expenseRuleFacts(spaceId: string | null | undefined, amountCents: number | null | undefined): RuleFacts {
+  return { spaceIds: spaceIdsOf(spaceId), amountCents: amountCents ?? 0 };
+}

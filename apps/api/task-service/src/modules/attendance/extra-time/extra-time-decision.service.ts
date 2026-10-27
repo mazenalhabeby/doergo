@@ -34,7 +34,7 @@ export class ExtraTimeDecisionService {
     private readonly countedTime: CountedTimeService,
     // Who may decide, nobody their own, and the ONE approval path.
     private readonly approval: ExtraTimeApprovalService,
-    // Office rules: a refusal ends any two-step. Global in the app; absent only in narrow unit tests.
+    // Office rules: adding overtime goes through them; a refusal ends the approvals half-way.
     private readonly rules: ApprovalRulesService,
   ) {}
 
@@ -243,7 +243,7 @@ export class ExtraTimeDecisionService {
     const allowed = await this.approval.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
     await this.approval.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
-    // A rejection ends any two-step under an office rule.
+    // A rejection ends the approvals half-way under an office rule.
     await this.rules.clear(data.organizationId, 'overtime', entry.id);
 
     const round = await this.prisma.overtimeRequest.findFirst({

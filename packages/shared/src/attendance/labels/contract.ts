@@ -37,6 +37,8 @@ export const LABEL_CODES = [
   'MISSED_BREAK',
   'AUTO_REST',
   // How it was recorded
+  /** Changed by hand by the office past an office rule on changed hours: it waits for approval (approval-rules). */
+  'HOURS_CHANGED',
   'RECORDED_OFFLINE',
   'UNANCHORED',
   'CLOCK_SUSPECT',
@@ -117,3 +119,6 @@ export interface LabelFacts {
    */
   joinedClockInIds?: string[];
 }
+
+/** The label a hand change past an office rule carries — it keeps the entry waiting whatever else is re-labelled. */
+export const HOURS_CHANGED_FLAG: LabelCode = 'HOURS_CHANGED';

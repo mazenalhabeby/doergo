@@ -94,7 +94,7 @@ export class DayHoursService {
     const spaceId = value.spaceId ?? null;
 
     await this.assertMayEdit(data, spaceId);
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: editorId,
       subjectId: technicianId,
       organizationId,
@@ -149,10 +149,13 @@ export class DayHoursService {
       approvedById: null,
       approvedAt: null,
     };
+    // With the member's workspaces, as the one request reader takes it (request-rule-facts.ts).
+    const include = { technician: REQUEST_RULE_SELECT.technician };
     const pending = previous
-      ? await this.prisma.timeOff.update({ where: { id: previous.id }, data: fields })
+      ? await this.prisma.timeOff.update({ where: { id: previous.id }, data: fields, include })
       : await this.prisma.timeOff.create({
           data: { technicianId, kind: 'HOURS', startDate: day, endDate: day, spaceId, ...fields },
+          include,
         });
     // Set again: approvals given for the EARLIER hours are void — the new hours start their approvals over.
     if (previous) await this.rules.clear(organizationId, 'request', pending.id);
@@ -162,11 +165,7 @@ export class DayHoursService {
         kind: 'request',
         itemId: pending.id,
         // The ONE request reader — with no workspace named, the member's own workspaces (as Approvals reads it).
-        facts: requestRuleFacts(
-          await this.prisma.timeOff.findUniqueOrThrow({ where: { id: pending.id }, select: REQUEST_RULE_SELECT }),
-          false,
-          1,
-        ),
+        facts: requestRuleFacts(pending, false, 1),
         deciderId: editorId,
         subjectId: technicianId,
       },

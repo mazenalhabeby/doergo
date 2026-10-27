@@ -25,7 +25,7 @@ export interface SelfDecisionPrisma {
   /** Asked through the published reader `isActiveAdmin` (auth-service owns User). */
   user: On<'user', 'findFirst'>['user'];
   /** Present on the real client; a test double without it skips the stand-in rule. */
-  approvalDelegation?: { findFirst(args: unknown): Promise<{ id: string } | null> };
+  approvalDelegation?: On<'approvalDelegation', 'findFirst'>['approvalDelegation'];
 }
 
 export async function assertNotSelfDecision(

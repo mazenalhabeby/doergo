@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { personName, type RuleKind } from '@hbcfield/shared';
+import { expenseRuleFacts, personName, type RuleKind } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 export type { RuleItem, RuleItemWindow } from './rule-items';
 import { CoverService } from '../../technicians/cover.service';
@@ -88,10 +88,10 @@ export class RuleFactsReader {
         since: m.createdAt,
         subjectId: m.authorId,
         subjectName: m.authorId ? (authors.get(m.authorId) ?? '') : '',
-        facts: { spaceIds: spaceOf.get(m.assetId) ? [spaceOf.get(m.assetId)!] : [], amountCents: m.amountCents },
+        facts: expenseRuleFacts(spaceOf.get(m.assetId), m.amountCents),
       }));
     }
-    // Overtime: the formal round waiting for a leader — keyed by its shift, like the second step.
+    // Overtime: the formal round waiting for a leader — keyed by its shift, like its approval step.
     const rows = await this.prisma.overtimeRequest.findMany({
       where: window.since
         ? { organizationId, createdAt: { gte: window.since }, ...inSpaces(window, 'locationId') }
@@ -140,7 +140,7 @@ export class RuleFactsReader {
         since: o.since,
         subjectId: o.subjectId,
         subjectName: personName(o.user),
-        facts: { spaceIds: [o.spaceId], minutes: o.minutes },
+        facts: overtimeRuleFacts(o.spaceId, o.counted, o.approvedBefore),
       })),
     ];
   }

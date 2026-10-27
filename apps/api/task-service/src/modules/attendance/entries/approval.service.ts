@@ -1,6 +1,6 @@
 // size-exempt: deciding time entries — the pending list, approve, reject and bulk approve share one set of checks
 import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
-import { success, paginated, ApprovalStatus, handChangedMinutes } from '@hbcfield/shared';
+import { success, paginated, ApprovalStatus, hoursRuleFacts } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
@@ -112,7 +112,7 @@ export class ApprovalService {
     }
 
     // A second party approves hours — the overtime rule (self-decision.ts).
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.approverId,
       subjectId: entry.userId,
       organizationId: data.organizationId,
@@ -134,7 +134,7 @@ export class ApprovalService {
         organizationId: data.organizationId,
         kind: 'hours',
         itemId: entry.id,
-        facts: { spaceIds: [entry.locationId], minutes: handChangedMinutes(entry) },
+        facts: hoursRuleFacts(entry),
         deciderId: data.approverId,
         subjectId: entry.userId,
       },
@@ -200,7 +200,7 @@ export class ApprovalService {
     }
 
     // Deciding your own entry, either way, needs somebody else (self-decision.ts).
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.approverId,
       subjectId: entry.userId,
       organizationId: data.organizationId,

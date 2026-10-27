@@ -8,7 +8,6 @@ import {
   flagsWithMissedRest,
   breakTotals,
   endRunningBreaks,
-  handChangedMinutes,
 } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
@@ -24,6 +23,7 @@ import { closeByOffice } from './office-close';
 import { ShiftCloser } from '../clock-out/shift-closer.service';
 import type { Prisma } from '@prisma/client';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { handChangeHolds, hoursRuleFacts, withHoursChanged } from '../core/hand-edit-review';
 
 /** The office correcting one entry: times, rests, the reason — audited. */
 @Injectable()
@@ -82,7 +82,7 @@ export class EntryEditService {
 
     // Correcting your own clock times is the same as approving them: an edit
     // is what payroll reads. Somebody else makes it (self-decision.ts).
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.editorId,
       subjectId: entry.userId,
       organizationId: data.organizationId,
@@ -269,15 +269,19 @@ export class EntryEditService {
     if (timesChanged) await this.rules.clear(data.organizationId, 'hours', entry.id);
     // A running shift is judged on its clock-in now, and again at its close (core/hand-edit-review.ts).
     if (timesChanged && entry.approvalStatus !== 'REJECTED') {
-      const minutes = handChangedMinutes({
+      const facts = hoursRuleFacts({
         isEdited: true,
         originalClockIn: entry.isEdited ? entry.originalClockIn : entry.clockInAt,
         originalClockOut: entry.isEdited ? entry.originalClockOut : entry.clockOutAt,
         clockInAt: newClockIn,
         clockOutAt: newClockOut,
+        locationId: entry.locationId,
       });
-      const facts = { spaceIds: entry.locationId ? [entry.locationId] : [], minutes };
-      if (minutes > 0 && (await this.rules.secondStepFor(data.organizationId, 'hours', facts))) {
+      const holds = await handChangeHolds(this.rules, data.organizationId, facts);
+      // The label keeps it waiting through every later re-labelling; a change back under the rule drops it.
+      flags = withHoursChanged(flags, holds);
+      updateData.flagReasons = flags;
+      if (holds) {
         updateData.approvalStatus = 'PENDING';
         updateData.approvedById = null;
         updateData.approvedAt = null;

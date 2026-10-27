@@ -6,10 +6,9 @@ import {
   roleNames,
   PrismaService,
   type ApprovalStepView,
-  type RuleFacts,
   type RuleKind,
 } from '@hbcfield/shared';
-import { stepRules } from './approval-steps';
+import { joinRoleNames, parseStoredFacts, stepRules } from './approval-steps';
 
 /**
  * The open steps for the inbox: who went first and which roles are still needed. What is needed is read the way
@@ -43,8 +42,9 @@ export class ApprovalStepsReader {
     const rules = await stepRules(this.prisma, organizationId, [...new Set(rows.map((r) => r.kind as RuleKind))]);
     const left = (r: (typeof rows)[number]) => {
       const ofKind = rules.filter((x) => x.kind === r.kind);
-      const needed = r.facts
-        ? requiredRoleIds(ofKind, r.facts as unknown as RuleFacts)
+      const facts = parseStoredFacts(r.facts);
+      const needed = facts
+        ? requiredRoleIds(ofKind, facts)
         : r.requiredRoleIds.filter((id) => ofKind.some((x) => x.secondRoleId === id));
       return needed.filter((x) => !r.doneRoleIds.includes(x));
     };
@@ -62,11 +62,7 @@ export class ApprovalStepsReader {
         itemId: r.itemId,
         firstById: r.firstById,
         firstByName: personById.get(r.firstById) ?? '',
-        roleName: leftOf
-          .get(r)!
-          .map((id) => roleById.get(id) ?? '')
-          .filter(Boolean)
-          .join(' + '),
+        roleName: joinRoleNames(leftOf.get(r)!, roleById),
       }));
   }
 }

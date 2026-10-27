@@ -1,3 +1,4 @@
+import { noOfficeRules } from '../../modules/approvals/__tests__/no-office-rules';
 import { NotFoundException } from '@nestjs/common';
 import { SprintsService } from '../../modules/sprints/sprints.service';
 import { EpicsService } from '../../modules/epics/epics.service';
@@ -94,7 +95,7 @@ describe('client-supplied ids are checked before the write', () => {
 
   describe('a proposal’s chosen kind', () => {
     // Who is told is ProposalNoticesService's; here it is quiet.
-    const svc = () => new AssetProposalService(prisma, { raised: jest.fn().mockResolvedValue(undefined) } as any, null);
+    const svc = () => new AssetProposalService(prisma, { raised: jest.fn().mockResolvedValue(undefined) } as any, null, noOfficeRules());
     const raise = () =>
       svc().raise({
         fields: { name: 'Van' } as any,

@@ -54,7 +54,7 @@ export class ApprovalsService {
 
   constructor(
     config: ConfigService,
-    // Office rules' open first steps. Present in the app; absent only in narrow unit tests.
+    // Office rules' open approval steps. Present in the app; absent only in narrow unit tests.
     @Optional() private readonly rules?: ApprovalRulesClient,
   ) {
     this.base = selfDispatchBase(config);

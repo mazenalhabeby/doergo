@@ -1,5 +1,5 @@
 import type { Prisma, TaskPriority } from '@prisma/client';
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '@hbcfield/shared';
 import { assertSpaceInOrg } from '../../../common/tenant-scope.util';
@@ -19,7 +19,7 @@ export class TaskUpdateService {
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     private readonly support: TaskSupportService,
     // A client request deleted half-way through an office rule: its approvals end with it.
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /**
@@ -213,7 +213,7 @@ export class TaskUpdateService {
     }
 
     await this.prisma.task.delete({ where: { id: data.id } });
-    await this.rules?.clearItem('clientRequest', data.id);
+    await this.rules.clearItem('clientRequest', data.id);
 
     // Notify via Socket.IO for real-time updates (spaceId lets cross-org shared
     // guests receive the delete on the space room too).

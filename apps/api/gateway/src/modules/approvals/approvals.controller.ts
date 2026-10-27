@@ -93,7 +93,7 @@ export class ApprovalsController {
 
   @Get('rules')
   @UseGuards(ApprovalRulesGuard)
-  @ApiOperation({ summary: "The office's approval rules (thresholds → a second approval)" })
+  @ApiOperation({ summary: "The office's approval rules (past a limit → more people approve)" })
   async listRules(@Request() req: AuthedRequest) {
     return { success: true, data: await this.rules.list(callerOrgId(req.user), rulesScope(req.user)) };
   }

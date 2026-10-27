@@ -174,27 +174,34 @@ export async function standInFor(
 }
 
 /**
- * Is one of these people standing in for the other — either way round — around `day` (a day either side, like
- * `STAND_IN_FOR_SUBJECT`)? Two approvals given by a leader and their stand-in are ONE authority, not two.
+ * Was one of these people standing in for the other — either way round — at any time from `since` (the first
+ * approval of an item) to `until` (now), a day either side like `STAND_IN_FOR_SUBJECT`? A stand-in ENDED in the
+ * meantime counts too: approvals given by a leader and the person deciding with their authority are ONE.
  */
 export async function standInBetween(
   prisma: { approvalDelegation: { count(args: unknown): Promise<number> } },
   organizationId: string,
   userId: string,
   others: string[],
-  day: Date,
+  since: Date,
+  until: Date = new Date(),
 ): Promise<boolean> {
   if (!others.length) return false;
   const DAY = 86_400_000;
   const n = await prisma.approvalDelegation.count({
     where: {
       organizationId,
-      revokedAt: null,
-      startsOn: { lte: new Date(day.getTime() + DAY) },
-      endsOn: { gte: new Date(day.getTime() - DAY) },
-      OR: [
-        { fromUserId: userId, toUserId: { in: others } },
-        { toUserId: userId, fromUserId: { in: others } },
+      startsOn: { lte: new Date(until.getTime() + DAY) },
+      endsOn: { gte: new Date(since.getTime() - DAY) },
+      // Ended before the first approval was given: it never covered this item.
+      OR: [{ revokedAt: null }, { revokedAt: { gte: since } }],
+      AND: [
+        {
+          OR: [
+            { fromUserId: userId, toUserId: { in: others } },
+            { toUserId: userId, fromUserId: { in: others } },
+          ],
+        },
       ],
     },
   });

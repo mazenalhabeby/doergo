@@ -44,8 +44,8 @@ describe('overtime rounds', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       overtimeRequest: {
-      // Earlier approved rounds on the shift (office rules judge the whole): none.
-      groupBy: jest.fn().mockResolvedValue([]),
+        // Earlier approved rounds on the shift (office rules judge the whole): none.
+        groupBy: jest.fn().mockResolvedValue([]),
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'ot1' }),
         update: jest.fn().mockResolvedValue({ id: 'ot1' }),
@@ -152,6 +152,21 @@ describe('overtime rounds', () => {
       expect(prisma.overtimeRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ approvalMethod: 'REMOTE', leaderSignature: null }),
+        }),
+      );
+    });
+
+    /*
+      ⚠️ Extra time approved straight from a running shift (nobody asked) is written as an approved round: the next
+      decision on the shift counts it, so 50-minute approvals one after another are no way round a one-hour rule.
+    */
+    it('approved with no round asked for: written as an approved round, numbered after the last', async () => {
+      prisma.overtimeRequest.findFirst.mockReset();
+      prisma.overtimeRequest.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ cycle: 2 });
+      await service.approveExtraTime({ approverId: 'leader', entryId: 'e1', minutes: 50, organizationId: 'org1' });
+      expect(prisma.overtimeRequest.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'APPROVED', cycle: 3, maxDurationMinutes: 50, timeEntryId: 'e1' }),
         }),
       );
     });

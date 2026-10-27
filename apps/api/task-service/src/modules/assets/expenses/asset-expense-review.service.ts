@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService, success, clampListLimit, peopleFaces } from '@hbcfield/shared';
+import { PrismaService, success, clampListLimit, peopleFaces, expenseRuleFacts } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
 import { AssetNotifier } from '../core/asset-notifier.service';
@@ -138,7 +138,7 @@ export class AssetExpenseReviewService {
     if (!filed || !this.access.mayIn(data, 'manage', filed.asset?.category?.spaceId ?? null)) {
       throw new NotFoundException('That expense is not waiting for a decision');
     }
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.userId,
       subjectId: filed?.authorId,
       organizationId: data.organizationId,
@@ -174,7 +174,7 @@ export class AssetExpenseReviewService {
           organizationId: data.organizationId,
           kind: 'expense',
           itemId: data.entryId,
-          facts: { spaceIds: spaceId ? [spaceId] : [], amountCents: filed.amountCents ?? 0 },
+          facts: expenseRuleFacts(spaceId, filed.amountCents),
           deciderId: data.userId,
           subjectId: filed.authorId,
         },

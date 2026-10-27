@@ -83,7 +83,7 @@ export class ExcursionsService {
       throw new BadRequestException('This request is no longer pending');
     }
     // Nobody sanctions their own time away from the site — the rule every other approval follows.
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.approverId,
       subjectId: excursion.userId,
       organizationId: data.organizationId,
@@ -129,7 +129,7 @@ export class ExcursionsService {
     if (excursion.status !== 'PENDING') {
       throw new BadRequestException('This request is no longer pending');
     }
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.approverId,
       subjectId: excursion.userId,
       organizationId: data.organizationId,

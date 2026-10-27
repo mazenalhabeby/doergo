@@ -143,6 +143,11 @@ export interface RuleFacts {
   urgent?: boolean | null;
 }
 
+/** An item's workspace as a rule reads it: one id, or none. */
+export function spaceIdsOf(spaceId: string | null | undefined): string[] {
+  return spaceId ? [spaceId] : [];
+}
+
 /** Does this rule apply? Strictly MORE than the threshold; no threshold = always. */
 type RuleShape = Pick<
   ApprovalRuleView,

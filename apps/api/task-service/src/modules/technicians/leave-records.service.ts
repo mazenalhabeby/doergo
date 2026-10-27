@@ -1,6 +1,6 @@
 import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
-import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort } from '../approvals/rules/request-rule-facts';
+import { REQUEST_RULE_SELECT, requestFactsFor } from '../approvals/rules/request-rule-facts';
 import {
   assertMemberInScope,
   toISODateString,
@@ -57,7 +57,7 @@ export class LeaveRecordsService {
       throw new NotFoundException('Employee not found in organization');
     }
     // Recording leave approves it: nobody records their own (an administrator excepted — self-decision.ts).
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.editorId,
       subjectId: data.technicianId,
       organizationId: data.organizationId,
@@ -140,15 +140,12 @@ export class LeaveRecordsService {
       },
       select: REQUEST_RULE_SELECT,
     });
-    const coverShort =
-      (await this.rules.asksAboutCover(data.organizationId)) &&
-      ((await requestsCoverShort(this.cover, data.organizationId, [created])).get(created.id) ?? false);
     const decided = await this.rules.decide(
       {
         organizationId: data.organizationId,
         kind: 'request',
         itemId: created.id,
-        facts: requestRuleFacts(created, coverShort, workingDays),
+        facts: await requestFactsFor(this.rules, this.cover, data.organizationId, created, workingDays),
         deciderId: data.editorId,
         subjectId: data.technicianId,
       },

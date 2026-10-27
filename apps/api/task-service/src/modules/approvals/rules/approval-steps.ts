@@ -1,7 +1,7 @@
 import type { PrismaService, RuleFacts, RuleKind } from '@hbcfield/shared';
 
 /**
- * The open second step of one item, closing steps, and the rules that gate. One OPEN step per item is a partial
+ * The open approval step of one item, closing steps, and the rules that gate. One OPEN step per item is a partial
  * unique index (see approval-rules.service.ts).
  */
 export function openStep(
@@ -38,4 +38,25 @@ export async function stepRules(prisma: PrismaService, organizationId: string, k
 /** What a step stores of the facts it was judged on (the inbox reads the rules against them). */
 export function storedFacts(facts: RuleFacts) {
   return JSON.parse(JSON.stringify(facts)) as object;
+}
+
+/** The facts a step stored, read back — null for a step from before they were stored, or anything unreadable. */
+export function parseStoredFacts(value: unknown): RuleFacts | null {
+  if (!value || typeof value !== 'object') return null;
+  const spaceIds = (value as { spaceIds?: unknown }).spaceIds;
+  if (!Array.isArray(spaceIds) || !spaceIds.every((s) => typeof s === 'string')) return null;
+  return value as RuleFacts;
+}
+
+/**
+ * The roles still needed, in words ("HR + Finance"). A role deleted since cannot be named, and nobody holds it:
+ * only an administrator can finish such an item, so that is what it says — never "waiting for ".
+ */
+export function joinRoleNames(roleIds: string[], names: ReadonlyMap<string, string>): string {
+  return (
+    roleIds
+      .map((id) => names.get(id) ?? '')
+      .filter(Boolean)
+      .join(' + ') || 'an administrator'
+  );
 }

@@ -83,4 +83,12 @@ describe('a rule on missed clock-ins follows the run', () => {
     expect(rules.clear).toHaveBeenCalledWith('o', 'noShow', ['d1', 'd2', 'd3']);
     expect(rules.decide).not.toHaveBeenCalled();
   });
+
+  it('an excuse with nobody named as deciding is refused — never judged as nobody', async () => {
+    const { svc, rules } = setup();
+    await expect(resolve(svc, { excusedById: undefined })).rejects.toMatchObject({
+      response: { code: 'NO_SHOW_DECIDER_REQUIRED' },
+    });
+    expect(rules.decide).not.toHaveBeenCalled();
+  });
 });

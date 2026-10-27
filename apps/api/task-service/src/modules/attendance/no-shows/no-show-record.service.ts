@@ -11,7 +11,7 @@ import {
 } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { DAY } from './no-show-record-helpers';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, spaceIdsOf } from '@hbcfield/shared';
 import { monthFacts, ruleRunsFor, runHints, runsFor, spaceRows } from './no-show-run-facts';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 
@@ -121,7 +121,7 @@ export class NoShowRecordService {
       where: { id: data.id, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
     });
     if (!inst) throw new NotFoundException('No-show not found');
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.excusedById,
       subjectId: inst.userId,
       organizationId: data.organizationId,
@@ -185,14 +185,17 @@ export class NoShowRecordService {
       const res = await close();
       return success({ id: inst.id, state: 'ABSENT', decided: res.count });
     }
+    // Excusing is a decision by somebody: never judged as nobody (the gateway always says who).
+    if (!data.excusedById)
+      throw new BadRequestException({ code: 'NO_SHOW_DECIDER_REQUIRED', message: 'Who decided is missing.' });
     const decided = await this.rules.decide(
       {
         organizationId: data.organizationId,
         kind: 'noShow',
         itemId: run?.latestId ?? inst.id,
         itemAliases: runIds,
-        facts: { spaceIds: inst.spaceId ? [inst.spaceId] : [], days: ruleDays },
-        deciderId: data.excusedById ?? '',
+        facts: { spaceIds: spaceIdsOf(inst.spaceId), days: ruleDays },
+        deciderId: data.excusedById,
         subjectId: inst.userId,
       },
       close,

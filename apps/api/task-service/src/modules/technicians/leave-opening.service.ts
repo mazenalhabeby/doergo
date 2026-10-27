@@ -91,7 +91,7 @@ export class LeaveOpeningService {
     if (people.length !== ids.length)
       throw new NotFoundException({ code: 'MEMBER_NOT_FOUND', message: 'Employee not found' });
     if (ids.includes(dto.callerId)) {
-      await assertNotSelfDecision(this.prisma as never, {
+      await assertNotSelfDecision(this.prisma, {
         deciderId: dto.callerId,
         subjectId: dto.callerId,
         organizationId: dto.organizationId,

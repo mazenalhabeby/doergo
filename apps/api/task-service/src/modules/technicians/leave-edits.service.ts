@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { isAbsence, PrismaService, success } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
-import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort } from '../approvals/rules/request-rule-facts';
+import { REQUEST_RULE_SELECT, requestFactsFor } from '../approvals/rules/request-rule-facts';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { CoverService } from './cover.service';
 import { workingDaysOf } from './member-requests';
@@ -44,7 +44,7 @@ export class LeaveEditsService {
     if (start > end) throw new BadRequestException('Start date must be before or equal to end date');
     const datesChanged = start.getTime() !== timeOff.startDate.getTime() || end.getTime() !== timeOff.endDate.getTime();
     if (datesChanged)
-      await assertNotSelfDecision(this.prisma as never, {
+      await assertNotSelfDecision(this.prisma, {
         deciderId: data.editorId,
         subjectId: timeOff.technicianId,
         organizationId: data.organizationId,
@@ -81,15 +81,12 @@ export class LeaveEditsService {
     await this.rules.clear(data.organizationId, 'request', data.timeOffId);
     if (timeOff.status !== 'APPROVED') return success(await write(), 'Day off updated');
     const row = { ...timeOff, startDate: start, endDate: end };
-    const coverShort =
-      (await this.rules.asksAboutCover(data.organizationId)) &&
-      ((await requestsCoverShort(this.cover, data.organizationId, [row])).get(row.id) ?? false);
     const decided = await this.rules.decide(
       {
         organizationId: data.organizationId,
         kind: 'request',
         itemId: data.timeOffId,
-        facts: requestRuleFacts(row, coverShort, workingDays),
+        facts: await requestFactsFor(this.rules, this.cover, data.organizationId, row, workingDays),
         deciderId: data.editorId,
         subjectId: timeOff.technicianId,
       },
@@ -105,7 +102,7 @@ export class LeaveEditsService {
   }
 
   /** Admin delete of a day off, scoped to the org. Its half-way approvals end with it. */
-  async adminDeleteTimeOff(data: { editorId?: string; organizationId: string; timeOffId: string }) {
+  async adminDeleteTimeOff(data: { organizationId: string; timeOffId: string }) {
     const timeOff = await this.prisma.timeOff.findFirst({
       where: { id: data.timeOffId, technician: { organizationId: data.organizationId } },
       select: { id: true },

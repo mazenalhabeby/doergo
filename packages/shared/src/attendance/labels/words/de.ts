@@ -24,6 +24,7 @@ export const de: LabelWords = {
     AUTO_CLOCK_IN: 'Automatisch eingestempelt',
     AUTO_CLOCK_OUT: 'Automatisch ausgestempelt',
     AUTO_REST: 'Automatische Pause',
+    HOURS_CHANGED: 'Zeiten von Hand geändert',
   },
   approval: {
     active: 'Aktiv',

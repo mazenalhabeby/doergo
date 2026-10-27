@@ -45,6 +45,7 @@ const SPECS: Spec[] = [
   ['FIX_MOCKED', 'red'],
   ['CLOCK_SUSPECT', 'red'],
   ['BOUNDARY_CHANGED', 'amber'],
+  ['HOURS_CHANGED', 'amber'],
   ['STALE', 'amber'],
   ['RECORDED_OFFLINE', 'muted'],
   ['UNANCHORED', 'muted'],

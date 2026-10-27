@@ -13,7 +13,7 @@ import {
   approvalRuleRoleKinds,
 } from '@hbcfield/shared/microservices';
 
-/** Gateway → task-service for office rules and the open first steps. */
+/** Gateway → task-service for office rules and their open approval steps. */
 @Injectable()
 export class ApprovalRulesClient extends BaseGatewayService {
   constructor(@Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy) {
@@ -56,11 +56,10 @@ export class ApprovalRulesClient extends BaseGatewayService {
     } satisfies RpcRequest<typeof approvalRulesDelete>);
   }
   /** Which kinds each role's holders could approve. */
-  async roleKinds(organizationId: string, roleIds: string[]) {
-    const reply = await this.send<RpcReply<typeof approvalRuleRoleKinds> | { data?: RpcReply<typeof approvalRuleRoleKinds> }>(
-      pattern(approvalRuleRoleKinds),
-      { organizationId, roleIds } satisfies RpcRequest<typeof approvalRuleRoleKinds>,
-    );
-    return ((reply as { data?: unknown })?.data ?? reply) as RpcReply<typeof approvalRuleRoleKinds>;
+  roleKinds(organizationId: string, roleIds: string[]) {
+    return this.send<RpcReply<typeof approvalRuleRoleKinds>>(pattern(approvalRuleRoleKinds), {
+      organizationId,
+      roleIds,
+    } satisfies RpcRequest<typeof approvalRuleRoleKinds>);
   }
 }

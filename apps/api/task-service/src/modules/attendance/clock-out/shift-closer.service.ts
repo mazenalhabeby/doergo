@@ -6,7 +6,7 @@ import { AUTO_REST_FLAG, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN as DEFAULT_TOLERANC
 import { JobPauseService } from '../../tasks/handover/job-pause.service';
 import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
-import { handEditNeedsReview } from '../core/hand-edit-review';
+import { handHoldAtClose } from '../core/hand-edit-review';
 import { clockEventEntry } from '../core/clock-event';
 import { CountedTimeService } from '../core/counted-time.service';
 import { MISSED_REST_FLAG, flagsWithMissedRest, judgedByLabelRules, parseBreakPlan } from '@hbcfield/shared';
@@ -32,13 +32,12 @@ export class ShiftCloser {
     private readonly notificationClient: ClientProxy,
     private readonly notificationRouting: NotificationRoutingService,
     private readonly countedTime: CountedTimeService,
+    private readonly rules: ApprovalRulesService, // a running shift changed by hand (hand-edit-review)
     // Jobs left in work are paused at every way a shift ends (packages/shared/src/tasks/handover.ts).
     @Optional() private readonly jobPause?: JobPauseService,
-    // The automatic clock (attendance/auto-clock.ts): its re-check, its rest, its thresholds.
-    // Optional, like the job pause: a shift always closes; absent, nothing is automatic.
+    // The automatic clock (its re-check, rest, thresholds) — optional like the job pause: absent, nothing is automatic.
     @Optional() private readonly autoClock?: AutoClockService,
     @Optional() private readonly routing?: AttendanceRoutingService, // who hears "day needs review" (A3)
-    @Optional() private readonly rules?: ApprovalRulesService, // a running shift changed by hand (hand-edit-review)
   ) {}
 
   /** One temporary close — the abandoned-shift sweep's, and the automatic clock's. False when somebody closed it first. */
@@ -166,7 +165,8 @@ export class ShiftCloser {
       flagsChanged = true;
     }
 
-    const handReview = await handEditNeedsReview(this.rules, entry, at);
+    // Changed by hand while running, past a rule: labelled, so it waits (core/hand-edit-review.ts).
+    const handHold = await handHoldAtClose(this.rules, entry, at, flagsChanged ? closeFlags : baseFlags);
     const result = await this.prisma.$transaction(async (tx) => {
       const claim = await tx.timeEntry.updateMany({
         where:
@@ -189,7 +189,7 @@ export class ShiftCloser {
           ...spec.fields,
           ...closingLabelColumns(entry, spec.labels),
           ...(flagsChanged ? { flagReasons: closeFlags, approvalStatus: closeApproval } : {}),
-          ...(handReview ? { approvalStatus: 'PENDING' as const } : {}),
+          ...handHold,
         },
       });
       if (claim.count === 0) return null;

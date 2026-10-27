@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Optional } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import {
   zoneOf,
@@ -36,7 +36,7 @@ export class RequestPrecheckService {
     private readonly cover: CoverService,
     private readonly ledger: LeaveLedgerService,
     private readonly moduleRef: ModuleRef,
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   async precheck(data: { userId: string; organizationId: string; body: unknown }): Promise<RequestPrecheck> {
@@ -88,16 +88,14 @@ export class RequestPrecheckService {
     }
 
     const ruleKind = value.kind === 'OVERTIME' ? 'overtime' : 'request';
-    const secondApproval = this.rules
-      ? await this.rules
-          .secondStepFor(data.organizationId, ruleKind, {
-            spaceIds,
-            days: workingDays ?? undefined,
-            minutes: value.minutes ?? undefined,
-            coverShort: cover === 'short' || cover === 'skill',
-          })
-          .catch(() => null)
-      : null;
+    const secondApproval = await this.rules
+      .secondStepFor(data.organizationId, ruleKind, {
+        spaceIds,
+        days: workingDays ?? undefined,
+        minutes: value.minutes ?? undefined,
+        coverShort: cover === 'short' || cover === 'skill',
+      })
+      .catch(() => null);
 
     return {
       workingDays,

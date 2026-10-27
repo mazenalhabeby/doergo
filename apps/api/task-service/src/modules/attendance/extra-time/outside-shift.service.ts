@@ -151,8 +151,7 @@ export class OutsideShiftService {
     return rows.flatMap((r) => {
       const o = outsideShift(r, tol.get(r.shiftId ?? '') ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN);
       const counted = r.outsideCountedMinutes ?? o?.total ?? 0;
-      const minutes = counted && (approved.get(r.id) ?? 0) + counted;
-      return minutes > 0
+      return counted > 0
         ? [
             {
               itemId: `${r.id}:outside`,
@@ -160,7 +159,9 @@ export class OutsideShiftService {
               subjectId: r.userId,
               user: r.user,
               spaceId: r.locationId,
-              minutes,
+              // The rule's facts are the reader's to build (overtimeRuleFacts) — the same as the approve path.
+              counted,
+              approvedBefore: approved.get(r.id) ?? 0,
             },
           ]
         : [];

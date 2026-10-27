@@ -63,3 +63,20 @@ export async function requestsCoverShort(
   }
   return out;
 }
+
+/**
+ * A request's facts for the approve path: cover is worked out only when a rule of the organization asks about it
+ * (asking costs four reads of the wallchart). ONE call for approving, recording and re-dating leave.
+ */
+export async function requestFactsFor(
+  rules: { asksAboutCover(organizationId: string): Promise<boolean> },
+  cover: Parameters<typeof requestsCoverShort>[0],
+  organizationId: string,
+  row: RequestRuleRow,
+  workingDays?: number | null,
+): Promise<RuleFacts> {
+  const coverShort =
+    (await rules.asksAboutCover(organizationId)) &&
+    ((await requestsCoverShort(cover, organizationId, [row])).get(row.id) ?? false);
+  return requestRuleFacts(row, coverShort, workingDays);
+}

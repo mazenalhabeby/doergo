@@ -273,25 +273,16 @@ describe('DayHoursService — who may set whose day', () => {
       timeOff: {
         findMany: jest.fn().mockResolvedValue(opts.leave ?? []),
         findFirst: jest.fn().mockResolvedValue(opts.previous ?? null),
-        // The request as the office rules read it (request-rule-facts.ts).
-        findUniqueOrThrow: jest.fn(async () => ({
-          id: 't1',
-          technicianId: 'm1',
-          kind: 'HOURS',
-          spaceId: 'sp1',
-          startDate: at('2026-10-24'),
-          endDate: at('2026-10-24'),
-          workingDays: null,
-          technician: { spaceAssignments: [{ spaceId: 's1' }] },
-        })),
         create: jest.fn(async (a: { data: Record<string, unknown> }) => ({
           id: 't1',
+          technician: { spaceAssignments: [{ spaceId: 'sp1' }] },
           approvedBy: { firstName: 'Anna', lastName: 'M' },
           space: { name: 'Site' },
           ...a.data,
         })),
         update: jest.fn(async (a: { data: Record<string, unknown> }) => ({
           id: 'prev',
+          technician: { spaceAssignments: [{ spaceId: 'sp1' }] },
           approvedBy: a.data.status === 'APPROVED' ? { firstName: 'Anna', lastName: 'M' } : null,
           space: null,
           startDate: at('2026-10-24'),

@@ -74,7 +74,7 @@ export class OfficeBreaksService {
 
     // ⚠️ A rest added to your OWN shift changes your own counted time — the
     // second-party rule, as for editing the entry (self-decision.ts).
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.editorId,
       subjectId: entry.userId,
       organizationId: data.organizationId,
@@ -202,7 +202,7 @@ export class OfficeBreaksService {
     if (!br) return refuse(HttpStatus.NOT_FOUND, 'Break not found.');
 
     // ⚠️ Removing a rest from your OWN shift raises your own counted time.
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.editorId,
       subjectId: br.timeEntry.userId,
       organizationId: data.organizationId,

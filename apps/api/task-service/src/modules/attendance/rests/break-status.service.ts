@@ -182,7 +182,7 @@ export class BreakStatusService {
 
     // ⚠️ Ending your OWN rest from the office side sets your own rest length —
     // and so your own counted time. Somebody else does it (self-decision.ts).
-    await assertNotSelfDecision(this.prisma as never, {
+    await assertNotSelfDecision(this.prisma, {
       deciderId: data.adminId,
       subjectId: breakRecord.timeEntry.userId,
       organizationId: data.organizationId,

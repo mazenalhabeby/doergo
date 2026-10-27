@@ -13,8 +13,8 @@ import { RULE_MESSAGES } from './approval-rules-helpers';
 import { roleCanDecide, ruleKindsByRole } from './rule-role-deciders';
 
 /**
- * The office rules themselves: listing, saving and deleting them (closing the
- * steps a removed rule left open).
+ * The office rules themselves: listing, saving and deleting them. Deleting or editing a rule never closes the
+ * steps it left open — approvals already given stay; the gate works out what is needed now.
  */
 @Injectable()
 export class ApprovalRulesAdminService {
@@ -25,7 +25,7 @@ export class ApprovalRulesAdminService {
   async listRules(organizationId: string, spaceIds?: string[]): Promise<ApprovalRuleView[]> {
     const rules = await this.prisma.approvalRule.findMany({
       /*
-        Held in some workspaces only: their own rules, AND the every-workspace ones — read-only (\`editable: false\`),
+        Held in some workspaces only: their own rules, AND the every-workspace ones — read-only (`editable: false`),
         because those apply in their workspaces too and the page would otherwise say "only the first approval"
         where the company already asks for more. Never another workspace's.
       */
@@ -98,8 +98,11 @@ export class ApprovalRulesAdminService {
     if (!second || !escalate)
       throw new BadRequestException({ message: RULE_MESSAGES.RULE_ROLE_REQUIRED, code: 'RULE_ROLE_REQUIRED' });
     if (!space) throw new NotFoundException('Workspace not found');
-    // The role it asks must be able to give that approval — else its items wait for somebody who cannot.
-    if (second.id && !(await roleCanDecide(this.prisma, organizationId, second.id, input.kind, space.id ?? null)))
+    // The roles it asks — and the one it passes to when nobody answers — must be able to give that approval:
+    // else its items wait for somebody who cannot, or a reminder names the person to somebody with no say.
+    const cannot = async (roleId: string | null) =>
+      !!roleId && !(await roleCanDecide(this.prisma, organizationId, roleId, input.kind, space.id ?? null));
+    if ((await cannot(second.id)) || (await cannot(escalate.id)))
       throw new BadRequestException({
         message: RULE_MESSAGES.RULE_ROLE_CANNOT_DECIDE,
         code: 'RULE_ROLE_CANNOT_DECIDE',

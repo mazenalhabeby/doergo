@@ -154,6 +154,26 @@ describe('saving an office rule', () => {
     expect(prisma.approvalRule.create).not.toHaveBeenCalled();
   });
 
+  it('refuses an ESCALATION role nobody holding it may approve this kind with — reminders name the person', async () => {
+    const { prisma, svc } = setup();
+    prisma.user.findMany.mockResolvedValueOnce([
+      {
+        role: 'EMPLOYEE',
+        memberRoleId: 'role-mgr',
+        memberRole: { permissions: { crmWork: true }, isActive: true },
+        spaceAssignments: [],
+      },
+    ]);
+    await expect(
+      svc.saveRule(ORG, 'u1', {
+        kind: 'hours',
+        remindAfterHours: 4,
+        escalateAfterHours: 24,
+        escalateRoleId: 'role-mgr',
+      }),
+    ).rejects.toMatchObject({ response: { code: 'RULE_ROLE_CANNOT_DECIDE' } });
+  });
+
   it('accepts it when one holder may — through the role, or the org-wide bridge', async () => {
     const { prisma, svc } = setup();
     prisma.user.findMany.mockResolvedValueOnce([

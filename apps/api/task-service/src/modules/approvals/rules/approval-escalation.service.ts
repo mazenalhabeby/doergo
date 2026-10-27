@@ -79,6 +79,16 @@ export class ApprovalEscalationService {
           where: { kind, itemId: { in: items.map((i) => i.itemId) } },
           select: { itemId: true, stage: true },
         });
+        // Items half-way through their approvals: the reminder goes to whom they still wait for, never to the
+        // people who already approved (one query for the kind).
+        const half = new Map(
+          (
+            await this.prisma.approvalStep.findMany({
+              where: { organizationId, kind, itemId: { in: items.map((i) => i.itemId) }, consumedAt: null },
+              select: { itemId: true, requiredRoleIds: true, doneRoleIds: true, approverIds: true },
+            })
+          ).map((st) => [st.itemId, st]),
+        );
         const sentFor = new Map<string, Set<NoticeStage>>();
         for (const n of notices)
           (sentFor.get(n.itemId) ?? sentFor.set(n.itemId, new Set()).get(n.itemId)!).add(n.stage as NoticeStage);
@@ -114,6 +124,16 @@ export class ApprovalEscalationService {
                   }),
                 )
               : [];
+          const step = half.get(item.itemId);
+          const waitingOn = step?.requiredRoleIds.find((r) => !step.doneRoleIds.includes(r));
+          if (stage === 'REMIND' && step && waitingOn)
+            recipientIds = await roleHolderIds(this.prisma, {
+              organizationId,
+              roleId: waitingOn,
+              spaceIds: item.facts.spaceIds,
+              exclude: [...step.approverIds, ...(item.subjectId ? [item.subjectId] : [])],
+              now,
+            });
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.
           if (!recipientIds.length)
             recipientIds = await cached(`usual|${who}`, () => this.usualDeciders(organizationId, kind, item));

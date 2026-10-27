@@ -4,6 +4,7 @@ import { ClockOutAlertsService } from '../clock-out/clock-out-alerts.service';
 import { DecidedCloseService } from '../clock-out/decided-close.service';
 import { ShiftCloseSweepService } from '../clock-out/shift-close-sweep.service';
 import { ShiftCloser } from '../clock-out/shift-closer.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };
@@ -38,6 +39,8 @@ export function clockOutServices(...args: unknown[]): ClockOutServiceParts {
     notificationClient,
     notificationRouting,
     countedTime,
+    // Office rules: none apply in these tests (a running shift changed by hand is judged at the close).
+    noOfficeRules(),
     jobPause,
     autoClock,
   );

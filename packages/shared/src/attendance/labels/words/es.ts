@@ -24,6 +24,7 @@ export const es: LabelWords = {
     AUTO_CLOCK_IN: 'Entrada automática',
     AUTO_CLOCK_OUT: 'Salida automática',
     AUTO_REST: 'Descanso automático',
+    HOURS_CHANGED: 'Horas cambiadas a mano',
   },
   approval: {
     active: 'Activo',

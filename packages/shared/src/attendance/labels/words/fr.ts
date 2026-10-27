@@ -24,6 +24,7 @@ export const fr: LabelWords = {
     AUTO_CLOCK_IN: 'Pointage d’arrivée automatique',
     AUTO_CLOCK_OUT: 'Pointage de départ automatique',
     AUTO_REST: 'Pause automatique',
+    HOURS_CHANGED: 'Heures modifiées à la main',
   },
   approval: {
     active: 'En cours',

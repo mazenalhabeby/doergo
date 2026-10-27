@@ -1,4 +1,4 @@
-import type { PrismaService, RuleFacts } from '@hbcfield/shared';
+import { spaceIdsOf, type PrismaService, type RuleFacts } from '@hbcfield/shared';
 
 /**
  * What an office rule on overtime judges: the shift's WHOLE overtime — every round already approved on it plus
@@ -7,7 +7,7 @@ import type { PrismaService, RuleFacts } from '@hbcfield/shared';
  * sweep and the rules page's numbers (`rule-facts.reader.ts`).
  */
 export function overtimeRuleFacts(spaceId: string | null, minutes: number, approvedBefore: number): RuleFacts {
-  return { spaceIds: spaceId ? [spaceId] : [], minutes: minutes + approvedBefore };
+  return { spaceIds: spaceIdsOf(spaceId), minutes: minutes + approvedBefore };
 }
 
 /** Overtime already approved on each of these shifts (every round), in one query. */
