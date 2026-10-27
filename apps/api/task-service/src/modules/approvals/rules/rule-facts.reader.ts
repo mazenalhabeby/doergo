@@ -5,9 +5,10 @@ import { PrismaService } from '@hbcfield/shared';
 export type { RuleItem, RuleItemWindow } from './rule-items';
 import { CoverService } from '../../technicians/cover.service';
 import { OutsideShiftService } from '../../attendance/extra-time/outside-shift.service';
+import { approvedOvertimeByEntry, overtimeRuleFacts } from '../../attendance/extra-time/overtime-rule-facts';
 import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort } from './request-rule-facts';
 import { inSpaces, type RuleItem, type RuleItemWindow } from './rule-items';
-import { MAX_ITEMS, clientRequestItems, hoursItems, namesOf, noShowItems, proposalItems } from './rule-facts-kinds';
+import { MAX_ITEMS, clientRequestItems, hoursItems, peopleNameMap, noShowItems, proposalItems } from './rule-facts-kinds';
 
 /**
  * The items of one kind as office rules read them — the ONE place a kind's facts (workspace, minutes, days,
@@ -79,15 +80,14 @@ export class RuleFactsReader {
           where: { id: { in: [...new Set(rows.map((m) => m.assetId))] } },
           select: { id: true, category: { select: { spaceId: true } } },
         }),
-        namesOf(this.prisma, rows.map((m) => m.authorId).filter(Boolean) as string[]),
+        peopleNameMap(this.prisma, rows.map((m) => m.authorId).filter(Boolean) as string[]),
       ]);
       const spaceOf = new Map(assets.map((a) => [a.id, a.category?.spaceId ?? null]));
-      const nameOf = authors;
       return rows.map((m) => ({
         itemId: m.id,
         since: m.createdAt,
         subjectId: m.authorId,
-        subjectName: m.authorId ? (nameOf.get(m.authorId) ?? '') : '',
+        subjectName: m.authorId ? (authors.get(m.authorId) ?? '') : '',
         facts: { spaceIds: spaceOf.get(m.assetId) ? [spaceOf.get(m.assetId)!] : [], amountCents: m.amountCents },
       }));
     }
@@ -106,6 +106,7 @@ export class RuleFactsReader {
           },
       select: {
         timeEntryId: true,
+        status: true,
         createdAt: true,
         technicianRespondedAt: true,
         locationId: true,
@@ -120,14 +121,20 @@ export class RuleFactsReader {
     const outside = await this.moduleRef
       .get(OutsideShiftService, { strict: false })
       .ruleItems(organizationId, window, MAX_ITEMS);
+    // Judged as the gate judges it: the shift's whole overtime (the rounds approved on it, never this one twice).
+    const approved = await approvedOvertimeByEntry(this.prisma, [...new Set(rows.map((o) => o.timeEntryId))]);
     return [
-      ...rows.map((o) => ({
-        itemId: o.timeEntryId,
-        since: o.technicianRespondedAt ?? o.createdAt,
-        subjectId: o.technicianId,
-        subjectName: personName(o.technician),
-        facts: { spaceIds: [o.locationId], minutes: o.maxDurationMinutes ?? null },
-      })),
+      ...rows.map((o) => {
+        const round = o.maxDurationMinutes ?? 0;
+        const before = (approved.get(o.timeEntryId) ?? 0) - (o.status === 'APPROVED' ? round : 0);
+        return {
+          itemId: o.timeEntryId,
+          since: o.technicianRespondedAt ?? o.createdAt,
+          subjectId: o.technicianId,
+          subjectName: personName(o.technician),
+          facts: overtimeRuleFacts(o.locationId, round, Math.max(0, before)),
+        };
+      }),
       ...outside.map((o) => ({
         itemId: o.itemId,
         since: o.since,

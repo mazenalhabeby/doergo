@@ -363,11 +363,11 @@ describe('AssetProposalService', () => {
       expect(rules.reopen).toHaveBeenCalledWith('s1');
     });
 
-    it('opens it again when somebody else took the papers first', async () => {
+    it('somebody else took the papers first: decided — the step is NOT opened again for a gone item', async () => {
       rules.gate.mockResolvedValue({ finalize: true, stepId: 's1' });
       prisma.assetProposal.updateMany.mockResolvedValue({ count: 0 });
       await expect(accept()).rejects.toBeInstanceOf(NotFoundException);
-      expect(rules.reopen).toHaveBeenCalledWith('s1');
+      expect(rules.reopen).not.toHaveBeenCalled();
     });
 
     it('tells the member it was added', async () => {

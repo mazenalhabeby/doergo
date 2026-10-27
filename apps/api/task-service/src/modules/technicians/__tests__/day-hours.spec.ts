@@ -273,6 +273,17 @@ describe('DayHoursService — who may set whose day', () => {
       timeOff: {
         findMany: jest.fn().mockResolvedValue(opts.leave ?? []),
         findFirst: jest.fn().mockResolvedValue(opts.previous ?? null),
+        // The request as the office rules read it (request-rule-facts.ts).
+        findUniqueOrThrow: jest.fn(async () => ({
+          id: 't1',
+          technicianId: 'm1',
+          kind: 'HOURS',
+          spaceId: 'sp1',
+          startDate: at('2026-10-24'),
+          endDate: at('2026-10-24'),
+          workingDays: null,
+          technician: { spaceAssignments: [{ spaceId: 's1' }] },
+        })),
         create: jest.fn(async (a: { data: Record<string, unknown> }) => ({
           id: 't1',
           approvedBy: { firstName: 'Anna', lastName: 'M' },
@@ -357,7 +368,7 @@ describe('DayHoursService — who may set whose day', () => {
     const res = (await svc.setDayHours(input())) as { data: { stage: string } };
     expect(res.data.stage).toBe('FIRST_STEP');
     expect(rules.decide).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'request', deciderId: 'leader', facts: { spaceIds: ['sp1'], days: 1 } }),
+      expect.objectContaining({ kind: 'request', deciderId: 'leader', facts: { spaceIds: ['sp1'], days: 1, coverShort: false } }),
       expect.any(Function),
     );
     expect(prisma.timeOff.update).not.toHaveBeenCalled();

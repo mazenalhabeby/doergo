@@ -22,6 +22,7 @@ import { TaskAssignmentService } from '../assignment/task-assignment.service';
 import { portalRequestScope } from './portal-request';
 import { emitEvent, taskAssignedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import type { TaskPriority } from '@prisma/client';
+import { alreadyDecided } from '../../approvals/rules/already-decided';
 
 /** Turning a client's request into a job, closing it, or sending it back — triage. */
 @Injectable()
@@ -162,27 +163,30 @@ export class TaskTriageService {
         deciderId: data.userId,
         subjectId: null,
       },
+      // Conditional on not routed yet: two people routing the same request at once cannot both route it.
       () =>
-        this.prisma.task.update({
-          where: { id: data.id },
-          data: {
-            spaceId: data.spaceId,
-            workflowId: effWorkflowId,
-            status: initialStatus,
-            priority: (data.priority as TaskPriority) || task.priority,
-            assignedToId,
-            triaged: true,
-            locationAddress: routedAddress,
-            // Keep any coords the task already had; else use the space's as a rough pin.
-            ...(task.locationLat == null && task.locationLng == null
-              ? { locationLat: space.lat, locationLng: space.lng }
-              : {}),
-          },
-          include: {
-            assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
-            createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-          },
-        }),
+        this.prisma.task
+          .update({
+            where: { id: data.id, triaged: false },
+            data: {
+              spaceId: data.spaceId,
+              workflowId: effWorkflowId,
+              status: initialStatus,
+              priority: (data.priority as TaskPriority) || task.priority,
+              assignedToId,
+              triaged: true,
+              locationAddress: routedAddress,
+              // Keep any coords the task already had; else use the space's as a rough pin.
+              ...(task.locationLat == null && task.locationLng == null
+                ? { locationLat: space.lat, locationLng: space.lng }
+                : {}),
+            },
+            include: {
+              assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+              createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            },
+          })
+          .catch(alreadyDecided('REQUEST_ALREADY_ROUTED', 'This request was routed a moment ago.')),
     );
     if (decided.waiting)
       return success(

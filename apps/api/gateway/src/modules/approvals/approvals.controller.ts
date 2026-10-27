@@ -3,7 +3,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpException,
@@ -12,9 +11,9 @@ import {
   Post,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import { isApprovalKind, isRuleKind } from '@hbcfield/shared';
-import { scopeFor } from '../../common/permission-scope';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DecideApprovalDto } from './dto/decide.dto';
 import { DecideDayDto } from './dto/decide-day.dto';
@@ -25,14 +24,10 @@ import { StandInsService } from './stand-ins.service';
 import { CreateStandInDto } from './dto/stand-in.dto';
 import { ApprovalRuleDto } from './dto/approval-rule.dto';
 import { ApprovalRulesClient } from './approval-rules.client';
-
+import { ApprovalRuleRolesService } from './approval-rule-roles.service';
+import { ApprovalRulesGuard, rulesScope } from './approval-rules-scope';
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
-import { ServiceCalls } from '../../common/microservices/service-calls';
-import { approvalRuleRoleKinds, listAccessRoles } from '@hbcfield/shared/microservices';
-
-type RoleRow = { id: string; name: string; permissions?: Record<string, unknown>; memberCount?: number };
-import type { SessionUser } from '../../common/request.types';
 /**
  * Everything waiting for the caller to decide, in one place — see
  * packages/shared/src/approvals. Any signed-in member may ask: what they get is
@@ -49,7 +44,7 @@ export class ApprovalsController {
     private readonly standIns: StandInsService,
     private readonly rules: ApprovalRulesClient,
     private readonly days: ApprovalDaysService,
-    private readonly services: ServiceCalls,
+    private readonly roleList: ApprovalRuleRolesService,
   ) {}
 
   @Get()
@@ -97,48 +92,22 @@ export class ApprovalsController {
   }
 
   @Get('rules')
+  @UseGuards(ApprovalRulesGuard)
   @ApiOperation({ summary: "The office's approval rules (thresholds → a second approval)" })
   async listRules(@Request() req: AuthedRequest) {
     return { success: true, data: await this.rules.list(callerOrgId(req.user), rulesScope(req.user)) };
   }
 
-  /**
-   * The roles a rule may name, for the rules page: id, name, org or workspace, and how many people hold it —
-   * never a role's permissions. `/organizations/roles` is for people who manage members; somebody who manages
-   * approval rules in one workspace needs only these four facts.
-   */
+  /** The roles a rule may name, never their permissions (approval-rule-roles.service.ts). */
   @Get('rules/roles')
+  @UseGuards(ApprovalRulesGuard)
   @ApiOperation({ summary: 'The roles an approval rule can name, with how many people hold each' })
   async ruleRoles(@Request() req: AuthedRequest) {
-    rulesScope(req.user);
-    const organizationId = callerOrgId(req.user);
-    const [org, space] = await Promise.all(
-      (['org', 'space'] as const).map((scope) => this.services.auth.ask(listAccessRoles, { organizationId, scope })),
-    );
-    const rows = (reply: unknown) => ((reply as { data?: RoleRow[] })?.data ?? (reply as RoleRow[])) || [];
-    const all = [
-      ...rows(org).map((r) => ({ r, inSpace: false })),
-      ...rows(space).map((r) => ({ r, inSpace: true })),
-    ].filter(({ r }) => Object.values(r.permissions ?? {}).some(Boolean));
-    // Which kinds each role's holders could approve — so the page marks a role that could never give the approval.
-    const kinds = await this.services.task.ask(approvalRuleRoleKinds, {
-      organizationId,
-      roleIds: all.map(({ r }) => r.id),
-    });
-    const kindsOf = ((kinds as { data?: unknown })?.data ?? kinds) as Record<string, string[]>;
-    return {
-      success: true,
-      data: all.map(({ r, inSpace }) => ({
-        id: r.id,
-        name: r.name,
-        inSpace,
-        holders: r.memberCount ?? 0,
-        decides: kindsOf?.[r.id] ?? [],
-      })),
-    };
+    return { success: true, data: await this.roleList.list(callerOrgId(req.user)) };
   }
 
   @Get('rules/insights')
+  @UseGuards(ApprovalRulesGuard)
   @ApiOperation({ summary: 'What the rules of one kind did over the last 90 days, and the rules worth adding' })
   async ruleInsights(@Query('kind') kind: string, @Request() req: AuthedRequest) {
     const scope = rulesScope(req.user);
@@ -147,6 +116,7 @@ export class ApprovalsController {
   }
 
   @Post('rules')
+  @UseGuards(ApprovalRulesGuard)
   @ApiOperation({ summary: 'Add an approval rule' })
   async createRule(@Body() dto: ApprovalRuleDto, @Request() req: AuthedRequest) {
     const scope = rulesScope(req.user);
@@ -154,6 +124,7 @@ export class ApprovalsController {
   }
 
   @Patch('rules/:id')
+  @UseGuards(ApprovalRulesGuard)
   @ApiOperation({ summary: 'Change an approval rule' })
   async updateRule(@Param('id') id: string, @Body() dto: ApprovalRuleDto, @Request() req: AuthedRequest) {
     const scope = rulesScope(req.user);
@@ -161,6 +132,7 @@ export class ApprovalsController {
   }
 
   @Delete('rules/:id')
+  @UseGuards(ApprovalRulesGuard)
   @ApiOperation({ summary: 'Remove an approval rule' })
   async deleteRule(@Param('id') id: string, @Request() req: AuthedRequest) {
     const scope = rulesScope(req.user);
@@ -193,16 +165,4 @@ export class ApprovalsController {
 
 function caller(req: AuthedRequest) {
   return { user: req.user, headers: req.headers, ip: req.ip };
-}
-
-/**
- * Office rules decide who may finish a decision, so they are the organization's own policy: an administrator,
- * or "manage approval rules" (bridged from canManageUsers org-wide, so nobody lost it when it was split out).
- * Held in some workspaces only → those workspaces' rules (undefined = org-wide). Never through a stand-in —
- * the key is not one a stand-in can hold — and never an external member (not on the external allow-list).
- */
-function rulesScope(user: SessionUser): string[] | undefined {
-  const scope = scopeFor(user, 'canManageApprovalRules');
-  if (scope && !scope.length) throw new ForbiddenException('Only somebody who may manage approval rules can do this');
-  return scope ?? undefined;
 }

@@ -82,13 +82,16 @@ export const getOrgTimeOff = rpc<GetOrgTimeOffMessage & { scopeSpaceIds?: string
 export const approveTimeOff = rpc<ApproveTimeOffMessage & { scopeSpaceIds?: string[] }>('approve_time_off');
 export const cancelTimeOff = rpc<CancelTimeOffMessage>('cancel_time_off');
 export const updateTimeOff = rpc<{
+  editorId: string;
   organizationId: string;
   timeOffId: string;
   startDate?: string;
   endDate?: string;
   reason?: string | null;
 }>('update_time_off');
-export const adminDeleteTimeOff = rpc<{ organizationId: string; timeOffId: string }>('admin_delete_time_off');
+export const adminDeleteTimeOff = rpc<{ editorId: string; organizationId: string; timeOffId: string }>(
+  'admin_delete_time_off',
+);
 export const addTimeOff = rpc<{
   editorId: string;
   organizationId: string;

@@ -24,6 +24,7 @@ import { AttendanceRoutingService } from '../core/attendance-routing.service';
 import { askAboutOwnRequest } from '../../approvals/own-request-route';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { ExtraTimeDecisionService } from './extra-time-decision.service';
+import { approvedOvertimeByEntry, overtimeRuleFacts } from './overtime-rule-facts';
 
 /** How far back an undecided outside time is still asked about — older belongs to closed payroll. */
 const LOOKBACK_DAYS = 31;
@@ -142,9 +143,15 @@ export class OutsideShiftService {
       take: max,
     });
     const tol = await this.tolerances(rows.map((r) => r.shiftId));
+    // Undecided: judged as the gate will judge it — with the overtime already approved on the shift.
+    const approved = await approvedOvertimeByEntry(
+      this.prisma,
+      rows.filter((r) => r.outsideCountedMinutes == null).map((r) => r.id),
+    );
     return rows.flatMap((r) => {
       const o = outsideShift(r, tol.get(r.shiftId ?? '') ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN);
-      const minutes = r.outsideCountedMinutes ?? o?.total ?? 0;
+      const counted = r.outsideCountedMinutes ?? o?.total ?? 0;
+      const minutes = counted && (approved.get(r.id) ?? 0) + counted;
       return minutes > 0
         ? [
             {
@@ -247,7 +254,9 @@ export class OutsideShiftService {
           organizationId: data.organizationId,
           kind: 'overtime',
           itemId: stepId,
-          facts: { spaceIds: entry.locationId ? [entry.locationId] : [], minutes: plan.counted },
+          // Overtime already approved on the shift counts too (`overtimeRuleFacts`); this decision agrees to its own.
+          facts: overtimeRuleFacts(entry.locationId, plan.counted, await this.approval.approvedOvertimeMinutes(entry.id)),
+          agreeMinutes: plan.counted,
           deciderId: data.approverId,
           subjectId: entry.userId,
         },

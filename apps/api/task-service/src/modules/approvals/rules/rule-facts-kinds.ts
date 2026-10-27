@@ -10,12 +10,12 @@ import {
   proposalReviewSpaces,
   type PrismaService,
 } from '@hbcfield/shared';
-import { runsFor } from '../../attendance/no-shows/no-show-run-facts';
+import { runsFor, ruleRunsFor } from '../../attendance/no-shows/no-show-run-facts';
 import { ProposalPlacesService } from '../../assets/proposals/proposal-places.service';
 import { inSpaces, type RuleItem, type RuleItemWindow } from './rule-items';
 
 /** People's names for a list of ids — one query. */
-export async function namesOf(prisma: PrismaService, ids: string[]): Promise<Map<string, string>> {
+export async function peopleNameMap(prisma: PrismaService, ids: string[]): Promise<Map<string, string>> {
   const people = await peopleNames(prisma, [...new Set(ids)]);
   return new Map(people.map((p) => [p.id, personName(p)]));
 }
@@ -103,9 +103,11 @@ export async function noShowItems(prisma: PrismaService, organizationId: string,
     orderBy: { expectedClockInAt: 'desc' },
     take: MAX_ITEMS,
   });
-  const [runs, names] = await Promise.all([
+  const [runs, ruleRuns, names] = await Promise.all([
     window.since ? decidedRuns(prisma, rows, window.since) : runsFor(prisma, rows, new Date()),
-    namesOf(
+    // Waiting ones are judged as the approve path judges them: days a person already answered still count.
+    window.since ? null : ruleRunsFor(prisma, rows, new Date()),
+    peopleNameMap(
       prisma,
       rows.map((r) => r.userId),
     ),
@@ -117,7 +119,7 @@ export async function noShowItems(prisma: PrismaService, organizationId: string,
       since: i.expectedClockInAt,
       subjectId: i.userId,
       subjectName: names.get(i.userId) ?? '',
-      facts: { spaceIds: i.spaceId ? [i.spaceId] : [], days: runs.get(i.id)?.count ?? 1 },
+      facts: { spaceIds: i.spaceId ? [i.spaceId] : [], days: (ruleRuns ?? runs).get(i.id)?.count ?? 1 },
     }));
 }
 
@@ -168,7 +170,7 @@ export async function proposalItems(
   // The assets module owns where a proposal belongs; asked through the container, never imported into this module.
   const [places, names] = await Promise.all([
     moduleRef.get(ProposalPlacesService, { strict: false }).placesOf(rows, organizationId),
-    namesOf(
+    peopleNameMap(
       prisma,
       rows.map((r) => r.raisedById),
     ),

@@ -173,6 +173,34 @@ export async function standInFor(
   );
 }
 
+/**
+ * Is one of these people standing in for the other — either way round — around `day` (a day either side, like
+ * `STAND_IN_FOR_SUBJECT`)? Two approvals given by a leader and their stand-in are ONE authority, not two.
+ */
+export async function standInBetween(
+  prisma: { approvalDelegation: { count(args: unknown): Promise<number> } },
+  organizationId: string,
+  userId: string,
+  others: string[],
+  day: Date,
+): Promise<boolean> {
+  if (!others.length) return false;
+  const DAY = 86_400_000;
+  const n = await prisma.approvalDelegation.count({
+    where: {
+      organizationId,
+      revokedAt: null,
+      startsOn: { lte: new Date(day.getTime() + DAY) },
+      endsOn: { gte: new Date(day.getTime() - DAY) },
+      OR: [
+        { fromUserId: userId, toUserId: { in: others } },
+        { toUserId: userId, fromUserId: { in: others } },
+      ],
+    },
+  });
+  return n > 0;
+}
+
 /** Does a stand-in grant hold `key` here (or anywhere, with no workspace)? */
 export function grantHolds(grant: DelegatedGrant, key: AccessPermissionKey, spaceId?: string | null): boolean {
   if (grant.org[key]) return true;

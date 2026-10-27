@@ -11,6 +11,7 @@ import { EntryChangeLog } from './entry-change-log';
 import type { TimeEntryStatus } from '@prisma/client';
 import { announceDayDecided, type DecidedEntry } from './day-decided';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { alreadyDecided } from '../../approvals/rules/already-decided';
 
 @Injectable()
 export class ApprovalService {
@@ -137,20 +138,23 @@ export class ApprovalService {
         deciderId: data.approverId,
         subjectId: entry.userId,
       },
+      // Conditional on still waiting: a refusal at the same moment is never overwritten (already-decided.ts).
       () =>
-        this.prisma.timeEntry.update({
-          where: { id: data.entryId },
-          data: {
-            approvalStatus: ApprovalStatus.APPROVED,
-            approvedById: data.approverId,
-            approvedAt: new Date(),
-            approvalNotes: data.notes,
-          },
-          include: {
-            user: { select: { id: true, firstName: true, lastName: true } },
-            location: { select: { name: true, timezone: true } },
-          },
-        }),
+        this.prisma.timeEntry
+          .update({
+            where: { id: data.entryId, approvalStatus: ApprovalStatus.PENDING },
+            data: {
+              approvalStatus: ApprovalStatus.APPROVED,
+              approvedById: data.approverId,
+              approvedAt: new Date(),
+              approvalNotes: data.notes,
+            },
+            include: {
+              user: { select: { id: true, firstName: true, lastName: true } },
+              location: { select: { name: true, timezone: true } },
+            },
+          })
+          .catch(alreadyDecided('ENTRY_ALREADY_DECIDED', 'This entry was decided a moment ago.')),
     );
     if (decided.waiting)
       return success({ ...entry, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);

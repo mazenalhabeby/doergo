@@ -4,11 +4,13 @@ import type { ApprovalKind } from './approval-kinds';
  * OFFICE RULES on approvals: past a threshold, a decision needs a SECOND
  * person — "overtime over 2 h needs the workspace manager too", "an expense
  * over €200 needs Finance". Enforced in each kind's OWN approve path (task-
- * service `ApprovalRulesService.gate`), so it holds in the inbox, on the old
+ * service `ApprovalRulesService.decide`), so it holds in the inbox, on the old
  * page and on the phone alike.
  *
- *   step 1  the usual approver approves → recorded, the item stays waiting
- *   step 2  somebody holding the rule's role (not the first person) approves → done
+ *   step 1  the usual approver approves → recorded, nothing written, the item stays waiting
+ *   then    EVERY rule that applies counts: each role they name is given by a different
+ *           person holding it (never the same person twice, nor a leader and their stand-in)
+ *           → the last one finishes it and the write runs
  *   reject  anybody who may decide it, at any step — the open step is dropped
  *
  * An administrator's approval finishes at once (there is nobody above them).

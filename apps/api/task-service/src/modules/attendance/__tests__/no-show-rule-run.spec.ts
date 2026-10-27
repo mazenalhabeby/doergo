@@ -56,6 +56,27 @@ describe('a rule on missed clock-ins follows the run', () => {
     );
   });
 
+  /*
+    ⚠️ Nor is answering one day "absent": D3 marked absent cut D1–D5 into two runs, each excused by one person,
+    then D3 reopened and excused alone. A day a PERSON answered still counts in the run the rule judges.
+  */
+  it('a day already answered by a person does not split the run the rule judges', async () => {
+    const { svc, rules, prisma } = setup();
+    const answered = (n: number, state: string, auto = false) => ({ ...day(n), state, closedAutomatically: auto });
+    prisma.shiftInstance.findMany.mockResolvedValue([
+      day(1),
+      day(2),
+      answered(3, 'ABSENT'),
+      answered(4, 'EXCUSED'),
+      answered(5, 'EXCUSED', true), // closed by the system (they were there): the run ends here
+    ]);
+    await resolve(svc, {});
+    expect(rules.decide).toHaveBeenCalledWith(
+      expect.objectContaining({ itemId: 'd2', facts: { spaceIds: ['s1'], days: 4 } }),
+      expect.any(Function),
+    );
+  });
+
   it('marking absent ends the step of the whole run', async () => {
     const { svc, rules } = setup();
     await resolve(svc, { action: 'absent' });

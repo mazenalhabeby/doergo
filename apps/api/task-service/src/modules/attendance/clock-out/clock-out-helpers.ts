@@ -47,6 +47,10 @@ interface ClosableEntry {
   /** Label rules version; null = an old entry, closed exactly as before. */
   labelRules?: number | null;
   labelFacts?: Prisma.JsonValue | null;
+  /** Changed by hand while running: past an office rule it waits for approval at the close (hand-edit-review). */
+  isEdited?: boolean | null;
+  originalClockIn?: Date | null;
+  originalClockOut?: Date | null;
 }
 
 /** How a shift is being closed. Everything the close itself works out is NOT here. */

@@ -19,10 +19,10 @@ export class ApprovalRuleInsightsService {
     const since = new Date(now.getTime() - RULE_INSIGHT_DAYS * 86_400_000);
     // EVERY rule counts toward what is caught (an organization rule covers a workspace manager's items too);
     // only the manager's own rules are shown by name.
-    const [rules, items] = await Promise.all([
-      this.admin.listRules(organizationId),
-      this.facts.read(organizationId, kind, { since, spaceIds }),
-    ]);
+    const rules = await this.admin.listRules(organizationId);
+    // Cover is worked out only when a rule asks about it — as the approve path and the sweep do.
+    const needCover = rules.some((r) => r.kind === kind && r.isActive && r.whenCoverShort);
+    const items = await this.facts.read(organizationId, kind, { since, spaceIds }, needCover);
     if (!spaceIds) return ruleInsights(kind, rules, items);
     // Held in some workspaces only: their items, nobody else's, and only rules they could add.
     const mine = items.filter((i) => i.facts.spaceIds.some((s) => spaceIds.includes(s)));

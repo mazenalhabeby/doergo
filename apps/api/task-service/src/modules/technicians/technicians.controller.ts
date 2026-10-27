@@ -8,6 +8,7 @@ import { MemberScheduleService } from './member-schedule.service';
 import { TimeOffRequestService } from './time-off-request.service';
 import { LeaveRecordsService } from './leave-records.service';
 import { TimeOffDecisionService } from './time-off-decision.service';
+import { LeaveEditsService } from './leave-edits.service';
 import { DayHoursService } from './day-hours.service';
 import { CoverService } from './cover.service';
 import { LeaveLedgerService } from './leave-ledger.service';
@@ -60,6 +61,7 @@ export class TechniciansController {
     private readonly requests: TimeOffRequestService,
     private readonly leaveRecords: LeaveRecordsService,
     private readonly decisions: TimeOffDecisionService,
+    private readonly leaveEdits: LeaveEditsService,
     private readonly dayHours: DayHoursService,
   ) {}
 
@@ -209,12 +211,12 @@ export class TechniciansController {
     @Payload()
     data: RpcRequest<typeof updateTimeOff>,
   ) {
-    return this.decisions.updateTimeOff(data);
+    return this.leaveEdits.updateTimeOff(data);
   }
 
   @MessagePattern(pattern(adminDeleteTimeOff))
   async adminDeleteTimeOff(@Payload() data: RpcRequest<typeof adminDeleteTimeOff>) {
-    return this.decisions.adminDeleteTimeOff(data);
+    return this.leaveEdits.adminDeleteTimeOff(data);
   }
 
   @MessagePattern(pattern(addTimeOff))

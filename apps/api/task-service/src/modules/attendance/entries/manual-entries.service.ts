@@ -110,11 +110,13 @@ export class ManualEntriesService {
       const length = (e: ManualEntryRow) => handChangedMinutes(e);
       const facts = (e: ManualEntryRow) => ({ spaceIds: [data.locationId], minutes: length(e) });
       const ruled = new Set<ManualEntryRow>();
-      for (const e of toCreate)
-        if (await this.rules.secondStepFor(data.organizationId, 'hours', facts(e))) {
-          Object.assign(e, { approvalStatus: 'PENDING', approvedById: null, approvedAt: null, approvalNotes: null });
-          ruled.add(e);
-        }
+      // The rules read ONCE for the whole back-fill, however many days.
+      const asks = await this.rules.needsMoreFor(data.organizationId, 'hours', toCreate.map(facts));
+      toCreate.forEach((e, i) => {
+        if (!asks[i]) return;
+        Object.assign(e, { approvalStatus: 'PENDING', approvedById: null, approvedAt: null, approvalNotes: null });
+        ruled.add(e);
+      });
       await this.writeManualEntries(data, toCreate, { breakOffsetMin, breakMin, reason });
       if (ruled.size) await this.askRules(data, [...ruled], facts);
     }
@@ -154,11 +156,16 @@ export class ManualEntriesService {
       },
       select: { id: true, clockInAt: true },
     });
+    let told = false;
     for (const e of rows) {
       const id = created.find((c) => c.clockInAt.getTime() === (e.clockInAt as Date).getTime())?.id;
       if (!id) continue;
+      // The next approvers hear about the batch once, not once a day.
+      const quiet = told;
+      told = true;
       await this.rules.decide(
         {
+          quiet,
           organizationId: data.organizationId,
           kind: 'hours',
           itemId: id,

@@ -18,6 +18,7 @@ import { CoverService } from './cover.service';
 import { requestRuleFacts, requestsCoverShort, type RequestRuleRow } from '../approvals/rules/request-rule-facts';
 import { workingDaysOf } from './member-requests';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
+import { alreadyDecided } from '../approvals/rules/already-decided';
 
 /** Deciding time off: approve or refuse, cancel, change, delete. Cover and working days as the member saw them. */
 @Injectable()
@@ -103,27 +104,26 @@ export class TimeOffDecisionService {
 
     // Office rules: past a threshold this approval is step 1 of 2 and the request stays pending.
     if (!approved) await this.rules.clear(organizationId, 'request', timeOffId);
+    // Conditional on still waiting: a refusal landing at the same moment is never overwritten (already-decided.ts).
     const write = () =>
-      this.prisma.timeOff.update({
-        where: { id: timeOffId },
-        data: {
-          ...(workingDays !== undefined ? { workingDays } : {}),
-          status: approved ? 'APPROVED' : 'REJECTED',
-          approvedById: approverId,
-          approvedAt: new Date(),
-          rejectionReason: approved ? null : rejectionReason,
-          ...(automatic ? { autoApproved: true } : {}),
-        },
-        include: {
-          technician: {
-            select: { id: true, firstName: true, lastName: true },
+      this.prisma.timeOff
+        .update({
+          where: { id: timeOffId, status: 'PENDING' },
+          data: {
+            ...(workingDays !== undefined ? { workingDays } : {}),
+            status: approved ? 'APPROVED' : 'REJECTED',
+            approvedById: approverId,
+            approvedAt: new Date(),
+            rejectionReason: approved ? null : rejectionReason,
+            ...(automatic ? { autoApproved: true } : {}),
           },
-          approvedBy: {
-            select: { id: true, firstName: true, lastName: true },
+          include: {
+            technician: { select: { id: true, firstName: true, lastName: true } },
+            approvedBy: { select: { id: true, firstName: true, lastName: true } },
+            space: { select: SPACE_BRIEF },
           },
-          space: { select: SPACE_BRIEF },
-        },
-      });
+        })
+        .catch(alreadyDecided('TIME_OFF_DECIDED', 'This request was decided a moment ago.'));
     let updated: Awaited<ReturnType<typeof write>>;
     if (approved) {
       // The one reader of a request's facts, shared with the sweep and the rules page; cover only when a rule asks.
@@ -214,77 +214,5 @@ export class TimeOffDecisionService {
     await this.rules.clearItem('request', timeOffId);
 
     return success(updated);
-  }
-
-  /** Admin edit of an existing day off (dates / reason), scoped to the org. */
-  async updateTimeOff(data: {
-    organizationId: string;
-    timeOffId: string;
-    startDate?: string; // "YYYY-MM-DD"
-    endDate?: string; // "YYYY-MM-DD" (inclusive)
-    reason?: string | null;
-  }) {
-    const timeOff = await this.prisma.timeOff.findFirst({
-      where: { id: data.timeOffId, technician: { organizationId: data.organizationId } },
-    });
-    if (!timeOff) {
-      throw new NotFoundException('Time-off request not found');
-    }
-    if (data.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(data.startDate)) {
-      throw new BadRequestException('Invalid date');
-    }
-    if (data.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(data.endDate)) {
-      throw new BadRequestException('Invalid date');
-    }
-    const start = data.startDate ? new Date(data.startDate) : timeOff.startDate;
-    const end = data.endDate ? new Date(data.endDate) : timeOff.endDate;
-    if (start > end) {
-      throw new BadRequestException('Start date must be before or equal to end date');
-    }
-
-    // Block overlap with the SAME employee's OTHER time off (exclude this one).
-    const overlap = await this.prisma.timeOff.findFirst({
-      where: {
-        id: { not: data.timeOffId },
-        technicianId: timeOff.technicianId,
-        status: { in: ['PENDING', 'APPROVED'] },
-        // Two answers to the same question: the same kind on the same day.
-        kind: timeOff.kind,
-        startDate: { lte: end },
-        endDate: { gte: start },
-      },
-      select: { id: true },
-    });
-    if (overlap) {
-      throw new BadRequestException('This overlaps an existing time-off entry for the employee');
-    }
-
-    const workingDays =
-      (data.startDate || data.endDate) && isAbsence(timeOff.kind)
-        ? await this.recountedWorkingDays(data.organizationId, timeOff.technicianId, start, end)
-        : undefined;
-    const updated = await this.prisma.timeOff.update({
-      where: { id: data.timeOffId },
-      data: {
-        ...(workingDays !== undefined ? { workingDays } : {}),
-        ...(data.startDate ? { startDate: start } : {}),
-        ...(data.endDate ? { endDate: end } : {}),
-        ...(data.reason !== undefined ? { reason: data.reason?.trim() || null } : {}),
-      },
-    });
-    return success(updated, 'Day off updated');
-  }
-
-  /** Admin delete of a day off, scoped to the org. */
-  async adminDeleteTimeOff(data: { organizationId: string; timeOffId: string }) {
-    const timeOff = await this.prisma.timeOff.findFirst({
-      where: { id: data.timeOffId, technician: { organizationId: data.organizationId } },
-      select: { id: true },
-    });
-    if (!timeOff) {
-      throw new NotFoundException('Time-off request not found');
-    }
-    await this.prisma.timeOff.delete({ where: { id: data.timeOffId } });
-    return success({ id: data.timeOffId }, 'Day off removed');
   }
 }

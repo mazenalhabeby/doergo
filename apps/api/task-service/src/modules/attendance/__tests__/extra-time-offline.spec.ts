@@ -25,7 +25,7 @@ function service(entry: any, round: any = { id: 'round-1' }) {
     },
     overtimeRequest: {
       // Earlier approved rounds on the shift (office rules judge the whole): none.
-      aggregate: jest.fn().mockResolvedValue({ _sum: { maxDurationMinutes: 0 } }),
+      groupBy: jest.fn().mockResolvedValue([]),
       findFirst: jest.fn().mockResolvedValue(round),
       update: jest.fn((args: any) => ({ kind: 'round.update', args })),
     },

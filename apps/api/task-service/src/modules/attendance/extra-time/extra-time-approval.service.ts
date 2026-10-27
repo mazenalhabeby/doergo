@@ -11,6 +11,7 @@ import { CountedTimeService } from '../core/counted-time.service';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
+import { approvedOvertimeByEntry, overtimeRuleFacts } from './overtime-rule-facts';
 
 /**
  * Approving extra time — the ONE decision path (office rules, self-decision,
@@ -79,8 +80,10 @@ export class ExtraTimeApprovalService {
     const round = await this.prisma.overtimeRequest.findFirst({
       where: { timeEntryId: entry.id, status: 'PENDING_APPROVAL' },
       orderBy: { cycle: 'desc' },
-      select: { id: true, overtimeStartAt: true },
+      select: { id: true, overtimeStartAt: true, createdAt: true },
     });
+    // Approvals half-way for an EARLIER round of this shift (one that expired or was declined) are not this one's.
+    if (round) await this.rules.clearBefore(data.organizationId, 'overtime', entry.id, round.createdAt);
 
     // Office rules: past a threshold this approval is one of several, and the shift waits for the others.
     const decided = await this.rules.decide(
@@ -89,10 +92,7 @@ export class ExtraTimeApprovalService {
         kind: 'overtime',
         itemId: entry.id,
         // Judged on the shift's whole overtime; this decision agrees to its own minutes.
-        facts: {
-          spaceIds: entry.locationId ? [entry.locationId] : [],
-          minutes: minutes + (await this.approvedOvertimeMinutes(entry.id)),
-        },
+        facts: overtimeRuleFacts(entry.locationId, minutes, await this.approvedOvertimeMinutes(entry.id)),
         agreeMinutes: minutes,
         deciderId: data.approverId,
         subjectId: entry.userId,
@@ -205,11 +205,7 @@ export class ExtraTimeApprovalService {
 
   /** Overtime already approved on this shift, every earlier round — what a rule adds this round to. */
   async approvedOvertimeMinutes(entryId: string): Promise<number> {
-    const done = await this.prisma.overtimeRequest.aggregate({
-      where: { timeEntryId: entryId, status: 'APPROVED' },
-      _sum: { maxDurationMinutes: true },
-    });
-    return done._sum.maxDurationMinutes ?? 0;
+    return (await approvedOvertimeByEntry(this.prisma, [entryId])).get(entryId) ?? 0;
   }
 
   /** True if the user may approve overtime for a space (space sub-role grant, or org admin). */

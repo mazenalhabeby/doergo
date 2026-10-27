@@ -1,4 +1,5 @@
 import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
+import { REQUEST_RULE_SELECT, requestRuleFacts } from '../approvals/rules/request-rule-facts';
 import {
   assertMemberInScope,
   notEndedWhere,
@@ -160,7 +161,12 @@ export class DayHoursService {
         organizationId,
         kind: 'request',
         itemId: pending.id,
-        facts: { spaceIds: spaceId ? [spaceId] : [], days: 1 },
+        // The ONE request reader — with no workspace named, the member's own workspaces (as Approvals reads it).
+        facts: requestRuleFacts(
+          await this.prisma.timeOff.findUniqueOrThrow({ where: { id: pending.id }, select: REQUEST_RULE_SELECT }),
+          false,
+          1,
+        ),
         deciderId: editorId,
         subjectId: technicianId,
       },

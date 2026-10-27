@@ -1,30 +1,28 @@
 import { closedHowOfBasis, endRunningRests, provisionalClockOut, type RestRow } from '../core/open-shift-close';
 import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService, personNameOf } from '@hbcfield/shared';
+import { PrismaService, personNameOf, personName, zoneOf, TimeEntryStatus, SERVICE_NAMES } from '@hbcfield/shared';
+import { AUTO_REST_FLAG, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN as DEFAULT_TOLERANCE } from '@hbcfield/shared';
 import { JobPauseService } from '../../tasks/handover/job-pause.service';
 import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
-import { personName, zoneOf, TimeEntryStatus, SERVICE_NAMES, AUTO_REST_FLAG } from '@hbcfield/shared';
-import { SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN as DEFAULT_TOLERANCE } from '@hbcfield/shared';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { handEditNeedsReview } from '../core/hand-edit-review';
 import { clockEventEntry } from '../core/clock-event';
 import { CountedTimeService } from '../core/counted-time.service';
 import { MISSED_REST_FLAG, flagsWithMissedRest, judgedByLabelRules, parseBreakPlan } from '@hbcfield/shared';
 import { approvalFor } from '../core/attendance-occurrence';
+import { AttendanceRoutingService } from '../core/attendance-routing.service';
+import { memberSiteRules } from '../core/member-site-rules';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
 import { ClosableEntry, CloseSpec, CLOSED_ROW_INCLUDE, ClosedRow, closingLabelColumns } from './clock-out-helpers';
-import { emitEvent, attendanceClockOutEvent } from '@hbcfield/shared/microservices';
-import {
-  attendancePendingApprovalEvent,
-  attendanceShiftClosedProvisionallyEvent,
-} from '@hbcfield/shared/microservices';
+import { emitEvent, attendanceClockOutEvent, attendancePendingApprovalEvent } from '@hbcfield/shared/microservices';
+import { attendanceShiftClosedProvisionallyEvent } from '@hbcfield/shared/microservices';
 
 /**
  * The ONE way a shift closes (closeEntry), the provisional close, the flag
  * tolerance, and the pending-approval alert — held once, used by every closer
  * (the clock-out, a close by decision, the sweeps).
  */
-import { AttendanceRoutingService } from '../core/attendance-routing.service';
-import { memberSiteRules } from '../core/member-site-rules';
 @Injectable()
 export class ShiftCloser {
   private readonly logger = new Logger(ShiftCloser.name);
@@ -40,6 +38,7 @@ export class ShiftCloser {
     // Optional, like the job pause: a shift always closes; absent, nothing is automatic.
     @Optional() private readonly autoClock?: AutoClockService,
     @Optional() private readonly routing?: AttendanceRoutingService, // who hears "day needs review" (A3)
+    @Optional() private readonly rules?: ApprovalRulesService, // a running shift changed by hand (hand-edit-review)
   ) {}
 
   /** One temporary close — the abandoned-shift sweep's, and the automatic clock's. False when somebody closed it first. */
@@ -167,6 +166,7 @@ export class ShiftCloser {
       flagsChanged = true;
     }
 
+    const handReview = await handEditNeedsReview(this.rules, entry, at);
     const result = await this.prisma.$transaction(async (tx) => {
       const claim = await tx.timeEntry.updateMany({
         where:
@@ -189,6 +189,7 @@ export class ShiftCloser {
           ...spec.fields,
           ...closingLabelColumns(entry, spec.labels),
           ...(flagsChanged ? { flagReasons: closeFlags, approvalStatus: closeApproval } : {}),
+          ...(handReview ? { approvalStatus: 'PENDING' as const } : {}),
         },
       });
       if (claim.count === 0) return null;

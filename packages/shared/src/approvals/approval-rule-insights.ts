@@ -62,7 +62,8 @@ export function ruleInsights(
   const perRule: Record<string, number> = {};
   const applying = items.map((i) => rulesThatApply(live, i.facts));
   for (const rs of applying) for (const r of rs) perRule[r.id] = (perRule[r.id] ?? 0) + 1;
-  const caught = applying.map((rs) => rs.length > 0);
+  // Caught = somebody ELSE must approve it too. A rule that only reminds still leaves it to one person.
+  const caught = applying.map((rs) => rs.some((r) => !!r.secondRoleId));
 
   const values = items
     .map((i) => ruleFactValue(kind, i.facts))

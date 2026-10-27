@@ -1,44 +1,41 @@
-// size-exempt: the office-rules gate read top to bottom — who decides, which rules apply, which step is open
-import { ConflictException, ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
+import { ConflictException, ForbiddenException, HttpException, Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Prisma } from '@prisma/client';
 import {
   personName,
   rulesThatApply,
   requiredRoleIds,
-  type ApprovalStepView,
   type RuleFacts,
   type RuleKind,
   roleNames,
-  peopleNames,
   personRoleAndName,
-  activeWindowWhere,
   SERVICE_NAMES,
-  holdsOrgRole,
+  heldRoleIds,
   roleHolderIds,
+  orgAdminIds,
+  standInBetween,
   PrismaService,
 } from '@hbcfield/shared';
 import { emitEvent, approvalSecondStepEvent } from '@hbcfield/shared/microservices';
-import { type Decided, GateVerdict } from './approval-rules-helpers';
-import { consumeStep, openStep } from './approval-steps';
+import type { Decided, GateVerdict, RuleGateInput } from './approval-rules-helpers';
+import { consumeStep, openStep, stepRules, storedFacts } from './approval-steps';
 
-export { type Decided, type GateVerdict } from './approval-rules-helpers';
+export { type Decided, type GateVerdict, type RuleGateInput } from './approval-rules-helpers';
 
 /**
  * OFFICE RULES, enforced where the decision is made (shared `approval-rules.ts`).
  *
- * Each kind's approve path calls `gate()` after its own permission and
- * second-party checks and before it writes. No rule applies → it finishes as
- * always. Rules apply → EVERY one of them counts (decided 2026-10-27):
- *   • nobody has approved yet: this approval is recorded as step 1, the item
- *     stays waiting, and the holders of the first role still needed are told;
- *   • then each role the rules name is given by somebody ELSE holding it, one
- *     person each (`SECOND_STEP_SAME_PERSON` / `SECOND_STEP_REQUIRED` otherwise);
- *     the last one finishes it.
- * An administrator finishes at once. A rejection, by anybody who may decide,
- * drops the open step (`clear`).
+ * Each kind's approve path calls `decide()` after its own permission and second-party checks, around its write.
+ * No rule applies → it finishes as always. Rules apply → EVERY one of them counts (decided 2026-10-27):
+ *   • nobody has approved yet: this approval is recorded as step 1, nothing is written, and the holders of the
+ *     first role still needed are told;
+ *   • then each role the rules name is given by somebody ELSE holding it, one person each — never the same
+ *     person twice, never a leader and their stand-in as two (`SECOND_STEP_SAME_PERSON` /
+ *     `SECOND_STEP_REQUIRED` otherwise); the last one finishes it.
+ * An active administrator finishes at once. A rejection, by anybody who may decide, drops the open step (`clear`).
  *
- * ⚠️ One OPEN step per item is a partial unique index: two people approving
- * first at the same moment cannot both "go first".
+ * ⚠️ One OPEN step per item is a partial unique index: two people approving first at the same moment cannot
+ * both "go first".
  */
 @Injectable()
 export class ApprovalRulesService {
@@ -49,36 +46,33 @@ export class ApprovalRulesService {
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notifications: ClientProxy,
   ) {}
 
-  async gate(
-    input: {
-      organizationId: string;
-      kind: RuleKind;
-      itemId: string;
-      facts: RuleFacts;
-      deciderId: string;
-      subjectId?: string | null;
-      subjectName?: string | null;
-      /**
-       * Earlier ids of the SAME item: a run of missed days is keyed on its newest day, so when another day joins
-       * the run the step opened on the old newest day is found — and moved — instead of being lost.
-       */
-      itemAliases?: string[];
-      /**
-       * Overtime: the minutes THIS decision agrees to, when the rule is judged on more (the shift's whole overtime,
-       * earlier rounds included — so 59-minute rounds are no way round a one-hour rule). Defaults to the facts' own.
-       */
-      agreeMinutes?: number;
-    },
-    retried = false,
-  ): Promise<GateVerdict> {
-    // Only rules with a SECOND STEP gate a decision; reminder-only rules are the sweep's.
-    const rules = await this.prisma.approvalRule.findMany({
-      where: { organizationId: input.organizationId, kind: input.kind, isActive: true, secondRoleId: { not: null } },
-      orderBy: { createdAt: 'asc' },
-    });
-    const open = await openStep(this.prisma, input.organizationId, input.kind, input.itemId, input.itemAliases);
+  /**
+   * THE approve path around its write. Not every approval given yet → `{ waiting }` and nothing is written (the
+   * gateway reads `stage`). Otherwise the write runs with the minutes the approvers agreed (overtime: the smallest
+   * any of them gave) and, if it throws, the step is opened again — the approvals already given are never lost.
+   * Unless the item was decided or removed meanwhile (404 / 409): then there is nothing left to approve.
+   */
+  async decide<T>(input: RuleGateInput, write: (agreedMinutes?: number) => Promise<T>): Promise<Decided<T>> {
+    const verdict = await this.gate(input);
+    if (!verdict.finalize) return { waiting: { stage: 'FIRST_STEP', waitingFor: verdict.roleName } };
+    try {
+      return { done: await write(verdict.minutes) };
+    } catch (e) {
+      const gone = e instanceof HttpException && [404, 409].includes(e.getStatus());
+      if (!gone) await this.reopen(verdict.stepId);
+      throw e;
+    }
+  }
+
+  /** The gate itself — approve paths call `decide()`, which wraps their write in it. Public for its spec. */
+  async gate(input: RuleGateInput, retried = false): Promise<GateVerdict> {
+    const rules = await stepRules(this.prisma, input.organizationId, [input.kind]);
+    const steps = await openStep(this.prisma, input.organizationId, input.kind, input.itemId, input.itemAliases);
+    // Two runs that became one each had a step: the newest stands, the other's approvals are not carried over.
+    for (const older of steps.slice(1)) await consumeStep(this.prisma, older.id);
+    const open = steps[0] ?? null;
     // EVERY rule that applies counts — one approver per role they name (shared `requiredRoleIds`).
-    const required = requiredRoleIds(rules as never[], input.facts);
+    const required = requiredRoleIds(rules, input.facts);
     if (!required.length) {
       if (open) await consumeStep(this.prisma, open.id);
       return { finalize: true };
@@ -90,9 +84,10 @@ export class ApprovalRulesService {
       if (open) await consumeStep(this.prisma, open.id);
       return { finalize: true, ...(open ? { stepId: open.id } : {}) };
     }
+    const deciderName = decider ? personName(decider) : '';
 
     if (!open) {
-      const first = rulesThatApply(rules as never[], input.facts)[0] as (typeof rules)[number];
+      const first = rulesThatApply(rules, input.facts)[0];
       try {
         await this.prisma.approvalStep.create({
           data: {
@@ -104,6 +99,7 @@ export class ApprovalRulesService {
             approverIds: [input.deciderId],
             requiredRoleIds: required,
             minutes: input.agreeMinutes ?? input.facts.minutes ?? null,
+            facts: storedFacts(input.facts),
           },
         });
       } catch (e) {
@@ -111,8 +107,8 @@ export class ApprovalRulesService {
         if (retried) throw e;
         return this.gate(input, true);
       }
-      await this.tellNext(required[0], input, decider ? personName(decider) : '');
-      return { finalize: false, roleName: await this.namesOf(required) };
+      if (!input.quiet) await this.tellNext(required[0], input, deciderName);
+      return { finalize: false, roleName: await this.roleLabel(required) };
     }
 
     // The step was opened under an earlier id of this item (a run that grew): it follows the item.
@@ -120,23 +116,33 @@ export class ApprovalRulesService {
       await this.prisma.approvalStep.updateMany({ where: { id: open.id }, data: { itemId: input.itemId } });
     // Rules may have changed since: what is needed now, minus what was already given.
     const left = required.filter((r) => !open.doneRoleIds.includes(r));
-    const leftNames = await this.namesOf(left.length ? left : required);
+    const leftNames = await this.roleLabel(left.length ? left : required);
     /*
       Every role already given (a step opened again after a write failed, or rules that asked less since): this
       is the retry of a finished decision — whoever may decide finishes it, earlier approvers included.
-      Otherwise nobody gives two of the approvals.
+      Otherwise nobody gives two of the approvals: not the same person (`firstById` covers steps from before
+      `approverIds`), and not a leader and the stand-in deciding with the leader's authority.
     */
-    if (left.length && (open.firstById === input.deciderId || open.approverIds.includes(input.deciderId))) {
+    const earlier = [...new Set([open.firstById, ...open.approverIds])];
+    if (
+      left.length &&
+      (earlier.includes(input.deciderId) ||
+        (await standInBetween(this.prisma, input.organizationId, input.deciderId, earlier, new Date())))
+    ) {
       throw new ConflictException({
         message: `This needs another approval by ${leftNames}.`,
         code: 'SECOND_STEP_SAME_PERSON',
         params: { role: leftNames },
       });
     }
-    const holds = await Promise.all(
-      left.map((roleId) => this.holdsRole(input.organizationId, input.deciderId, roleId, input.facts.spaceIds)),
-    );
-    const given = left[holds.indexOf(true)] ?? null;
+    const held = await heldRoleIds(this.prisma, {
+      userId: input.deciderId,
+      organizationId: input.organizationId,
+      roleIds: left,
+      spaceIds: input.facts.spaceIds,
+      now: new Date(),
+    });
+    const given = held[0] ?? null;
     if (left.length && !given) {
       throw new ForbiddenException({
         message: `The next approval is for ${leftNames}.`,
@@ -157,38 +163,45 @@ export class ApprovalRulesService {
         approverIds: [...new Set([...open.approverIds, input.deciderId])],
         requiredRoleIds: required,
         minutes,
+        facts: storedFacts(input.facts),
         ...(stillLeft.length ? {} : { consumedAt: new Date() }),
       },
     });
     if (!count)
       throw new ConflictException({ message: 'Somebody else decided this a moment ago.', code: 'SECOND_STEP_TAKEN' });
     if (stillLeft.length) {
-      await this.tellNext(stillLeft[0], input, decider ? personName(decider) : '');
-      return { finalize: false, roleName: await this.namesOf(stillLeft) };
+      if (!input.quiet) await this.tellNext(stillLeft[0], input, deciderName);
+      return { finalize: false, roleName: await this.roleLabel(stillLeft) };
     }
     return { finalize: true, stepId: open.id, ...(minutes != null ? { minutes } : {}) };
   }
 
   /**
    * The write after the last approval failed (a contract that could not be applied, a flow that does not exist):
-   * the approvals already given stay, so the next try is not a fresh step 1. Only if nothing else opened since.
+   * the approvals already given stay, so the next try is not a fresh step 1. Only if nothing else opened since —
+   * that conflict (the partial unique index) is the one error expected here; anything else is logged and thrown.
    */
   async reopen(stepId: string | undefined): Promise<void> {
     if (!stepId) return;
     try {
       await this.prisma.approvalStep.updateMany({ where: { id: stepId }, data: { consumedAt: null } });
-    } catch {
-      // Another step opened meanwhile (the partial unique index): that one stands.
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') return;
+      this.logger.error(`could not reopen approval step ${stepId}: ${(e as Error).message}`);
+      throw e;
     }
   }
 
   /** Would a decision like this need more approvals, and by which roles? For the member's pre-check. */
   async secondStepFor(organizationId: string, kind: RuleKind, facts: RuleFacts): Promise<string | null> {
-    const rules = await this.prisma.approvalRule.findMany({
-      where: { organizationId, kind, isActive: true, secondRoleId: { not: null } },
-    });
-    const required = requiredRoleIds(rules as never[], facts);
-    return required.length ? this.namesOf(required) : null;
+    const required = requiredRoleIds(await stepRules(this.prisma, organizationId, [kind]), facts);
+    return required.length ? this.roleLabel(required) : null;
+  }
+
+  /** `secondStepFor` for a batch of items of one kind — the rules read once. True = more approvals needed. */
+  async needsMoreFor(organizationId: string, kind: RuleKind, facts: RuleFacts[]): Promise<boolean[]> {
+    const rules = await stepRules(this.prisma, organizationId, [kind]);
+    return facts.map((f) => requiredRoleIds(rules, f).length > 0);
   }
 
   /** Does any active rule of this kind ask about cover? (Cover is only computed then.) */
@@ -200,29 +213,18 @@ export class ApprovalRulesService {
     );
   }
 
-  /**
-   * THE approve path around its write. Not every approval given yet → `{ waiting }` and nothing is written (the
-   * gateway reads `stage`). Otherwise the write runs with the minutes the approvers agreed (overtime: the smallest
-   * any of them gave) and, if it throws, the step is opened again — the approvals already given are never lost.
-   */
-  async decide<T>(
-    input: Parameters<ApprovalRulesService['gate']>[0],
-    write: (agreedMinutes?: number) => Promise<T>,
-  ): Promise<Decided<T>> {
-    const verdict = await this.gate(input);
-    if (!verdict.finalize) return { waiting: { stage: 'FIRST_STEP', waitingFor: verdict.roleName } };
-    try {
-      return { done: await write(verdict.minutes) };
-    } catch (e) {
-      await this.reopen(verdict.stepId);
-      throw e;
-    }
-  }
-
   /** A rejection — by anybody who may decide — ends the two-step for this item. */
   async clear(organizationId: string, kind: RuleKind, itemId: string | string[]): Promise<void> {
     await this.prisma.approvalStep.updateMany({
       where: { organizationId, kind, itemId: { in: [itemId].flat() }, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+  }
+
+  /** A step opened before `since` is about an earlier version of the item (an overtime round that lapsed): it ends. */
+  async clearBefore(organizationId: string, kind: RuleKind, itemId: string, since: Date): Promise<void> {
+    await this.prisma.approvalStep.updateMany({
+      where: { organizationId, kind, itemId, consumedAt: null, firstAt: { lt: since } },
       data: { consumedAt: new Date() },
     });
   }
@@ -235,63 +237,10 @@ export class ApprovalRulesService {
     });
   }
 
-  /** The open first steps for these items, for the inbox. ONE query each for steps, people and roles. */
-  async steps(organizationId: string, items: Array<{ kind: RuleKind; itemId: string }>): Promise<ApprovalStepView[]> {
-    if (!items.length) return [];
-    // Only OPEN steps (few), read by id in chunks — every item asked, however long the inbox.
-    const wanted = new Set(items.map((i) => `${i.kind}:${i.itemId}`));
-    const ids = [...new Set(items.map((i) => i.itemId))];
-    const chunks = Array.from({ length: Math.ceil(ids.length / 1000) }, (_, n) => ids.slice(n * 1000, n * 1000 + 1000));
-    const rows = (
-      await Promise.all(
-        chunks.map((chunk) =>
-          this.prisma.approvalStep.findMany({
-            where: { organizationId, consumedAt: null, itemId: { in: chunk } },
-            select: { kind: true, itemId: true, firstById: true, requiredRoleIds: true, doneRoleIds: true },
-          }),
-        ),
-      )
-    )
-      .flat()
-      .filter((r) => wanted.has(`${r.kind}:${r.itemId}`));
-    if (!rows.length) return [];
-    // What is still needed, read against the rules as they are NOW — a role no active rule names is not waited for.
-    const named = await this.prisma.approvalRule.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        secondRoleId: { not: null },
-        kind: { in: [...new Set(rows.map((r) => r.kind))] },
-      },
-      select: { kind: true, secondRoleId: true },
-    });
-    const asked = new Set(named.map((r) => `${r.kind}:${r.secondRoleId}`));
-    const left = (r: (typeof rows)[number]) =>
-      r.requiredRoleIds.filter((x) => !r.doneRoleIds.includes(x) && asked.has(`${r.kind}:${x}`));
-    const [people, roles] = await Promise.all([
-      peopleNames(this.prisma, [...new Set(rows.map((r) => r.firstById))]),
-      roleNames(this.prisma, [...new Set(rows.flatMap(left))]),
-    ]);
-    const personById = new Map(people.map((p) => [p.id, personName(p)]));
-    const roleById = new Map(roles.map((r) => [r.id, r.name]));
-    return rows
-      .filter((r) => left(r).length)
-      .map((r) => ({
-        kind: r.kind as RuleKind,
-        itemId: r.itemId,
-        firstById: r.firstById,
-        firstByName: personById.get(r.firstById) ?? '',
-        roleName: left(r)
-          .map((id) => roleById.get(id) ?? '')
-          .filter(Boolean)
-          .join(' + '),
-      }));
-  }
-
-  // ── who holds the second step's role, and telling them ─────────────────
+  // ── telling the next approvers ─────────────────────────────────────────
 
   /** The roles still needed, in words ("HR + Finance"). */
-  private async namesOf(roleIds: string[]): Promise<string> {
+  private async roleLabel(roleIds: string[]): Promise<string> {
     const roles = await roleNames(this.prisma, roleIds);
     return roleIds
       .map((id) => roles.find((r) => r.id === id)?.name ?? '')
@@ -299,66 +248,30 @@ export class ApprovalRulesService {
       .join(' + ');
   }
 
-  /** Holds the role org-wide, or as a workspace role in one of the item's workspaces — and it is active. */
-  private async holdsRole(
-    organizationId: string,
-    userId: string,
-    roleId: string,
-    spaceIds: string[],
-  ): Promise<boolean> {
-    const now = new Date();
-    const [org, space] = await Promise.all([
-      holdsOrgRole(this.prisma, userId, organizationId, roleId),
-      spaceIds.length
-        ? this.prisma.spaceAssignment.findFirst({
-            where: {
-              userId,
-              organizationId,
-              roleId,
-              spaceId: { in: spaceIds },
-              role: { isActive: true },
-              ...activeWindowWhere(now),
-            },
-            select: { id: true },
-          })
-        : Promise.resolve(null),
-    ]);
-    return !!org || !!space;
-  }
-
-  /** Active holders of a role — org-wide, or as a workspace role in one of these workspaces. */
-  async holdersOf(
-    organizationId: string,
-    roleId: string,
-    spaceIds: string[],
-    exclude: string[] = [],
-  ): Promise<string[]> {
-    const now = new Date();
-    return roleHolderIds(this.prisma, { organizationId, roleId, spaceIds, exclude, now });
-  }
-
-  /** Push the holders of the next role needed (never who already approved, or the person it is about). */
-  private async tellNext(
-    roleId: string,
-    input: {
-      organizationId: string;
-      kind: RuleKind;
-      itemId: string;
-      facts: RuleFacts;
-      deciderId: string;
-      subjectId?: string | null;
-      subjectName?: string | null;
-    },
-    firstName: string,
-  ) {
+  /**
+   * Push the holders of the next role needed (never who already approved, or the person it is about). Nobody
+   * holds it for this item's workspace (a workspace role the rule names for every workspace) → the
+   * administrators, who can always finish it — an item must never wait for nobody, silently.
+   */
+  private async tellNext(roleId: string, input: RuleGateInput, firstName: string) {
     try {
-      const recipientIds = await this.holdersOf(input.organizationId, roleId, input.facts.spaceIds, [
-        input.deciderId,
-        ...(input.subjectId ? [input.subjectId] : []),
-      ]);
+      const exclude = [input.deciderId, ...(input.subjectId ? [input.subjectId] : [])];
+      const now = new Date();
+      const { organizationId, facts } = input;
+      let recipientIds = await roleHolderIds(this.prisma, {
+        organizationId,
+        roleId,
+        spaceIds: facts.spaceIds,
+        exclude,
+        now,
+      });
+      if (!recipientIds.length)
+        recipientIds = (await orgAdminIds(this.prisma, organizationId, input.deciderId))
+          .map((a) => a.id)
+          .filter((id) => !exclude.includes(id));
       if (!recipientIds.length) return;
       emitEvent(this.notifications, approvalSecondStepEvent, {
-        organizationId: input.organizationId,
+        organizationId,
         recipientIds,
         kind: input.kind,
         itemId: input.itemId,

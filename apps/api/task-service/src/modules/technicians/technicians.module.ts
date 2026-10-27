@@ -9,6 +9,7 @@ import { MemberScheduleService } from './member-schedule.service';
 import { TimeOffRequestService } from './time-off-request.service';
 import { LeaveRecordsService } from './leave-records.service';
 import { TimeOffDecisionService } from './time-off-decision.service';
+import { LeaveEditsService } from './leave-edits.service';
 import { CoverService } from './cover.service';
 import { LeaveLedgerService } from './leave-ledger.service';
 import { LeaveCarryOverService } from './leave-carry-over.service';
@@ -35,6 +36,7 @@ import { DayHoursService } from './day-hours.service';
     TimeOffRequestService,
     LeaveRecordsService,
     TimeOffDecisionService,
+    LeaveEditsService,
     CoverService,
     CoverFloorService,
     LeaveLedgerService,

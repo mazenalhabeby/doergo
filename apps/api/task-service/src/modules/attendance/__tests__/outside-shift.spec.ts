@@ -53,6 +53,7 @@ function make(opts: { row?: unknown; claimed?: number; gate?: unknown; mayApprov
     assertNotSelfOvertimeDecision: jest.fn(async () => {
       if (opts.self) throw new ForbiddenException({ code: 'SELF_DECISION' });
     }),
+    approvedOvertimeMinutes: jest.fn().mockResolvedValue(0),
   };
   const decisions = { recordDecidedOvertime: jest.fn().mockResolvedValue({ success: true }) };
   const routing = { notifyTargetsFor: jest.fn().mockResolvedValue(['anna']) };

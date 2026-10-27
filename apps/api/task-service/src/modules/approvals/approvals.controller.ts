@@ -2,7 +2,7 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApprovalRouteService } from './rules/approval-route.service';
 import { StandInsService } from './stand-ins.service';
-import { ApprovalRulesService } from './rules/approval-rules.service';
+import { ApprovalStepsReader } from './rules/approval-steps-reader';
 import { ApprovalRulesAdminService } from './rules/approval-rules-admin.service';
 import { ApprovalRuleInsightsService } from './rules/approval-rule-insights.service';
 import {
@@ -26,7 +26,7 @@ export class ApprovalsController {
   constructor(
     private readonly routes: ApprovalRouteService,
     private readonly standIns: StandInsService,
-    private readonly rules: ApprovalRulesService,
+    private readonly stepsReader: ApprovalStepsReader,
     private readonly rulesAdmin: ApprovalRulesAdminService,
     private readonly insights: ApprovalRuleInsightsService,
   ) {}
@@ -53,7 +53,7 @@ export class ApprovalsController {
 
   @MessagePattern(pattern(approvalSteps))
   steps(@Payload() data: RpcRequest<typeof approvalSteps>) {
-    return this.rules.steps(data.organizationId, data.items ?? []);
+    return this.stepsReader.steps(data.organizationId, data.items ?? []);
   }
 
   @MessagePattern(pattern(approvalRulesList))

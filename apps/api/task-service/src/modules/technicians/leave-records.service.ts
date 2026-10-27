@@ -1,4 +1,5 @@
 import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
+import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort } from '../approvals/rules/request-rule-facts';
 import {
   assertMemberInScope,
@@ -55,6 +56,13 @@ export class LeaveRecordsService {
     if (!technician) {
       throw new NotFoundException('Employee not found in organization');
     }
+    // Recording leave approves it: nobody records their own (an administrator excepted — self-decision.ts).
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.editorId,
+      subjectId: data.technicianId,
+      organizationId: data.organizationId,
+      message: 'You cannot record your own time off. Ask a manager or an administrator.',
+    });
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(data.endDate)) {
       throw new BadRequestException('Invalid date');
     }

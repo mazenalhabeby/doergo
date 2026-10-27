@@ -28,6 +28,8 @@ const PATHS: Array<[string, string, boolean]> = [
   // The office recording leave, or setting a day's hours, follows the same rules as a member asking.
   ['technicians/leave-records.service.ts', 'request', false],
   ['technicians/day-hours.service.ts', 'request', false],
+  // New dates on leave already on the record are a new decision; the approvals for the old ones end.
+  ['technicians/leave-edits.service.ts', 'request', true],
   ['assets/expenses/asset-expense-review.service.ts', 'expense', true],
   ['assets/proposals/proposal-review.service.ts', 'assetProposal', true],
   // A client request has no refusal — it only ever becomes a job.

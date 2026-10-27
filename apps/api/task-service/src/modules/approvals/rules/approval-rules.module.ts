@@ -6,6 +6,7 @@ import { ApprovalRulesAdminService } from './approval-rules-admin.service';
 import { ApprovalRouteService } from './approval-route.service';
 import { ApprovalEscalationService } from './approval-escalation.service';
 import { RuleFactsReader } from './rule-facts.reader';
+import { ApprovalStepsReader } from './approval-steps-reader';
 import { ApprovalRuleInsightsService } from './approval-rule-insights.service';
 
 /** One gate for every approve path office rules apply to (RULE_KINDS: overtime, requests, expenses, changed hours,
@@ -19,8 +20,9 @@ import { ApprovalRuleInsightsService } from './approval-rule-insights.service';
     ApprovalRouteService,
     ApprovalEscalationService,
     RuleFactsReader,
+    ApprovalStepsReader,
     ApprovalRuleInsightsService,
   ],
-  exports: [ApprovalRulesService, ApprovalRulesAdminService, ApprovalRouteService, ApprovalRuleInsightsService],
+  exports: [ApprovalRulesService, ApprovalStepsReader, ApprovalRulesAdminService, ApprovalRouteService, ApprovalRuleInsightsService],
 })
 export class ApprovalRulesModule {}

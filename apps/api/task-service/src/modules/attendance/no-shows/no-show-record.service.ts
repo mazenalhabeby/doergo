@@ -12,7 +12,7 @@ import {
 import { assertNotSelfDecision } from '../core/self-decision';
 import { DAY } from './no-show-record-helpers';
 import { PrismaService } from '@hbcfield/shared';
-import { monthFacts, runHints, runsFor, spaceRows } from './no-show-run-facts';
+import { monthFacts, ruleRunsFor, runHints, runsFor, spaceRows } from './no-show-run-facts';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 
 /**
@@ -164,6 +164,8 @@ export class NoShowRecordService {
       is still five days in a row.
     */
     const runIds = run?.ids ?? [inst.id];
+    // …and with the days a person already answered: answering one day "absent" never splits the run (ruleRunsFor).
+    const ruleDays = (await ruleRunsFor(this.prisma, [inst], now)).get(inst.id)?.count ?? run?.count ?? 1;
     const close = () =>
       this.prisma.shiftInstance.updateMany({
         // Only the ones still open — a day closed meanwhile keeps its own answer.
@@ -189,7 +191,7 @@ export class NoShowRecordService {
         kind: 'noShow',
         itemId: run?.latestId ?? inst.id,
         itemAliases: runIds,
-        facts: { spaceIds: inst.spaceId ? [inst.spaceId] : [], days: run?.count ?? 1 },
+        facts: { spaceIds: inst.spaceId ? [inst.spaceId] : [], days: ruleDays },
         deciderId: data.excusedById ?? '',
         subjectId: inst.userId,
       },

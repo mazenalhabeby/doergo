@@ -32,6 +32,13 @@ describe('ruleInsights', () => {
     expect(got.uncovered).toBe(0);
   });
 
+  it('a rule that only reminds catches nothing — the item is still decided by one person', () => {
+    const remindOnly = { ...rule('nudge', null, null), secondRoleId: null, remindAfterHours: 4 };
+    const got = ruleInsights('overtime', [remindOnly], items);
+    expect(got.perRule).toEqual({ nudge: 11 });
+    expect(got.uncovered).toBe(11);
+  });
+
   it('suggests a limit near the 90th percentile and the big items no rule caught', () => {
     const got = ruleInsights('overtime', [], items);
     expect(got.suggestedLimit).toBe(300);

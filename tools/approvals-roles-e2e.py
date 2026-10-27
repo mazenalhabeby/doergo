@@ -323,6 +323,24 @@ def main():
     check('the new member is removed again', s in (200, 204), (s, b))
 
 
+RULE_FIELDS = ('kind', 'spaceId', 'minMinutes', 'minDays', 'minAmountCents', 'whenCoverShort', 'secondRoleId',
+               'remindAfterHours', 'escalateAfterHours', 'escalateRoleId', 'categoryId', 'urgentOnly')
+
+
+def set_rules_active(tok, rules, active):
+    for r in rules:
+        call('PATCH', f"/approvals/rules/{r['id']}", tok, {**{k: r.get(k) for k in RULE_FIELDS}, 'isActive': active})
+
+
+def pause_office_rules():
+    """The organization's own rules are switched off for this run (an "every request needs an admin" rule would
+    hold each approval), and back on after — the run adds and removes the one rule it is about."""
+    owner = login('client@example.com')
+    rules = [r for r in data(call('GET', '/approvals/rules', owner)[1]) or [] if r.get('isActive')]
+    set_rules_active(owner, rules, False)
+    return owner, rules
+
+
 def report():
     print('\n— performance (ms)')
     print(f"     {'call':28} {'n':>3} {'p50':>7} {'max':>7}")
@@ -331,7 +349,13 @@ def report():
 
 
 if __name__ == '__main__':
-    main()
+    owner_tok, paused = pause_office_rules()
+    try:
+        main()
+    finally:
+        set_rules_active(owner_tok, paused, True)
+        if paused:
+            print(f'office rules switched back on: {len(paused)}')
     report()
     print(f"\n{'ALL PASSED' if failures == 0 else f'{failures} FAILED'}")
     sys.exit(1 if failures else 0)

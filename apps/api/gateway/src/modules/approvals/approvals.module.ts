@@ -5,9 +5,10 @@ import { ApprovalRouteService } from './approval-route.service';
 import { StandInsService } from './stand-ins.service';
 import { ApprovalRulesClient } from './approval-rules.client';
 import { ApprovalDaysService } from './approval-days.service';
+import { ApprovalRuleRolesService } from './approval-rule-roles.service';
 
 @Module({
   controllers: [ApprovalsController],
-  providers: [ApprovalsService, ApprovalDaysService, ApprovalRouteService, StandInsService, ApprovalRulesClient],
+  providers: [ApprovalsService, ApprovalDaysService, ApprovalRouteService, StandInsService, ApprovalRulesClient, ApprovalRuleRolesService],
 })
 export class ApprovalsModule {}

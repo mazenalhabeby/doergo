@@ -10,6 +10,7 @@ import {
   approvalRulesSave,
   approvalRulesDelete,
   approvalRulesInsights,
+  approvalRuleRoleKinds,
 } from '@hbcfield/shared/microservices';
 
 /** Gateway → task-service for office rules and the open first steps. */
@@ -53,5 +54,13 @@ export class ApprovalRulesClient extends BaseGatewayService {
       id,
       spaceIds,
     } satisfies RpcRequest<typeof approvalRulesDelete>);
+  }
+  /** Which kinds each role's holders could approve. */
+  async roleKinds(organizationId: string, roleIds: string[]) {
+    const reply = await this.send<RpcReply<typeof approvalRuleRoleKinds> | { data?: RpcReply<typeof approvalRuleRoleKinds> }>(
+      pattern(approvalRuleRoleKinds),
+      { organizationId, roleIds } satisfies RpcRequest<typeof approvalRuleRoleKinds>,
+    );
+    return ((reply as { data?: unknown })?.data ?? reply) as RpcReply<typeof approvalRuleRoleKinds>;
   }
 }

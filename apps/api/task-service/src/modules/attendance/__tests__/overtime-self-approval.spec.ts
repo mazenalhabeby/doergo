@@ -42,7 +42,7 @@ describe('overtime self-approval (AT-B1)', () => {
     // Overtime is a loop now: one record per ROUND on the same entry.
     overtimeRequest: {
       // Earlier approved rounds on the shift (office rules judge the whole): none.
-      aggregate: jest.fn().mockResolvedValue({ _sum: { maxDurationMinutes: 0 } }),
+      groupBy: jest.fn().mockResolvedValue([]),
       findFirst: jest.fn().mockResolvedValue(null),
       create: jest.fn().mockResolvedValue({ id: 'ot1', cycle: 1 }),
       update: jest.fn().mockResolvedValue({ id: 'ot1' }),

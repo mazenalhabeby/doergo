@@ -1,10 +1,17 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, noticeDue, pickRule, runWithCronLock, type NoticeStage, type RuleKind } from '@hbcfield/shared';
+import {
+  SERVICE_NAMES,
+  noticeDue,
+  pickRule,
+  roleHolderIds,
+  runWithCronLock,
+  type NoticeStage,
+  type RuleKind,
+} from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { ApprovalRouteService } from './approval-route.service';
-import { ApprovalRulesService } from './approval-rules.service';
 import { RuleFactsReader, type RuleItem } from './rule-facts.reader';
 import { emitEvent, approvalReminderEvent } from '@hbcfield/shared/microservices';
 
@@ -25,7 +32,6 @@ export class ApprovalEscalationService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly rules: ApprovalRulesService,
     private readonly route: ApprovalRouteService,
     private readonly facts: RuleFactsReader,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notifications: ClientProxy,
@@ -44,9 +50,11 @@ export class ApprovalEscalationService {
   }
 
   async sweep(now = new Date()): Promise<number> {
-    const rules = await this.prisma.approvalRule.findMany({
-      where: { isActive: true, OR: [{ remindAfterHours: { not: null } }, { escalateAfterHours: { not: null } }] },
-    });
+    const rules = (
+      await this.prisma.approvalRule.findMany({
+        where: { isActive: true, OR: [{ remindAfterHours: { not: null } }, { escalateAfterHours: { not: null } }] },
+      })
+    ).map((r) => ({ ...r, kind: r.kind as RuleKind }));
     const groups = new Map<string, typeof rules>();
     for (const r of rules)
       groups.set(`${r.organizationId}|${r.kind}`, [...(groups.get(`${r.organizationId}|${r.kind}`) ?? []), r]);
@@ -80,7 +88,7 @@ export class ApprovalEscalationService {
         const cached = (key: string, read: () => Promise<string[]>) =>
           once.get(key) ?? (once.set(key, read()), once.get(key)!);
         for (const item of items) {
-          const rule = pickRule(group as never[], item.facts) as (typeof group)[number] | null;
+          const rule = pickRule(group, item.facts);
           // A rule is about what is raised from the day it exists: switching one on does not nag about the backlog.
           if (!rule || item.since < rule.createdAt) continue;
           const stage = noticeDue(rule, item.since, now, sentFor.get(item.itemId) ?? new Set());
@@ -97,12 +105,13 @@ export class ApprovalEscalationService {
           let recipientIds =
             stage === 'ESCALATE'
               ? await cached(`${rule.escalateRoleId}|${who}`, () =>
-                  this.rules.holdersOf(
+                  roleHolderIds(this.prisma, {
                     organizationId,
-                    rule.escalateRoleId!,
-                    item.facts.spaceIds,
-                    item.subjectId ? [item.subjectId] : [],
-                  ),
+                    roleId: rule.escalateRoleId!,
+                    spaceIds: item.facts.spaceIds,
+                    exclude: item.subjectId ? [item.subjectId] : [],
+                    now,
+                  }),
                 )
               : [];
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.

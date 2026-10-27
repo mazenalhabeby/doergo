@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
@@ -47,6 +48,8 @@ export class AssetProposalService {
     private readonly prisma: PrismaService,
     private readonly notices: ProposalNoticesService,
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    // Withdrawn: approvals half-way under an office rule end with it.
+    @Optional() private readonly rules?: ApprovalRulesService,
   ) {}
 
   // ── The page ───────────────────────────────────────────────────────────────
@@ -249,6 +252,7 @@ export class AssetProposalService {
       data: { status: PROPOSAL_STATUS.WITHDRAWN },
     });
     if (!count) throw new NotFoundException('That is not yours, or it has been decided');
+    await this.rules?.clearItem('assetProposal', data.id);
     return success({ id: data.id, status: PROPOSAL_STATUS.WITHDRAWN });
   }
 

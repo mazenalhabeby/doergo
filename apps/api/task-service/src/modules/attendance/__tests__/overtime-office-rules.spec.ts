@@ -92,6 +92,8 @@ describe('time outside the shift is decided under its own step', () => {
     svc.approval = {
       userCanApproveOvertime: jest.fn().mockResolvedValue(true),
       assertNotSelfOvertimeDecision: jest.fn().mockResolvedValue(undefined),
+      // An hour already approved on the shift as an overtime round.
+      approvedOvertimeMinutes: jest.fn().mockResolvedValue(60),
     };
     svc.decisions = { recordDecidedOvertime: jest.fn().mockResolvedValue(undefined) };
     svc.notificationClient = { emit: jest.fn() };
@@ -105,7 +107,16 @@ describe('time outside the shift is decided under its own step', () => {
     const decide = jest.fn().mockResolvedValue(waiting);
     await build(decide).decide(decideFor(120));
     expect(decide).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'overtime', itemId: 'e1:outside', facts: { spaceIds: ['s1'], minutes: 120 } }),
+      expect.objectContaining({ kind: 'overtime', itemId: 'e1:outside' }),
+      expect.any(Function),
+    );
+  });
+
+  it("judged with the shift's overtime already approved — a round plus outside time is no way round a rule", async () => {
+    const decide = jest.fn().mockResolvedValue(waiting);
+    await build(decide).decide(decideFor(120));
+    expect(decide).toHaveBeenCalledWith(
+      expect.objectContaining({ facts: { spaceIds: ['s1'], minutes: 180 }, agreeMinutes: 120 }),
       expect.any(Function),
     );
   });

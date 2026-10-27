@@ -267,7 +267,8 @@ export class EntryEditService {
     */
     // Approvals already given were for the OLD times: an edit starts the office rules' approvals again.
     if (timesChanged) await this.rules.clear(data.organizationId, 'hours', entry.id);
-    if (timesChanged && newClockOut && entry.approvalStatus !== 'REJECTED') {
+    // A running shift is judged on its clock-in now, and again at its close (core/hand-edit-review.ts).
+    if (timesChanged && entry.approvalStatus !== 'REJECTED') {
       const minutes = handChangedMinutes({
         isEdited: true,
         originalClockIn: entry.isEdited ? entry.originalClockIn : entry.clockInAt,

@@ -173,6 +173,7 @@ export class TimeOffAdminController {
     @CurrentUser() user: SessionUser,
   ) {
     return this.services.task.ask(updateTimeOff, {
+      editorId: user.id,
       organizationId: callerOrgId(user),
       timeOffId,
       startDate: body.startDate,
@@ -186,7 +187,11 @@ export class TimeOffAdminController {
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
   @RequirePermission('canManageRota')
   async adminDeleteTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: SessionUser) {
-    return this.services.task.ask(adminDeleteTimeOff, { organizationId: callerOrgId(user), timeOffId });
+    return this.services.task.ask(adminDeleteTimeOff, {
+      editorId: user.id,
+      organizationId: callerOrgId(user),
+      timeOffId,
+    });
   }
 
   @Delete('time-off/:timeOffId')

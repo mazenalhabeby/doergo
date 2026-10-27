@@ -20,11 +20,14 @@ describe('ApprovalRulesService.gate', () => {
     isActive: true,
   };
   let steps: any[];
+  /** Who holds which role: org-wide, or [role, workspace] pairs. */
+  let holds: Record<string, { org?: string; spaces?: Array<[string, string]> }>;
   const prisma: any = {
     approvalRule: { findMany: jest.fn() },
     approvalStep: {
-      findFirst: jest.fn(
-        async ({ where }: any) => steps.find((s) => where.itemId.in.includes(s.itemId) && !s.consumedAt) ?? null,
+      // Newest first, as `openStep` orders them.
+      findMany: jest.fn(async ({ where }: any) =>
+        steps.filter((s) => where.itemId.in.includes(s.itemId) && !s.consumedAt).reverse(),
       ),
       create: jest.fn(async ({ data }: any) => {
         steps.push({
@@ -51,7 +54,7 @@ describe('ApprovalRulesService.gate', () => {
       }),
     },
     user: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([{ id: 'mgr' }]) },
-    spaceAssignment: { findFirst: jest.fn() },
+    approvalDelegation: { count: jest.fn() },
     accessRole: {
       findUnique: jest.fn().mockResolvedValue({ name: 'Space Manager' }),
       findMany: jest.fn(async ({ where }: any) =>
@@ -69,9 +72,22 @@ describe('ApprovalRulesService.gate', () => {
     prisma.approvalRule.findMany.mockResolvedValue([rule]);
     prisma.accessRole.findUnique.mockResolvedValue({ name: 'Space Manager' });
     prisma.user.findMany.mockResolvedValue([{ id: 'mgr' }]);
-    // user.findFirst answers two questions: the decider's role, and "holds the role org-wide".
-    prisma.user.findFirst.mockImplementation(async ({ where }: any) => {
-      if (where.memberRoleId) return where.id === 'mgr' ? { id: 'mgr' } : null;
+    holds = { mgr: { org: 'role-mgr' } };
+    prisma.approvalDelegation.count.mockResolvedValue(0);
+    // user.findFirst answers two questions: the decider's role, and which of the roles they hold (`heldRoleIds`).
+    prisma.user.findFirst.mockImplementation(async ({ where, select }: any) => {
+      if (select?.spaceAssignments) {
+        const h = holds[where.id];
+        if (!h) return null;
+        const w = select.spaceAssignments.where;
+        return {
+          memberRoleId: h.org ?? null,
+          memberRole: { isActive: true },
+          spaceAssignments: (h.spaces ?? [])
+            .filter(([r, sp]) => w.roleId.in.includes(r) && w.spaceId.in.includes(sp))
+            .map(([roleId]) => ({ roleId })),
+        };
+      }
       return {
         role: where.id.endsWith('owner') ? 'ADMIN' : 'EMPLOYEE',
         firstName: where.id,
@@ -79,7 +95,6 @@ describe('ApprovalRulesService.gate', () => {
         isActive: where.id !== 'gone-owner',
       };
     });
-    prisma.spaceAssignment.findFirst.mockResolvedValue(null);
   });
 
   it('under the threshold: finishes as always', async () => {
@@ -119,9 +134,7 @@ describe('ApprovalRulesService.gate', () => {
 
   it("a workspace role counts only in the item's workspace", async () => {
     await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
-    prisma.spaceAssignment.findFirst.mockImplementation(async ({ where }: any) =>
-      where.userId === 'siteMgr' && where.spaceId.in.includes('s1') ? { id: 'a' } : null,
-    );
+    holds.siteMgr = { spaces: [['role-mgr', 's1']] };
     expect(await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'siteMgr' })).toEqual({
       finalize: true,
       minutes: 180,
@@ -193,11 +206,7 @@ describe('ApprovalRulesService.gate', () => {
       { ...rule, id: 'company', secondRoleId: 'role-fin' },
       { ...rule, id: 'depot', spaceId: 's1', secondRoleId: 'role-mgr' },
     ]);
-    prisma.user.findFirst.mockImplementation(async ({ where }: any) => {
-      if (where.memberRoleId === 'role-mgr') return where.id === 'mgr' ? { id: 'mgr' } : null;
-      if (where.memberRoleId === 'role-fin') return where.id === 'fin' ? { id: 'fin' } : null;
-      return { role: 'EMPLOYEE', firstName: where.id, lastName: '' };
-    });
+    holds.fin = { org: 'role-fin' };
     const facts = { spaceIds: ['s1'], minutes: 180 };
     expect(await svc.gate({ ...base, facts, deciderId: 'leader' })).toEqual({
       finalize: false,
@@ -232,5 +241,55 @@ describe('ApprovalRulesService.gate', () => {
     expect(await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 600 }, deciderId: 'leader' })).toEqual({
       finalize: true,
     });
+  });
+  it('a leader and the stand-in deciding with their authority are ONE approver, not two', async () => {
+    await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
+    prisma.approvalDelegation.count.mockResolvedValue(1);
+    await expect(
+      svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }),
+    ).rejects.toMatchObject({ response: { code: 'SECOND_STEP_SAME_PERSON' } });
+    expect(prisma.approvalDelegation.count).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ organizationId: 'o' }) }),
+    );
+  });
+
+  it('the facts it was judged on are stored on the step (the inbox reads the rules against them)', async () => {
+    await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
+    expect(steps[0].facts).toEqual({ spaceIds: ['s1'], minutes: 180 });
+  });
+
+  it('two runs that became one: the newest step stands, the older is closed (never a unique-index crash)', async () => {
+    await svc.gate({ ...base, itemId: 'day1', facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
+    await svc.gate({ ...base, itemId: 'day3', facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader2' });
+    const v = await svc.gate({
+      ...base,
+      itemId: 'day3',
+      itemAliases: ['day1'],
+      facts: { spaceIds: ['s1'], minutes: 180 },
+      deciderId: 'mgr',
+    });
+    expect(v).toMatchObject({ finalize: true, stepId: 's1' });
+    expect(steps.every((st) => st.consumedAt)).toBe(true);
+  });
+
+  it('nobody holds the role for this workspace: the administrators are told — it never waits for nobody', async () => {
+    prisma.user.findMany.mockImplementation(async ({ where }: any) => (where.role === 'ADMIN' ? [{ id: 'owner' }] : []));
+    await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
+    expect(notifications.emit).toHaveBeenCalledWith(
+      'approval_second_step',
+      expect.objectContaining({ recipientIds: ['owner'] }),
+    );
+  });
+
+  it('decide(): the item decided or removed meanwhile (404 / 409) — the step is NOT opened again', async () => {
+    const { ConflictException } = jest.requireActual('@nestjs/common');
+    await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
+    const gone = jest.fn(async () => {
+      throw new ConflictException('already decided');
+    });
+    await expect(
+      svc.decide({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }, gone),
+    ).rejects.toThrow('already decided');
+    expect(steps[0].consumedAt).not.toBeNull();
   });
 });

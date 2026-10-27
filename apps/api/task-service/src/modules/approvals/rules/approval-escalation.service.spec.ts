@@ -29,7 +29,12 @@ describe('ApprovalEscalationService.sweep', () => {
     approvalRule: { findMany: jest.fn() },
     assetMoney: { findMany: jest.fn() },
     asset: { findMany: jest.fn().mockResolvedValue([{ id: 'a1', category: { spaceId: 's1' } }]) },
-    user: { findMany: jest.fn().mockResolvedValue([{ id: 'driver', firstName: 'Dan', lastName: 'D' }]) },
+    // Two reads: the people an item is about, and the holders of the escalation role (`roleHolderIds`, an OR).
+    user: {
+      findMany: jest.fn(async ({ where }: any) =>
+        where.OR ? holders.map((id) => ({ id })) : [{ id: 'driver', firstName: 'Dan', lastName: 'D' }],
+      ),
+    },
     approvalNotice: {
       findMany: jest.fn(async () => notices),
       create: jest.fn(async ({ data }: any) => {
@@ -39,7 +44,7 @@ describe('ApprovalEscalationService.sweep', () => {
       }),
     },
   };
-  const rules: any = { holdersOf: jest.fn().mockResolvedValue(['fin1']) };
+  let holders = ['fin1'];
   const route: any = {
     route: jest.fn().mockResolvedValue({
       deciders: [
@@ -53,7 +58,6 @@ describe('ApprovalEscalationService.sweep', () => {
   const notifications: any = { emit: jest.fn() };
   const svc = new ApprovalEscalationService(
     prisma,
-    rules,
     route,
     new RuleFactsReader(prisma, {} as any),
     notifications,
@@ -68,6 +72,7 @@ describe('ApprovalEscalationService.sweep', () => {
 
   beforeEach(() => {
     notices = [];
+    holders = ['fin1'];
     jest.clearAllMocks();
     prisma.approvalRule.findMany.mockResolvedValue([rule]);
   });
@@ -89,12 +94,14 @@ describe('ApprovalEscalationService.sweep', () => {
       'approval_reminder',
       expect.objectContaining({ recipientIds: ['fin1'], stage: 'ESCALATE' }),
     );
-    expect(rules.holdersOf).toHaveBeenCalledWith('o', 'finance', ['s1'], ['driver']);
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ organizationId: 'o', id: { notIn: ['driver'] } }) }),
+    );
     expect(await svc.sweep(now)).toBe(0);
   });
 
   it('an escalation to a role nobody holds falls back to the usual deciders', async () => {
-    rules.holdersOf.mockResolvedValueOnce([]);
+    holders = [];
     prisma.assetMoney.findMany.mockResolvedValue([slip('e4', 30, 30000)]);
     expect(await svc.sweep(now)).toBe(1);
     expect(notifications.emit).toHaveBeenCalledWith(

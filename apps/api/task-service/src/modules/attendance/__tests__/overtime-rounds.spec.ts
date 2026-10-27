@@ -45,7 +45,7 @@ describe('overtime rounds', () => {
       },
       overtimeRequest: {
       // Earlier approved rounds on the shift (office rules judge the whole): none.
-      aggregate: jest.fn().mockResolvedValue({ _sum: { maxDurationMinutes: 0 } }),
+      groupBy: jest.fn().mockResolvedValue([]),
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'ot1' }),
         update: jest.fn().mockResolvedValue({ id: 'ot1' }),

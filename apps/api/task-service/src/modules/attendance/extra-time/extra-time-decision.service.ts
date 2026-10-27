@@ -9,6 +9,7 @@ import { ApprovalRulesService } from '../../approvals/rules/approval-rules.servi
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
+import { overtimeRuleFacts } from './overtime-rule-facts';
 
 /**
  * The office deciding extra time after the fact: refusing it, taking back approved
@@ -143,10 +144,7 @@ export class ExtraTimeDecisionService {
         kind: 'overtime',
         itemId: entry.id,
         // Judged on the shift's whole overtime; this decision agrees to its own minutes.
-        facts: {
-          spaceIds: entry.locationId ? [entry.locationId] : [],
-          minutes: minutes + (await this.approval.approvedOvertimeMinutes(entry.id)),
-        },
+        facts: overtimeRuleFacts(entry.locationId, minutes, await this.approval.approvedOvertimeMinutes(entry.id)),
         agreeMinutes: minutes,
         deciderId: data.approverId,
         subjectId: entry.userId,

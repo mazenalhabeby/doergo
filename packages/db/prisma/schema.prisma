@@ -2716,6 +2716,9 @@ model ApprovalStep {
   doneRoleIds    String[]  @default([])
   /// … and everybody who approved it so far (nobody approves twice). The first is `firstById`.
   approverIds    String[]  @default([])
+  /// What the item was judged on at the last approval (spaceIds, minutes, days …) — the inbox's "needs …" reads
+  /// the rules against THESE, as the gate does. Null on steps from before.
+  facts          Json?
 
   @@index([organizationId, kind, itemId])
   @@map("approval_steps")
