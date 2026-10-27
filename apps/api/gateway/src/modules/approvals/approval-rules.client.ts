@@ -20,10 +20,11 @@ export class ApprovalRulesClient extends BaseGatewayService {
     super(taskClient, ApprovalRulesClient.name);
   }
 
-  steps(organizationId: string, items: Array<{ kind: RuleKind; itemId: string }>) {
+  steps(organizationId: string, items: Array<{ kind: RuleKind; itemId: string }>, callerId?: string) {
     return this.send<RpcReply<typeof approvalSteps>>(pattern(approvalSteps), {
       organizationId,
       items,
+      callerId,
     } satisfies RpcRequest<typeof approvalSteps>);
   }
   list(organizationId: string, spaceIds?: string[]) {

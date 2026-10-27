@@ -193,6 +193,7 @@ export class ApprovalsService {
       const steps = await this.rules.steps(
         callerOrgId(user),
         asked.map(({ kind, itemId }) => ({ kind, itemId })),
+        user.id,
       );
       const byKey = new Map(steps.map((s) => [`${s.kind}:${s.itemId}`, s]));
       for (const { i, kind, itemId } of asked) {
@@ -203,6 +204,9 @@ export class ApprovalsService {
             firstByName: s.firstByName,
             roleName: s.roleName,
             mine: s.firstById === user.id,
+            agreedMinutes: s.agreedMinutes,
+            waitsForYou: s.waitsForCaller ?? false,
+            youFinish: s.callerFinishes ?? false,
           };
       }
     } catch (e) {

@@ -135,6 +135,8 @@ export const timeApprovals = {
         type: r.type ?? null,
         startDate: start,
         endDate: iso(r.endDate),
+        // Every day of it is already over (asked late, or never answered) — the screens say so on the row.
+        datesPassed: datesPassed(r.endDate, ctx.now),
         startTime: r.startTime ?? null,
         endTime: r.endTime ?? null,
         workingDays: r.workingDays ?? null,
@@ -197,4 +199,10 @@ export function pastEndFacts(
   if (!Number.isFinite(end) || !Number.isFinite(stop) || stop <= end) return {};
   const past = Math.round((stop - end) / 60_000);
   return past > 0 ? { pastEndMinutes: past, requestedMinutes: Math.min(1440, Math.ceil(past / 15) * 15) } : {};
+}
+
+/** Is a request's LAST day already behind us? A DATE column, compared as a calendar day (the day after it ended). */
+export function datesPassed(endDate: unknown, now: Date): boolean {
+  const end = iso(endDate);
+  return !!end && end.slice(0, 10) < now.toISOString().slice(0, 10);
 }

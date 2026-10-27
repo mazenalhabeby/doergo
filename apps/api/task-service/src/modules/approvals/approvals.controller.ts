@@ -53,7 +53,7 @@ export class ApprovalsController {
 
   @MessagePattern(pattern(approvalSteps))
   steps(@Payload() data: RpcRequest<typeof approvalSteps>) {
-    return this.stepsReader.steps(data.organizationId, data.items ?? []);
+    return this.stepsReader.steps(data.organizationId, data.items ?? [], data.callerId);
   }
 
   @MessagePattern(pattern(approvalRulesList))

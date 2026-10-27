@@ -55,6 +55,34 @@ export async function heldRoleIds(
  * Up to 50 active members holding this role — organization-wide, or as a workspace role in one of these
  * workspaces today — except the given ids.
  */
+/**
+ * The roles one member holds now, for "does this wait for ME": active ADMIN, the organization role (when
+ * active) and every workspace role with its workspace (an active role, an assignment in its window). One query.
+ */
+export async function memberRolesNow(db: On<'user', 'findFirst'>, organizationId: string, userId: string, now: Date) {
+  const u = await db.user.findFirst({
+    where: { id: userId, organizationId },
+    select: {
+      id: true,
+      role: true,
+      isActive: true,
+      memberRoleId: true,
+      memberRole: { select: { isActive: true } },
+      spaceAssignments: {
+        where: { roleId: { not: null }, role: { isActive: true }, ...activeWindowWhere(now) },
+        select: { roleId: true, spaceId: true },
+      },
+    },
+  });
+  if (!u) return null;
+  return {
+    id: u.id,
+    admin: u.role === 'ADMIN' && u.isActive,
+    orgRoleId: u.memberRole?.isActive ? u.memberRoleId : null,
+    spaceRoles: (u.spaceAssignments ?? []).flatMap((a) => (a.roleId ? [{ roleId: a.roleId, spaceId: a.spaceId }] : [])),
+  };
+}
+
 export async function roleHolderIds(
   db: On<'user', 'findMany'>,
   input: { organizationId: string; roleId: string; spaceIds: string[]; exclude: string[]; now: Date },

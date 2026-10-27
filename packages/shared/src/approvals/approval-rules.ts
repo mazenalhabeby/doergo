@@ -235,6 +235,12 @@ export interface ApprovalStepView {
   firstById: string;
   firstByName: string;
   roleName: string;
+  /** The smallest time any approver agreed so far (overtime), null when none was given. */
+  agreedMinutes: number | null;
+  /** Asked for a caller: they hold a role still needed here and have not approved it yet (or are an administrator). */
+  waitsForCaller?: boolean;
+  /** Asked for a caller: their approval finishes it (an active administrator, or they hold every role still needed). */
+  callerFinishes?: boolean;
 }
 
 export type NoticeStage = 'REMIND' | 'ESCALATE';

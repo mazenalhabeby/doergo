@@ -47,7 +47,20 @@ export interface ApprovalItem {
   /** Why the caller may decide it ("you approve hours at Binderholz"). Absent on a read-only item. */
   why?: { via: 'ADMIN' | 'ORG' | 'SPACE' | 'ASSIGNED' | 'DELEGATED'; fromName?: string | null };
   /** Waiting for a SECOND approval under an office rule (see approval-rules.ts). */
-  step?: { firstById: string; firstByName: string; roleName: string; mine: boolean };
+  /**
+   * Half-way through an office rule: who went first, which roles are still needed, the smallest time agreed so far
+   * (a decision with minutes starts from it — never a default that would cut it), whether it now waits for the
+   * CALLER (they hold a role still needed and have not approved), and whether their approval FINISHES it.
+   */
+  step?: {
+    firstById: string;
+    firstByName: string;
+    roleName: string;
+    mine: boolean;
+    agreedMinutes?: number | null;
+    waitsForYou?: boolean;
+    youFinish?: boolean;
+  };
   /**
    * Kind-specific facts, flat and serialisable — rendered by each app's own
    * words for the kind (see `approvalFacts`). Never a sentence.
@@ -67,6 +80,8 @@ export interface ApprovalsCount {
   /** Of which NOW — somebody waiting on the spot. */
   now: number;
   byKind: Partial<Record<ApprovalKind, number>>;
+  /** Of which half-way under an office rule and waiting for the CALLER (`step.waitsForYou`) — the phone's home card. */
+  yours: number;
 }
 
 /* ------------------------------------------------------------------ buttons */
@@ -197,9 +212,11 @@ export function sortApprovals(items: ApprovalItem[]): ApprovalItem[] {
 export function countApprovals(items: readonly ApprovalItem[]): ApprovalsCount {
   const byKind: Partial<Record<ApprovalKind, number>> = {};
   let now = 0;
+  let yours = 0;
   for (const i of items) {
     byKind[i.kind] = (byKind[i.kind] ?? 0) + 1;
     if (i.group === 'NOW') now++;
+    if (i.step?.waitsForYou) yours++;
   }
-  return { total: items.length, now, byKind };
+  return { total: items.length, now, byKind, yours };
 }

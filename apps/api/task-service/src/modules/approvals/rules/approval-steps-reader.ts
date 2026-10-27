@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  memberRolesNow,
   personName,
   peopleNames,
   roleNames,
@@ -7,7 +8,7 @@ import {
   type ApprovalStepView,
   type RuleKind,
 } from '@hbcfield/shared';
-import { joinRoleNames, rolesStillNeeded, stepRules } from './approval-steps';
+import { joinRoleNames, parseStoredFacts, rolesStillNeeded, stepRules } from './approval-steps';
 
 /**
  * The open steps for the inbox: who went first and which roles are still needed. What is needed is read the way
@@ -19,8 +20,15 @@ import { joinRoleNames, rolesStillNeeded, stepRules } from './approval-steps';
 export class ApprovalStepsReader {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** ONE query each for steps (by id, in chunks), rules, people and roles — however long the inbox. */
-  async steps(organizationId: string, items: Array<{ kind: RuleKind; itemId: string }>): Promise<ApprovalStepView[]> {
+  /**
+   * ONE query each for steps (by id, in chunks), rules, people, roles and — when a caller is named — the caller's
+   * own roles, however long the inbox. For the caller: does it wait for THEM, and does their approval finish it.
+   */
+  async steps(
+    organizationId: string,
+    items: Array<{ kind: RuleKind; itemId: string }>,
+    callerId?: string,
+  ): Promise<ApprovalStepView[]> {
     if (!items.length) return [];
     const wanted = new Set(items.map((i) => `${i.kind}:${i.itemId}`));
     const ids = [...new Set(items.map((i) => i.itemId))];
@@ -36,6 +44,8 @@ export class ApprovalStepsReader {
               firstById: true,
               requiredRoleIds: true,
               doneRoleIds: true,
+              approverIds: true,
+              minutes: true,
               facts: true,
             },
           }),
@@ -52,9 +62,10 @@ export class ApprovalStepsReader {
         rules.filter((x) => x.kind === r.kind),
       );
     const leftOf = new Map(rows.map((r) => [r, left(r)]));
-    const [people, roles] = await Promise.all([
+    const [people, roles, caller] = await Promise.all([
       peopleNames(this.prisma, [...new Set(rows.map((r) => r.firstById))]),
       roleNames(this.prisma, [...new Set([...leftOf.values()].flat())]),
+      callerId ? memberRolesNow(this.prisma, organizationId, callerId, new Date()) : null,
     ]);
     const personById = new Map(people.map((p) => [p.id, personName(p)]));
     const roleById = new Map(roles.map((r) => [r.id, r.name]));
@@ -66,6 +77,32 @@ export class ApprovalStepsReader {
         firstById: r.firstById,
         firstByName: personById.get(r.firstById) ?? '',
         roleName: joinRoleNames(leftOf.get(r)!, roleById),
+        agreedMinutes: r.minutes ?? null,
+        ...(caller ? forCaller(caller, r, leftOf.get(r)!) : {}),
       }));
   }
+}
+
+type CallerRoles = NonNullable<Awaited<ReturnType<typeof memberRolesNow>>>;
+
+/**
+ * The gate's own reading, for one caller: an active administrator finishes anything; otherwise it waits for them
+ * when they hold a role still needed (org-wide, or in one of the item's workspaces) and have not approved it yet,
+ * and they finish it when they hold EVERY role still needed. Never a second approval by the same person.
+ */
+function forCaller(
+  caller: CallerRoles,
+  step: { approverIds: string[]; facts: unknown },
+  left: string[],
+): { waitsForCaller: boolean; callerFinishes: boolean } {
+  if (step.approverIds.includes(caller.id)) return { waitsForCaller: false, callerFinishes: false };
+  if (caller.admin) return { waitsForCaller: true, callerFinishes: true };
+  const spaces = new Set(parseStoredFacts(step.facts)?.spaceIds ?? []);
+  const holds = (roleId: string) =>
+    caller.orgRoleId === roleId || caller.spaceRoles.some((a) => a.roleId === roleId && spaces.has(a.spaceId));
+  const held = left.filter(holds);
+  return {
+    waitsForCaller: held.length > 0,
+    callerFinishes: held.length > 0 && held.length === left.length && left.length === 1,
+  };
 }

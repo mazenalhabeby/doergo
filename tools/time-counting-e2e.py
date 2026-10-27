@@ -131,12 +131,17 @@ def main():
         check('the long day is flagged for the leader', 'PAST_DAILY_LIMIT' in (out.get('flagReasons') or []), out.get('flagReasons'))
 
         here = next(p for p in data(call('GET', '/attendance/clock-in-locations', noor, label='clock-in places')[1]) if p['id'] == place['id'])
-        check('her phone is told today’s hours are used up', (here.get('noShift') or {}).get('workedTodayMinutes', 0) >= 720, here.get('noShift'))
+        # A night belongs to the day it STARTED: run within 12 h 30 of midnight, that long day is yesterday's.
+        same_day = start.astimezone(tz).date() == datetime.now(UTC).astimezone(tz).date()
+        worked_today = (here.get('noShift') or {}).get('workedTodayMinutes', 0)
+        check('her phone is told today’s hours are used up' if same_day else 'the long day started yesterday, so today is untouched',
+              worked_today >= 720 if same_day else worked_today == 0, here.get('noShift'))
         s, b = clock_in(noor, place)
         again = data(b) if s in (200, 201) else {}
         made['entries'] += [again['id']] if again.get('id') else []
         check('clocking in again with no hours left is KEPT, not refused', s in (200, 201), (s, b.get('code')))
-        check('…and flagged past the daily limit', 'PAST_DAILY_LIMIT' in (again.get('flagReasons') or []), again.get('flagReasons'))
+        check('…and flagged past the daily limit' if same_day else '…and not flagged: today has its full hours',
+              ('PAST_DAILY_LIMIT' in (again.get('flagReasons') or [])) == same_day, again.get('flagReasons'))
         clock_out(noor, place)
 
         s, b = call('PATCH', f"/locations/{place['id']}", owner, {'noShiftPolicy': 'SHIFT_ONLY'})

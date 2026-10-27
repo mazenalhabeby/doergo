@@ -22,7 +22,7 @@ export const standInsEnd = rpc<{ caller: StandInCaller; id: string }, { ended: t
 );
 
 export const approvalSteps = rpc<
-  { organizationId: string; items: Array<{ kind: RuleKind; itemId: string }> },
+  { organizationId: string; items: Array<{ kind: RuleKind; itemId: string }>; callerId?: string },
   ApprovalStepView[]
 >('approval_steps');
 
