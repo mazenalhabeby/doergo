@@ -11,8 +11,7 @@ import { CountedTimeService } from '../core/counted-time.service';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { approvedOvertimeByEntry, lastRoundCycle, overtimeWriteMissed } from './overtime-rule-facts';
-import { overtimeRuleFacts } from '@hbcfield/shared';
+import { approvedOvertimeByEntry, lastRoundCycle, overtimeGateInput, overtimeWriteMissed } from './overtime-rule-facts';
 import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /**
@@ -93,16 +92,7 @@ export class ExtraTimeApprovalService {
 
     // Office rules: past a threshold this approval is one of several, and the shift waits for the others.
     const decided = await this.rules.decide(
-      {
-        organizationId: data.organizationId,
-        kind: 'overtime',
-        itemId: entry.id,
-        // Judged on the shift's whole overtime; this decision agrees to its own minutes.
-        facts: overtimeRuleFacts(entry.locationId, minutes, await this.approvedOvertimeMinutes(entry.id)),
-        agreeMinutes: minutes,
-        deciderId: data.approverId,
-        subjectId: entry.userId,
-      },
+      overtimeGateInput(entry, minutes, await this.approvedOvertimeMinutes(entry.id), data),
       async (agreed) => {
         if (agreed != null) minutes = agreed;
         /*
@@ -180,7 +170,7 @@ export class ExtraTimeApprovalService {
                   }),
                 ]),
           ])
-          .catch(overtimeWriteMissed(this.prisma, entry.id, { roundId: round?.id, afterCycle: lastCycle }));
+          .catch(overtimeWriteMissed(this.prisma, entry.id, round ? { roundId: round.id } : { afterCycle: lastCycle }));
 
         // Closed: the timesheet already counted it — count it again with the approval.
         if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });

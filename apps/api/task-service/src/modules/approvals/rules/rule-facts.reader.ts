@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { expenseRuleFacts, isAbsence, personName, type RuleKind } from '@hbcfield/shared';
+import { COUNTED_ROUND_STATUSES, expenseRuleFacts, isCountedRound, personName, type RuleKind } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 export type { RuleItem, RuleItemWindow } from './rule-items';
 import { CoverService } from '../../technicians/cover.service';
 import { OutsideShiftService } from '../../attendance/extra-time/outside-shift.service';
-import { COUNTED_ROUND_STATUSES, approvedOvertimeByEntry } from '../../attendance/extra-time/overtime-rule-facts';
+import { approvedOvertimeByEntry } from '../../attendance/extra-time/overtime-rule-facts';
 import { overtimeRuleFacts } from '@hbcfield/shared';
 import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort, type RequestRuleRow } from './request-rule-facts';
-import { restGapOf, stretchFrom, stretchWhere } from './leave-stretch';
+import { restGapOf, stretchDaysMany } from './leave-stretch';
 import { CalendarRulesService } from '../../calendar/calendar-rules.service';
 import { inSpaces, type RuleItem, type RuleItemWindow } from './rule-items';
 import {
@@ -33,25 +33,20 @@ export class RuleFactsReader {
 
   /**
    * The whole stretch of leave each request belongs to, as the approve path judges it (leave-stretch.ts) — so a
-   * reminder rule catches what the approval would. ONE query for the batch; the calendar asked only for real gaps.
+   * reminder rule catches what the approval would. One query for the batch; the calendar asked once per gap.
    */
   private async stretchDays(organizationId: string, rows: RequestRuleRow[]): Promise<Map<string, number>> {
-    const out = new Map<string, number>();
-    const leave = rows.filter((r) => isAbsence(r.kind));
-    if (!leave.length) return out;
-    const from = new Date(Math.min(...leave.map((r) => r.startDate.getTime())));
-    const to = new Date(Math.max(...leave.map((r) => r.endDate.getTime())));
-    const others = await this.prisma.timeOff.findMany({
-      where: stretchWhere([...new Set(leave.map((r) => r.technicianId))], from, to),
-      select: { id: true, technicianId: true, startDate: true, endDate: true, workingDays: true },
-    });
     const calendar = this.moduleRef.get(CalendarRulesService, { strict: false });
-    for (const r of leave) {
-      const own = requestRuleFacts(r, false).days ?? 0;
-      const mine = others.filter((o) => o.technicianId === r.technicianId && o.id !== r.id);
-      out.set(r.id, await stretchFrom(r, own, mine, restGapOf(calendar, organizationId, r.technicianId)));
-    }
-    return out;
+    const rests = new Map<string, ReturnType<typeof restGapOf>>();
+    const restOf = (userId: string) =>
+      rests.get(userId) ?? rests.set(userId, restGapOf(calendar, organizationId, userId)).get(userId)!;
+    const asks = rows.map((row) => ({
+      row,
+      ownDays: requestRuleFacts(row, false).days ?? 0,
+      rest: restOf(row.technicianId),
+    }));
+    const days = await stretchDaysMany(this.prisma, asks);
+    return new Map(rows.map((r) => [r.id, days.get(r) ?? 0]));
   }
 
   async read(organizationId: string, kind: RuleKind, window: RuleItemWindow, needCover = false): Promise<RuleItem[]> {
@@ -171,12 +166,7 @@ export class RuleFactsReader {
     const approved = await approvedOvertimeByEntry(this.prisma, [...new Set(rows.map((o) => o.timeEntryId))]);
     const later = (o: (typeof rows)[number]) =>
       rows
-        .filter(
-          (r) =>
-            r.timeEntryId === o.timeEntryId &&
-            (r.status === 'APPROVED' || r.status === 'COMPLETED') &&
-            r.cycle >= o.cycle,
-        )
+        .filter((r) => r.timeEntryId === o.timeEntryId && isCountedRound(r.status) && r.cycle >= o.cycle)
         .reduce((n, r) => n + (r.maxDurationMinutes ?? 0), 0);
     return [
       ...rows.map((o) => {

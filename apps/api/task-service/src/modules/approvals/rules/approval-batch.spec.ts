@@ -8,8 +8,8 @@ jest.mock('@hbcfield/shared', () => ({
 import { BatchNotices } from './approval-step-notices';
 
 /*
-  Round 8 (2026-10-27): two overtime decisions at once never add it twice, and a batch tells the next approvers once
-  per role and workspace — naming the person only when the batch is about one person.
+  Two overtime decisions at once never add it twice; a batch tells the next approvers once per role and workspace —
+  naming the person only when it is about one person — and every place that starts a batch ends it.
 */
 const missed = new Prisma.PrismaClientKnownRequestError('miss', { code: 'P2025', clientVersion: 'x' });
 
@@ -64,7 +64,8 @@ describe('BatchNotices', () => {
     const { sent, exclude } = await flush(batch);
     expect(sent).toHaveLength(1);
     expect(sent[0].subjectName).toBe('');
-    expect(exclude[0]).toEqual(expect.arrayContaining(['lead', 'w0', 'w29']));
+    // Only the decider is left out: each person in the batch may decide the others' items.
+    expect(exclude[0]).toEqual(['lead']);
   });
 
   it("one person's days: named, as a single approval would be", async () => {
@@ -81,5 +82,20 @@ describe('BatchNotices', () => {
     batch.add('hr', input('w1', 'e1'), 'Lea');
     batch.add('hr', { ...input('w2', 'e2'), facts: { spaceIds: ['s2'] } }, 'Lea');
     expect((await flush(batch)).sent).toHaveLength(2);
+  });
+});
+
+describe('every batch is ended', () => {
+  it('each file that starts a BatchNotices also sends it (tellBatch / flush) — or nobody would ever be told', () => {
+    const { execSync } = jest.requireActual('child_process');
+    const root = require('path').resolve(__dirname, '../../..');
+    const files: string[] = execSync(`grep -rl "new BatchNotices()" ${root} --include=*.ts`, { encoding: 'utf8' })
+      .split('\n')
+      .filter((f: string) => f && !f.endsWith('.spec.ts'));
+    expect(files.length).toBeGreaterThanOrEqual(2);
+    for (const f of files) {
+      const src: string = require('fs').readFileSync(f, 'utf8');
+      expect({ f, ends: /tellBatch\(|\.flush\(/.test(src) }).toEqual({ f, ends: true });
+    }
   });
 });

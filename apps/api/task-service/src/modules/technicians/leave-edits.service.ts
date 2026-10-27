@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { isAbsence, PrismaService, success } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
+import { alreadyDecided, CHANGED_MEANWHILE } from '../approvals/rules/already-decided';
 import { REQUEST_RULE_SELECT, requestFactsFor } from '../approvals/rules/request-rule-facts';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { CoverService } from './cover.service';
@@ -80,7 +81,16 @@ export class LeaveEditsService {
       ...(datesChanged ? { startDate: start, endDate: end } : {}),
       ...(data.reason !== undefined ? { reason: data.reason?.trim() || null } : {}),
     };
-    const write = () => this.prisma.timeOff.update({ where: { id: data.timeOffId }, data: fields });
+    // Conditional on the request as read (already-decided.ts): cancelled, decided or re-dated meanwhile → 409, never
+    // a request brought back to life.
+    const asRead = {
+      id: data.timeOffId,
+      status: timeOff.status,
+      startDate: timeOff.startDate,
+      endDate: timeOff.endDate,
+    };
+    const changedMeanwhile = alreadyDecided(CHANGED_MEANWHILE, 'This day off changed a moment ago — look again.');
+    const write = () => this.prisma.timeOff.update({ where: asRead, data: fields }).catch(changedMeanwhile);
     if (!datesChanged) return success(await write(), 'Day off updated');
 
     // Approvals given for the old dates end with them.
@@ -100,10 +110,12 @@ export class LeaveEditsService {
     );
     if (decided.done) return success(decided.done, 'Day off updated');
     // Past an office rule: the new dates wait for the others.
-    const waiting = await this.prisma.timeOff.update({
-      where: { id: data.timeOffId },
-      data: { ...fields, status: 'PENDING', approvedById: null, approvedAt: null },
-    });
+    const waiting = await this.prisma.timeOff
+      .update({ where: asRead, data: { ...fields, status: 'PENDING', approvedById: null, approvedAt: null } })
+      .catch(async (e) => {
+        await this.rules.clear(data.organizationId, 'request', data.timeOffId); // the step just opened goes too
+        return changedMeanwhile(e);
+      });
     return waitingReply(waiting, decided.waiting, 'Day off updated');
   }
 

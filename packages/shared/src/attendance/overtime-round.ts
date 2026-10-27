@@ -28,7 +28,14 @@ export type OvertimeRoundState =
   | 'REFUSED'; // a leader said no
 
 export const OVERTIME_ROUND_STATES: readonly OvertimeRoundState[] = [
-  'RUNNING', 'OVER', 'DONE', 'WAITING_PERSON', 'WAITING_DECISION', 'NO_ANSWER', 'NOT_NEEDED', 'REFUSED',
+  'RUNNING',
+  'OVER',
+  'DONE',
+  'WAITING_PERSON',
+  'WAITING_DECISION',
+  'NO_ANSWER',
+  'NOT_NEEDED',
+  'REFUSED',
 ];
 
 /** The fields a round is judged on — the OvertimeRequest columns plus its shift's clock-out. */
@@ -52,7 +59,11 @@ const ms = (v: string | Date | null | undefined): number | null => {
   return Number.isNaN(t) ? null : t;
 };
 
-const AGREED = new Set(['APPROVED', 'COMPLETED']);
+/** A round that counts as overtime already agreed: APPROVED, or COMPLETED (the legacy flow's word for it). */
+export const COUNTED_ROUND_STATUSES = ['APPROVED', 'COMPLETED'] as const;
+const AGREED = new Set<string>(COUNTED_ROUND_STATUSES);
+/** Does this round's overtime count as agreed? */
+export const isCountedRound = (status: string) => AGREED.has(status);
 
 export function overtimeRoundState(r: OvertimeRoundFacts, now: Date = new Date()): OvertimeRoundState {
   switch (r.status) {

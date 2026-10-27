@@ -3,6 +3,7 @@ import {
   PrismaService,
   zoneOf,
   localPartsIn,
+  isCountedRound,
   overtimeRoundMinutes,
   scopeWhere,
   success,
@@ -61,7 +62,7 @@ export class OvertimeSummaryService {
     let noAnswer = 0;
     for (const r of rows) {
       if (r.status === 'EXPIRED_NO_APPROVAL') noAnswer++;
-      if (r.status !== 'APPROVED' && r.status !== 'COMPLETED') continue;
+      if (!isCountedRound(r.status)) continue;
       rounds++;
       const m = overtimeRoundMinutes(roundFacts(r, latest), now);
       workedMinutes += m.worked;

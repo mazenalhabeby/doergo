@@ -14,6 +14,7 @@ import { ModuleRef } from '@nestjs/core';
 import { PrismaService, SERVICE_NAMES, success } from '@hbcfield/shared';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
+import { missedWrite } from '../approvals/rules/already-decided';
 import { DayHoursReshapeService } from '../attendance/shifts/day-hours-reshape.service';
 import { REQUEST_REFUSALS, SPACE_BRIEF, requestFacts } from './technicians-helpers';
 import { requestClashes } from './member-requests';
@@ -171,7 +172,15 @@ export class DayHoursService {
         subjectId: technicianId,
       },
       () =>
-        this.applyApproved({ id: pending.id, organizationId, technicianId, editorId, spaceId, date: value.startDate }),
+        this.applyApproved({
+          id: pending.id,
+          organizationId,
+          technicianId,
+          editorId,
+          spaceId,
+          date: value.startDate,
+          hours: { startTime: pending.startTime, endTime: pending.endTime },
+        }),
     );
     if (decided.waiting) return waitingReply(pending, decided.waiting, 'Hours saved');
     const { saved, entriesChanged } = decided.done;
@@ -186,13 +195,24 @@ export class DayHoursService {
     editorId: string;
     spaceId: string | null;
     date: string;
+    /** The hours just set — approved only while they are still the request's (another leader may set them again). */
+    hours?: { startTime: string | null; endTime: string | null };
   }) {
     const include = { space: { select: SPACE_BRIEF }, approvedBy: { select: { firstName: true, lastName: true } } };
-    const saved = await this.prisma.timeOff.update({
-      where: { id: a.id },
-      data: { status: 'APPROVED', approvedById: a.editorId, approvedAt: new Date() },
-      include,
-    });
+    // Conditional, like every approve write (already-decided.ts): a request cancelled or set again meanwhile wins.
+    const saved = await this.prisma.timeOff
+      .update({
+        where: { id: a.id, status: 'PENDING', ...(a.hours ?? {}) },
+        data: { status: 'APPROVED', approvedById: a.editorId, approvedAt: new Date() },
+        include,
+      })
+      .catch(
+        missedWrite(
+          async () => (await this.prisma.timeOff.count({ where: { id: a.id, status: 'PENDING' } })) > 0,
+          'TIME_OFF_DECIDED',
+          'These hours were changed or cancelled a moment ago.',
+        ),
+      );
     const entriesChanged = await this.reshape.reshapeDay({
       organizationId: a.organizationId,
       userId: a.technicianId,

@@ -1,4 +1,4 @@
-import { restGapOf, stretchWorkingDays, type RestGap } from './leave-stretch';
+import { restGapOf, stretchDaysMany, stretchWorkingDays, type RestGap } from './leave-stretch';
 
 /*
   Leave is judged on the whole stretch it belongs to: two 4-day requests back to back (or with only a weekend
@@ -29,7 +29,7 @@ describe('stretchWorkingDays', () => {
     };
   const rest = restDays();
   const prisma = (others: Array<{ startDate: Date; endDate: Date; workingDays: number | null }>) =>
-    ({ timeOff: { findMany: jest.fn().mockResolvedValue(others) } }) as never;
+    ({ timeOff: { findMany: jest.fn().mockResolvedValue(others.map((o) => ({ technicianId: 'm', ...o }))) } }) as never;
 
   it('a request right before it (Mon–Thu, then Fri) counts together', async () => {
     const after = { startDate: day('2026-11-13'), endDate: day('2026-11-13'), workingDays: 1 };
@@ -81,5 +81,38 @@ describe('stretchWorkingDays', () => {
     expect(await restGapOf(counted(0), 'o', 'm')(day('2026-11-14'), day('2026-11-15'))).toBe(true);
     expect(await restGapOf(counted(1), 'o', 'm')(day('2026-11-14'), day('2026-11-15'))).toBe(false);
     expect(await restGapOf(counted(new Error('down')), 'o', 'm')(day('2026-11-14'), day('2026-11-15'))).toBe(false);
+  });
+
+  it('a batch (the sweep, the insights): ONE query, each gap asked once, never a request as its own neighbour', async () => {
+    const a = { ...row, id: 'a', startDate: day('2026-11-02'), endDate: day('2026-11-06') }; // Mon–Fri
+    const b = { ...row, id: 'b', startDate: day('2026-11-09'), endDate: day('2026-11-12') }; // Mon–Thu
+    const rows = [a, b].map((r) => ({
+      id: r.id,
+      technicianId: 'm',
+      startDate: r.startDate,
+      endDate: r.endDate,
+      workingDays: 5,
+    }));
+    const db = { timeOff: { findMany: jest.fn().mockResolvedValue(rows) } } as never;
+    const calendar = { countLeaveFor: jest.fn(async () => ({ counted: 0 })) };
+    const shared = restGapOf(calendar, 'o', 'm');
+    const out = await stretchDaysMany(db, [
+      { row: a, ownDays: 5, rest: shared },
+      { row: b, ownDays: 4, rest: shared },
+    ]);
+    expect([out.get(a), out.get(b)]).toEqual([10, 9]);
+    expect((db as any).timeOff.findMany).toHaveBeenCalledTimes(1);
+    expect(calendar.countLeaveFor).toHaveBeenCalledTimes(1); // the weekend between them, asked once for both
+  });
+
+  it('many requests in a row: each neighbour tested once, walking outward', async () => {
+    const rest = jest.fn(restDays());
+    const weeks = [16, 23, 30].map((d) => ({
+      startDate: day(`2026-11-${d}`),
+      endDate: day(`2026-11-${d + 4}`),
+      workingDays: 5,
+    }));
+    expect(await stretchWorkingDays(prisma(weeks), row, 4, rest)).toBe(4); // Thu 12 → Mon 16: Fri is a working day
+    expect(rest).toHaveBeenCalledTimes(1);
   });
 });

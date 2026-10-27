@@ -14,6 +14,7 @@ import { DAY } from './no-show-record-helpers';
 import { PrismaService, spaceIdsOf } from '@hbcfield/shared';
 import { monthFacts, ruleRunsFor, runHints, runsFor, spaceRows } from './no-show-run-facts';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /**
  * The no-show RECORD and its decisions (shared attendance/no-show.ts):
@@ -200,7 +201,7 @@ export class NoShowRecordService {
       },
       close,
     );
-    if (decided.waiting) return success({ id: inst.id, state: inst.state, decided: 0, ...decided.waiting });
+    if (decided.waiting) return waitingReply({ id: inst.id, state: inst.state, decided: 0 }, decided.waiting);
     const res = decided.done;
     return success({ id: inst.id, state: 'EXCUSED', decided: res.count });
   }

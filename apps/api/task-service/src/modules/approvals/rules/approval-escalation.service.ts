@@ -101,8 +101,9 @@ export class ApprovalEscalationService {
           (sentFor.get(n.itemId) ?? sentFor.set(n.itemId, new Set()).get(n.itemId)!).add(n.stage as NoticeStage);
 
         // Who to tell is the same for every item of one workspace and person: asked once per sweep.
-        const once = new Map<string, Promise<string[]>>();
-        const cached = (key: string, read: () => Promise<string[]>) =>
+        // Each answer also says whether somebody was left out only for being on leave today.
+        const once = new Map<string, Promise<Reachable>>();
+        const cached = (key: string, read: () => Promise<Reachable>) =>
           once.get(key) ?? (once.set(key, read()), once.get(key)!);
         for (const item of items) {
           const rule = pickRule(group, item.facts);
@@ -125,7 +126,7 @@ export class ApprovalEscalationService {
           const roleId = stage === 'ESCALATE' ? rule.escalateRoleId : step ? waitingOn : null;
           // The holders (asked once per role, workspace and person this sweep) — never who already approved, never
           // anybody on leave today: the same for a reminder and an escalation.
-          const holders = roleId
+          const holders: Reachable = roleId
             ? await cached(`${roleId}|${who}`, async () => {
                 const ids = await roleHolderIds(this.prisma, {
                   organizationId,
@@ -135,21 +136,26 @@ export class ApprovalEscalationService {
                   now,
                 });
                 const away = await awayOn(this.prisma, ids, leaveDay(now, await zoneOf()));
-                return ids.filter((id) => !away.has(id));
+                return { ids: ids.filter((id) => !away.has(id)), someAway: away.size > 0 };
               })
-            : [];
-          let recipientIds = holders.filter((id) => !step?.approverIds.includes(id));
+            : { ids: [], someAway: false };
+          // Never a reminder to somebody who already approved it (they would be refused).
+          const notApproved = (ids: string[]) => ids.filter((id) => !step?.approverIds.includes(id));
+          let recipientIds = notApproved(holders.ids);
+          let someAway = holders.someAway;
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.
-          if (!recipientIds.length)
-            recipientIds = (await cached(`usual|${who}`, () => this.usualDeciders(organizationId, kind, item))).filter(
-              // Never a reminder to somebody who already approved it (they would be refused).
-              (id) => !step?.approverIds.includes(id),
-            );
-          // Nobody to tell right now (all on leave): the claim is given back, so a later sweep says it once they return.
           if (!recipientIds.length) {
-            await this.prisma.approvalNotice.deleteMany({
-              where: { organizationId, kind, itemId: item.itemId, stage },
-            });
+            const usual = await cached(`usual|${who}`, () => this.usualDeciders(organizationId, kind, item));
+            recipientIds = notApproved(usual.ids);
+            someAway ||= usual.someAway;
+          }
+          if (!recipientIds.length) {
+            // Only on leave today: the claim is given back, so a later sweep says it once they return. Nobody at all
+            // (everyone able already approved): it stays said — never claimed and given back every sweep.
+            if (someAway)
+              await this.prisma.approvalNotice.deleteMany({
+                where: { organizationId, kind, itemId: item.itemId, stage },
+              });
             continue;
           }
           emitEvent(this.notifications, approvalReminderEvent, {
@@ -171,7 +177,7 @@ export class ApprovalEscalationService {
   }
 
   /** Who decides it today, from the one resolver "who else can decide" uses — minus anybody on leave. */
-  private async usualDeciders(organizationId: string, kind: RuleKind, item: RuleItem): Promise<string[]> {
+  private async usualDeciders(organizationId: string, kind: RuleKind, item: RuleItem): Promise<Reachable> {
     const r = await this.route.route({
       organizationId,
       callerId: '',
@@ -179,6 +185,9 @@ export class ApprovalEscalationService {
       spaceId: item.facts.spaceIds[0] ?? null,
       subjectUserId: item.subjectId,
     });
-    return r.deciders.filter((d) => !d.onLeave).map((d) => d.id);
+    return { ids: r.deciders.filter((d) => !d.onLeave).map((d) => d.id), someAway: r.deciders.some((d) => d.onLeave) };
   }
 }
+
+/** Who can be told now, and whether somebody was left out only for being on leave today. */
+type Reachable = { ids: string[]; someAway: boolean };

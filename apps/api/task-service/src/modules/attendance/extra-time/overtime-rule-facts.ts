@@ -1,8 +1,6 @@
-import type { PrismaService } from '@hbcfield/shared';
+import { COUNTED_ROUND_STATUSES, overtimeRuleFacts, type PrismaService } from '@hbcfield/shared';
+import type { RuleGateInput } from '../../approvals/rules/approval-rules-helpers';
 import { missedWrite } from '../../approvals/rules/already-decided';
-
-/** A round that counts as overtime already agreed: APPROVED, or COMPLETED (the legacy flow's word for it). */
-export const COUNTED_ROUND_STATUSES = ['APPROVED', 'COMPLETED'] as const;
 
 /* What an overtime rule needs from the database; the pure builder is shared (`overtimeRuleFacts`). */
 
@@ -40,23 +38,48 @@ export async function lastRoundCycle(prisma: PrismaService, entryId: string): Pr
 }
 
 /**
- * An overtime write that missed its claim (the end it read, or the round still waiting): decided meanwhile — the
- * round refused or approved by somebody else, a NEWER round written by somebody else (two adding at once), the
- * shift gone — or only CHANGED (another path moved the end). `afterCycle` = the last round this decision read.
+ * An overtime write that missed its claim: decided meanwhile → `OVERTIME_ALREADY_DECIDED` (the round refused or
+ * approved by somebody else, a NEWER round written by somebody else — two adding at once — or the shift gone);
+ * only CHANGED (another path moved the end) → `CHANGED_MEANWHILE`. Either way the approvals end.
+ *   { roundId } — deciding a round that waits: still waiting = that round is still PENDING_APPROVAL;
+ *   { afterCycle } — adding a round: still waiting = the shift exists and nobody wrote a round after `afterCycle`.
  */
 export function overtimeWriteMissed(
   prisma: PrismaService,
   entryId: string,
-  seen: { roundId?: string; afterCycle: number },
+  seen: { roundId: string } | { afterCycle: number },
 ) {
+  const roundStillWaiting = async (roundId: string) =>
+    (await prisma.overtimeRequest.count({ where: { id: roundId, status: 'PENDING_APPROVAL' } })) > 0;
+  const noNewerRound = async (afterCycle: number) =>
+    (await prisma.timeEntry.count({ where: { id: entryId } })) > 0 &&
+    (await prisma.overtimeRequest.count({ where: { timeEntryId: entryId, cycle: { gt: afterCycle } } })) === 0;
   return missedWrite(
-    async () =>
-      seen.roundId
-        ? (await prisma.overtimeRequest.count({ where: { id: seen.roundId, status: 'PENDING_APPROVAL' } })) > 0
-        : (await prisma.timeEntry.count({ where: { id: entryId } })) > 0 &&
-          (await prisma.overtimeRequest.count({ where: { timeEntryId: entryId, cycle: { gt: seen.afterCycle } } })) ===
-            0,
+    () => ('roundId' in seen ? roundStillWaiting(seen.roundId) : noNewerRound(seen.afterCycle)),
     'OVERTIME_ALREADY_DECIDED',
     'This overtime was decided a moment ago.',
   );
+}
+
+/**
+ * An overtime decision as the office rules judge it — ONE shape for approving a round, adding to a closed shift and
+ * counting time outside it: the shift's WHOLE overtime (earlier approved rounds + this one), while this decision
+ * agrees to its own minutes (59-minute rounds are no way round a one-hour rule).
+ */
+export function overtimeGateInput(
+  entry: { id: string; locationId: string | null; userId: string },
+  minutes: number,
+  approvedBefore: number,
+  decider: { organizationId: string; approverId: string },
+  itemId: string = entry.id,
+): RuleGateInput {
+  return {
+    organizationId: decider.organizationId,
+    kind: 'overtime',
+    itemId,
+    facts: overtimeRuleFacts(entry.locationId, minutes, approvedBefore),
+    agreeMinutes: minutes,
+    deciderId: decider.approverId,
+    subjectId: entry.userId,
+  };
 }

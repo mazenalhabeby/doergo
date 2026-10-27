@@ -24,8 +24,8 @@ import { AttendanceRoutingService } from '../core/attendance-routing.service';
 import { askAboutOwnRequest } from '../../approvals/own-request-route';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { ExtraTimeDecisionService } from './extra-time-decision.service';
-import { approvedOvertimeByEntry } from './overtime-rule-facts';
-import { overtimeRuleFacts, ruleStepItemId } from '@hbcfield/shared';
+import { approvedOvertimeByEntry, overtimeGateInput } from './overtime-rule-facts';
+import { ruleStepItemId } from '@hbcfield/shared';
 import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /** How far back an undecided outside time is still asked about — older belongs to closed payroll. */
@@ -253,20 +253,7 @@ export class OutsideShiftService {
     } else {
       // Counting time is overtime — past a threshold it waits for the others, and nothing is written yet.
       const decided = await this.rules.decide(
-        {
-          organizationId: data.organizationId,
-          kind: 'overtime',
-          itemId: stepId,
-          // Overtime already approved on the shift counts too (`overtimeRuleFacts`); this decision agrees to its own.
-          facts: overtimeRuleFacts(
-            entry.locationId,
-            plan.counted,
-            await this.approval.approvedOvertimeMinutes(entry.id),
-          ),
-          agreeMinutes: plan.counted,
-          deciderId: data.approverId,
-          subjectId: entry.userId,
-        },
+        overtimeGateInput(entry, plan.counted, await this.approval.approvedOvertimeMinutes(entry.id), data, stepId),
         async (agreed) => {
           // Never more than any approver agreed to.
           if (agreed != null && agreed < plan.counted) plan = planAfterCounting(entry, outside, agreed);

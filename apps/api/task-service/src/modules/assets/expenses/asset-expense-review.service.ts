@@ -5,6 +5,7 @@ import { AssetAccessService, type AssetActor } from '../core/asset-access.servic
 import { AssetNotifier } from '../core/asset-notifier.service';
 import { assertNotSelfDecision } from '../../attendance/core/self-decision';
 import { EXPENSE_STATUS } from './asset-expense-helpers';
+import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /**
  * What happens to an expense after it is sent: the member's own list, the office's
@@ -180,7 +181,7 @@ export class AssetExpenseReviewService {
         },
         write,
       );
-      if (decided.waiting) return success({ id: data.entryId, status: EXPENSE_STATUS.SUBMITTED, ...decided.waiting });
+      if (decided.waiting) return waitingReply({ id: data.entryId, status: EXPENSE_STATUS.SUBMITTED }, decided.waiting);
     }
 
     await this.notifier.expenseDecided({

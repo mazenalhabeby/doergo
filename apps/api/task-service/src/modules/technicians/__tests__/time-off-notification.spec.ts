@@ -138,4 +138,34 @@ describe('who is told about a leave request', () => {
       endDate: '2026-10-05',
     });
   });
+
+  it('is written only on the dates, hours and minutes the approver saw (changed meanwhile = a new decision)', async () => {
+    const seen = {
+      id: 'to1',
+      status: 'PENDING',
+      technicianId: 'mike',
+      startDate: new Date('2026-10-01'),
+      endDate: new Date('2026-10-01'),
+      startTime: '08:00',
+      endTime: '16:00',
+      minutes: null,
+      technician: { organizationId: 'org1', spaceAssignments: [] },
+    };
+    prisma.timeOff.findUnique.mockResolvedValueOnce(seen);
+    await service.approveTimeOff({
+      timeOffId: 'to1',
+      organizationId: 'org1',
+      approverId: 'anna',
+      approved: false,
+    } as never);
+    expect(prisma.timeOff.update.mock.calls[0][0].where).toEqual({
+      id: 'to1',
+      status: 'PENDING',
+      startDate: seen.startDate,
+      endDate: seen.endDate,
+      startTime: '08:00',
+      endTime: '16:00',
+      minutes: null,
+    });
+  });
 });

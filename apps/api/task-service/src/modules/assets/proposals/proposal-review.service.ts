@@ -10,6 +10,7 @@ import { assetScope } from '../core/asset-access.service';
 import { ALLOWED, PENDING_SCAN, PROPOSAL_STATUS, cleanProposalFields } from './asset-proposal-helpers';
 import { ProposalPlacesService } from './proposal-places.service';
 import { ProposalNoticesService } from './proposal-notices.service';
+import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /**
  * The office's side of a page a member sent in: the queue, accepting (which runs
@@ -165,7 +166,7 @@ export class ProposalReviewService {
       },
       apply,
     );
-    if (decided.waiting) return success({ id: data.id, status: PROPOSAL_STATUS.PENDING, ...decided.waiting });
+    if (decided.waiting) return waitingReply({ id: data.id, status: PROPOSAL_STATUS.PENDING }, decided.waiting);
     return decided.done;
   }
 

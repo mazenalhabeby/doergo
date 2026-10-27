@@ -18,13 +18,24 @@ export interface LeaveCalendar {
 /** Are the days from..to (inclusive) all days off for this person? */
 export type RestGap = (from: Date, to: Date) => Promise<boolean>;
 
-/** The rest-gap test read from the person's own calendar — an unreadable calendar joins nothing. */
+/**
+ * The rest-gap test read from the person's own calendar — an unreadable calendar joins nothing. Each gap is asked
+ * once (cached): a batch of one person's requests shares one answer per gap.
+ */
 export function restGapOf(calendar: LeaveCalendar, organizationId: string, userId: string): RestGap {
-  return async (from, to) => {
-    const count = await calendar
-      .countLeaveFor(organizationId, userId, toISODateString(from), toISODateString(to))
-      .catch(() => null);
-    return count !== null && count.counted === 0;
+  const asked = new Map<string, Promise<boolean>>();
+  return (from, to) => {
+    const [a, b] = [toISODateString(from), toISODateString(to)];
+    const key = `${a}|${b}`;
+    if (!asked.has(key))
+      asked.set(
+        key,
+        calendar
+          .countLeaveFor(organizationId, userId, a, b)
+          .then((c) => c.counted === 0)
+          .catch(() => false),
+      );
+    return asked.get(key)!;
   };
 }
 
@@ -48,7 +59,7 @@ export interface StretchPrisma {
   timeOff: { findMany(args: unknown): Promise<Array<Other & { id?: string; technicianId?: string }>> };
 }
 
-/** The other leave a stretch may join: waiting or approved, ±90 days, never the request itself. */
+/** The other leave a stretch may join: waiting or approved, ±90 days (the request itself is skipped by id). */
 export function stretchWhere(technicianIds: string[], from: Date, to: Date) {
   return {
     technicianId: { in: technicianIds },
@@ -59,36 +70,61 @@ export function stretchWhere(technicianIds: string[], from: Date, to: Date) {
   };
 }
 
-/** The stretch's working days from leave already read (the batch path: one query for many requests). */
+const daysOf = (o: Other) => o.workingDays ?? Math.round((o.endDate.getTime() - o.startDate.getTime()) / DAY) + 1;
+
+/**
+ * The stretch's working days from leave already read. Walks outward from the request — the nearest leave before it,
+ * then the next, and the same after — so each neighbour is tested ONCE (at most one calendar question per gap).
+ */
 export async function stretchFrom(row: StretchRow, ownDays: number, others: Other[], rest: RestGap): Promise<number> {
   if (!isAbsence(row.kind)) return ownDays;
-  let [from, to, days] = [row.startDate, row.endDate, ownDays];
-  const left = [...others];
-  for (let grew = true; grew;) {
-    grew = false;
-    for (const o of [...left]) {
-      if (!((await touches(o.endDate, from, rest)) || (await touches(to, o.startDate, rest)))) continue;
-      left.splice(left.indexOf(o), 1);
-      days += o.workingDays ?? Math.round((o.endDate.getTime() - o.startDate.getTime()) / DAY) + 1;
-      if (o.startDate < from) from = o.startDate;
-      if (o.endDate > to) to = o.endDate;
-      grew = true;
-    }
+  let days = ownDays;
+  const before = others.filter((o) => o.endDate < row.startDate).sort((x, y) => +y.endDate - +x.endDate);
+  for (let edge = row.startDate, i = 0; i < before.length; i++) {
+    if (!(await touches(before[i].endDate, edge, rest))) break;
+    days += daysOf(before[i]);
+    if (before[i].startDate < edge) edge = before[i].startDate;
+  }
+  const after = others.filter((o) => o.startDate > row.endDate).sort((x, y) => +x.startDate - +y.startDate);
+  for (let edge = row.endDate, i = 0; i < after.length; i++) {
+    if (!(await touches(edge, after[i].startDate, rest))) break;
+    days += daysOf(after[i]);
+    if (after[i].endDate > edge) edge = after[i].endDate;
   }
   return days;
 }
 
-/** The working days of the whole stretch of one request — one query (`stretchFrom` for a batch). */
+/** The working days of the whole stretch of one request — one query (`stretchDaysMany` for a batch). */
 export async function stretchWorkingDays(
   prisma: StretchPrisma,
   row: StretchRow,
   ownDays: number,
   rest: RestGap,
 ): Promise<number> {
-  if (!isAbsence(row.kind)) return ownDays;
+  return (await stretchDaysMany(prisma, [{ row, ownDays, rest }])).get(row) ?? ownDays;
+}
+
+/**
+ * The stretches of many requests at once — ONE query for all of them; the calendar asked once per gap per person
+ * (pass the same `rest` for one person's rows). A request in the database is never counted as its own neighbour.
+ */
+export async function stretchDaysMany(
+  prisma: StretchPrisma,
+  asks: Array<{ row: StretchRow; ownDays: number; rest: RestGap }>,
+): Promise<Map<StretchRow, number>> {
+  const out = new Map<StretchRow, number>();
+  const leave = asks.filter((a) => isAbsence(a.row.kind));
+  for (const a of asks) out.set(a.row, a.ownDays);
+  if (!leave.length) return out;
+  const from = new Date(Math.min(...leave.map((a) => a.row.startDate.getTime())));
+  const to = new Date(Math.max(...leave.map((a) => a.row.endDate.getTime())));
   const others = await prisma.timeOff.findMany({
-    where: { ...stretchWhere([row.technicianId], row.startDate, row.endDate), id: { not: row.id } },
-    select: { startDate: true, endDate: true, workingDays: true },
+    where: stretchWhere([...new Set(leave.map((a) => a.row.technicianId))], from, to),
+    select: { id: true, technicianId: true, startDate: true, endDate: true, workingDays: true },
   });
-  return stretchFrom(row, ownDays, others, rest);
+  for (const a of leave) {
+    const mine = others.filter((o) => o.technicianId === a.row.technicianId && o.id !== a.row.id);
+    out.set(a.row, await stretchFrom(a.row, a.ownDays, mine, a.rest));
+  }
+  return out;
 }

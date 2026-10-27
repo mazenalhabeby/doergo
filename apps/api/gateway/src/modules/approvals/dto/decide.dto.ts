@@ -1,6 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { APPROVAL_KINDS, NO_SHOW_EXCUSE_REASONS, type ApprovalActionId, type ApprovalKind } from '@hbcfield/shared';
+import { DECISION_MINUTES_MAX } from '@hbcfield/shared';
 
 /** One decision from the inbox. Shape only — the kind's own route judges it. */
 export class DecideApprovalDto {
@@ -28,7 +40,7 @@ export class DecideApprovalDto {
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(1440)
+  @Max(DECISION_MINUTES_MAX)
   minutes?: number;
 
   @ApiPropertyOptional()

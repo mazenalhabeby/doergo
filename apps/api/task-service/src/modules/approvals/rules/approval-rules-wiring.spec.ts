@@ -13,7 +13,11 @@ const MODULES = path.join(__dirname, '..', '..');
 const read = (rel: string) => fs.readFileSync(path.join(MODULES, rel), 'utf8');
 // `firstOfMany` is decide() for a batch of NEW items (days typed in together) — the same judging, at once.
 const decides = (kind: string) =>
-  new RegExp(`rules\\.(?:decide|firstOfMany)\\(\\s*\\{[\\s\\S]{0,240}kind: '${kind}'`, 'g');
+  // A literal input, or for overtime the one builder of its input (overtime-rule-facts.ts `overtimeGateInput`).
+  new RegExp(
+    `rules\\.(?:decide|firstOfMany)\\(\\s*(?:\\{[\\s\\S]{0,240}kind: '${kind}'${kind === 'overtime' ? '|overtimeGateInput\\(' : ''})`,
+    'g',
+  );
 const clears = (kind: string) => new RegExp(`rules\\.clear\\([^)]*'${kind}'`);
 
 // [file, kind, does it also refuse (and must drop the step)?]

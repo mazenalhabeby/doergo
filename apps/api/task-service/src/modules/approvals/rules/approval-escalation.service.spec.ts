@@ -170,4 +170,14 @@ describe('ApprovalEscalationService.sweep', () => {
     expect(notices).toHaveLength(0);
     expect(await svc.sweep(now)).toBe(1);
   });
+
+  it('nobody able to receive it at all (everyone already approved): said once, never claimed again each sweep', async () => {
+    holders = ['mgr'];
+    openSteps = [{ itemId: 'e7', requiredRoleIds: ['finance'], doneRoleIds: [], approverIds: ['mgr'] }];
+    route.route.mockResolvedValueOnce({ deciders: [{ id: 'mgr', onLeave: false }], moreDeciders: 0, told: [] });
+    prisma.assetMoney.findMany.mockResolvedValue([slip('e7', 5, 30000)]);
+    expect(await svc.sweep(now)).toBe(0);
+    expect(notices).toHaveLength(1);
+    expect(prisma.approvalNotice.deleteMany).not.toHaveBeenCalled();
+  });
 });

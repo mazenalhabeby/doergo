@@ -15,7 +15,7 @@ import { ApprovalRulesService } from '../approvals/rules/approval-rules.service'
 import { ShiftResolverService } from '../attendance/core/shift-resolver.service';
 import { CoverService } from './cover.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
-import { restGapOf, stretchFrom, stretchWhere } from '../approvals/rules/leave-stretch';
+import { restGapOf, stretchWorkingDays } from '../approvals/rules/leave-stretch';
 import { LeaveLedgerService } from './leave-ledger.service';
 import { TechniciansService } from './technicians.service';
 import { REQUEST_REFUSALS } from './technicians-helpers';
@@ -116,7 +116,6 @@ export class RequestPrecheckService {
     };
   }
 
-  /** The member's planned time on that day, from the rota (the same resolver as the automatic clock). */
   /** The whole stretch of leave this request would join — as the approval will judge it (leave-stretch.ts). */
   private async stretchDays(
     data: { userId: string; organizationId: string },
@@ -125,19 +124,15 @@ export class RequestPrecheckService {
     end: Date,
     own: number,
   ): Promise<number> {
-    try {
-      const others = await this.prisma.timeOff.findMany({
-        where: stretchWhere([data.userId], start, end),
-        select: { startDate: true, endDate: true, workingDays: true },
-      });
-      const calendar = this.moduleRef.get(CalendarRulesService, { strict: false });
-      const row = { id: '', technicianId: data.userId, kind, startDate: start, endDate: end };
-      return await stretchFrom(row, own, others, restGapOf(calendar, data.organizationId, data.userId));
-    } catch {
-      return own; // advice only: an unreadable stretch is judged on its own days, as before
-    }
+    const calendar = this.moduleRef.get(CalendarRulesService, { strict: false });
+    const row = { id: '', technicianId: data.userId, kind, startDate: start, endDate: end };
+    // Advice only: an unreadable stretch is judged on its own days, as before.
+    return stretchWorkingDays(this.prisma, row, own, restGapOf(calendar, data.organizationId, data.userId)).catch(
+      () => own,
+    );
   }
 
+  /** The member's planned time on that day, from the rota (the same resolver as the automatic clock). */
   private async plannedMinutes(userId: string, organizationId: string, day: string): Promise<number> {
     try {
       const resolver = this.moduleRef.get(ShiftResolverService, { strict: false });

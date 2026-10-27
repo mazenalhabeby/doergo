@@ -57,8 +57,10 @@ type NoticeInput = Parameters<typeof tellNextApprovers>[4];
 
 /**
  * A batch ("Approve all", days typed in together): the next approvers hear ONCE per role and workspace — after
- * the batch, not per item. About one person → named ("approve Anna's request"); about several → one general
- * line, and none of them is told about the others' items.
+ * the batch, not per item. About one person → named ("approve Anna's request") and never told to that person;
+ * about several → one general line (the inbox opens on the kind), and anybody holding the role may hear it, the
+ * people it is about included — each of them may decide the OTHERS' items. Only `flush` sends: a batch must end with
+ * `ApprovalRulesService.tellBatch` (approval-batch.spec.ts checks every place that starts one).
  */
 export class BatchNotices {
   private readonly groups = new Map<
@@ -77,7 +79,7 @@ export class BatchNotices {
     for (const g of this.groups.values()) {
       const many = g.subjects.size > 1;
       const input = many ? { ...g.input, subjectId: undefined, subjectName: '' } : g.input;
-      await tellNextApprovers(prisma, notifications, logger, g.roleId, input, g.firstName, many ? [...g.subjects] : []);
+      await tellNextApprovers(prisma, notifications, logger, g.roleId, input, g.firstName);
     }
     this.groups.clear();
   }

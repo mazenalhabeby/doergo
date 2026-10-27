@@ -2,14 +2,15 @@ import type { TimeEntry } from '@prisma/client';
 import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, refusalSettlesOutside, success, TimeEntryStatus } from '@hbcfield/shared';
-import { scopeWhere, overtimeRuleFacts, type AttendanceScope } from '@hbcfield/shared';
+import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { decidableExtraTimeWhere, overtimeEndFor, refusalNudge } from './extra-time-helpers';
 import { CountedTimeService } from '../core/counted-time.service';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { COUNTED_ROUND_STATUSES, overtimeWriteMissed } from './overtime-rule-facts';
+import { COUNTED_ROUND_STATUSES } from '@hbcfield/shared';
+import { lastRoundCycle, overtimeGateInput, overtimeWriteMissed } from './overtime-rule-facts';
 import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /** The office deciding extra time after the fact: refusing it, taking back approved overtime, adding it. */
@@ -138,16 +139,7 @@ export class ExtraTimeDecisionService {
 
     // Office rules: adding it is approving it — past a threshold it waits for the others, nothing written yet.
     const decided = await this.rules.decide(
-      {
-        organizationId: data.organizationId,
-        kind: 'overtime',
-        itemId: entry.id,
-        // Judged on the shift's whole overtime; this decision agrees to its own minutes.
-        facts: overtimeRuleFacts(entry.locationId, minutes, await this.approval.approvedOvertimeMinutes(entry.id)),
-        agreeMinutes: minutes,
-        deciderId: data.approverId,
-        subjectId: entry.userId,
-      },
+      overtimeGateInput(entry, minutes, await this.approval.approvedOvertimeMinutes(entry.id), data),
       (agreed) => this.writeRound(entry, agreed ?? minutes, data),
     );
     if (decided.waiting) return waitingReply({ entryId: entry.id }, decided.waiting);
@@ -175,11 +167,7 @@ export class ExtraTimeDecisionService {
       now,
       minutes,
     });
-    const previous = await this.prisma.overtimeRequest.findFirst({
-      where: { timeEntryId: entry.id },
-      orderBy: { cycle: 'desc' },
-      select: { cycle: true },
-    });
+    const lastCycle = await lastRoundCycle(this.prisma, entry.id);
 
     // Claimed on the end this decision read: two at once write one round (already-decided.ts), never two.
     const moved = this.prisma.timeEntry.update({
@@ -189,7 +177,7 @@ export class ExtraTimeDecisionService {
     const round = this.prisma.overtimeRequest.create({
       data: {
         timeEntryId: entry.id,
-        cycle: (previous?.cycle ?? 0) + 1,
+        cycle: lastCycle + 1,
         technicianId: entry.userId,
         locationId: entry.locationId,
         organizationId: data.organizationId,
@@ -206,7 +194,7 @@ export class ExtraTimeDecisionService {
     });
     await this.prisma
       .$transaction([moved, round])
-      .catch(overtimeWriteMissed(this.prisma, entry.id, { afterCycle: previous?.cycle ?? 0 }));
+      .catch(overtimeWriteMissed(this.prisma, entry.id, { afterCycle: lastCycle }));
     await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
     await relabelAfterEndMoved(this.prisma, entry, newExpected);
 
