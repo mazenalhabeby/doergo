@@ -12,6 +12,8 @@ import { fallThrough, ruleRanges } from "../../_lib/rule-range"
 import { limitText } from "./rule-step"
 import { RulesCanvas } from "./rules-canvas"
 import { UncaughtNode } from "./uncaught-node"
+import { SuggestionBar } from "./suggestion-bar"
+import { useRuleOffers } from "../../_hooks/use-rule-offers"
 
 const NEW_NODE =
   "inline-flex h-11 items-center gap-2 rounded-2xl border-[1.5px] border-dashed border-shell-accent bg-card px-4 " +
@@ -33,6 +35,14 @@ export function RulesTree() {
   const uncaught = fallThrough(tree.rules, tree.workspaces)
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
+  const showLimit = (v: number) => limitText(t, tree.kind, v, currency)
+  const { offers, dismiss } = useRuleOffers({
+    kind: tree.kind,
+    setKind: tree.setKind,
+    insights: tree.insights,
+    spaceName,
+    limitText: showLimit,
+  })
 
   const start = (
     <div className={START}>
@@ -47,12 +57,7 @@ export function RulesTree() {
     </div>
   )
   const fallsThrough = uncaught.length ? (
-    <UncaughtNode
-      items={uncaught}
-      limitText={(v) => limitText(t, tree.kind, v, currency)}
-      busy={tree.busy}
-      onAdd={tree.add}
-    />
+    <UncaughtNode items={uncaught} limitText={showLimit} busy={tree.busy} onAdd={(spaceId) => tree.add({ spaceId })} />
   ) : null
   const add = (
     <button type="button" onClick={() => tree.add()} disabled={tree.busy} className={NEW_NODE}>
@@ -64,6 +69,17 @@ export function RulesTree() {
   return (
     <div className="flex flex-col gap-3">
       <p className="max-w-[720px] text-sm text-muted-foreground">{t("approvals.tree.intro")}</p>
+      <SuggestionBar
+        insights={tree.insights?.kind === tree.kind ? tree.insights : undefined}
+        kindLabel={kindName(tree.kind)}
+        offers={offers}
+        busy={tree.busy}
+        onAdd={(o) => {
+          tree.add({ spaceId: o.spaceId, limit: o.limit })
+          dismiss(o)
+        }}
+        onDismiss={dismiss}
+      />
       <div className="grid items-start gap-4 lg:grid-cols-[210px_minmax(0,1fr)]">
         <Panel as="nav" className="flex flex-col gap-0.5">
           <span className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
@@ -105,6 +121,7 @@ export function RulesTree() {
               currency,
               onChange: tree.change,
               onRemove: (r) => tree.remove.mutate(r.id),
+              hits: tree.insights?.kind === tree.kind ? tree.insights.perRule : undefined,
             }}
           />
         )}

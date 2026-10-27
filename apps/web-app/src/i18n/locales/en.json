@@ -9977,7 +9977,23 @@
         "upTo": "One approval up to {{to}}",
         "addHere": "Add rule"
       },
-      "onlyFirstDone": "Only the first approval — then done"
+      "onlyFirstDone": "Only the first approval — then done",
+      "smart": {
+        "window_one": "{{count}} {{kind}} ask in the last {{days}} days",
+        "window_other": "{{count}} {{kind}} asks in the last {{days}} days",
+        "caught_one": "{{count}} went to a rule",
+        "caught_other": "{{count}} went to a rule",
+        "alone_one": "{{count}} was decided by one person",
+        "alone_other": "{{count}} were decided by one person",
+        "suggest_one": "{{count}} ask over {{limit}} at {{where}} was approved by one person. Add a second approval?",
+        "suggest_other": "{{count}} asks over {{limit}} at {{where}} were approved by one person. Add a second approval?",
+        "fromItem": "A rule like the one you came from: {{where}}, more than {{limit}}.",
+        "add": "Add rule",
+        "notNow": "Not now",
+        "hits_one": "{{count}} in 90 days",
+        "hits_other": "{{count}} in 90 days",
+        "makeRule": "Make a rule like this"
+      }
     }
   },
   "overtimePage": {

@@ -9977,7 +9977,23 @@
         "upTo": "Un'approvazione fino a {{to}}",
         "addHere": "Aggiungi regola"
       },
-      "onlyFirstDone": "Solo la prima approvazione — poi fatto"
+      "onlyFirstDone": "Solo la prima approvazione — poi fatto",
+      "smart": {
+        "window_one": "{{count}} richiesta ({{kind}}) negli ultimi {{days}} giorni",
+        "window_other": "{{count}} richieste ({{kind}}) negli ultimi {{days}} giorni",
+        "caught_one": "{{count}} è passata da una regola",
+        "caught_other": "{{count}} sono passate da una regola",
+        "alone_one": "{{count}} l'ha decisa una sola persona",
+        "alone_other": "{{count}} le ha decise una sola persona",
+        "suggest_one": "{{count}} richiesta oltre {{limit}} a {{where}} è stata approvata da una sola persona. Aggiungere una seconda approvazione?",
+        "suggest_other": "{{count}} richieste oltre {{limit}} a {{where}} sono state approvate da una sola persona. Aggiungere una seconda approvazione?",
+        "fromItem": "Una regola come per la richiesta aperta: {{where}}, più di {{limit}}.",
+        "add": "Aggiungi regola",
+        "notNow": "Non ora",
+        "hits_one": "{{count}} in 90 giorni",
+        "hits_other": "{{count}} in 90 giorni",
+        "makeRule": "Crea una regola come questa"
+      }
     }
   },
   "overtimePage": {

@@ -2,6 +2,7 @@
 import { rpc } from '../contract';
 import type { ApprovalRouteInput, StandInCaller } from './task-service-types';
 import type { ApprovalRuleInput, ApprovalRuleView, ApprovalStepView, RuleKind } from '../../approvals/approval-rules';
+import type { RuleInsights } from '../../approvals/approval-rule-insights';
 import type { ApprovalRouting, StandInInput, StandInView, StandInsResponse } from '../../approvals/approval-routing';
 
 export const approvalRouteRpc = rpc<
@@ -31,6 +32,10 @@ export const approvalRulesSave = rpc<
   { organizationId: string; userId: string; input: ApprovalRuleInput; id?: string },
   { id: string }
 >('approval_rules_save');
+
+export const approvalRulesInsights = rpc<{ organizationId: string; kind: RuleKind }, RuleInsights>(
+  'approval_rules_insights',
+);
 
 export const approvalRulesDelete = rpc<{ organizationId: string; id: string }, { deleted: true }>(
   'approval_rules_delete',

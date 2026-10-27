@@ -1,4 +1,5 @@
 import { ApprovalEscalationService } from './approval-escalation.service';
+import { RuleFactsReader } from './rule-facts.reader';
 
 /*
   When nobody answers. The sweep reminds the usual deciders (never anybody on
@@ -28,7 +29,7 @@ describe('ApprovalEscalationService.sweep', () => {
   const rules: any = { holdersOf: jest.fn().mockResolvedValue(['fin1']) };
   const route: any = { route: jest.fn().mockResolvedValue({ deciders: [{ id: 'mgr', onLeave: false }, { id: 'away', onLeave: true }], moreDeciders: 0, told: [] }) };
   const notifications: any = { emit: jest.fn() };
-  const svc = new ApprovalEscalationService(prisma, rules, route, {} as any, notifications);
+  const svc = new ApprovalEscalationService(prisma, rules, route, new RuleFactsReader(prisma, {} as any), notifications);
   const slip = (id: string, ageH: number, cents: number) => ({ id, createdAt: hoursAgo(ageH), amountCents: cents, authorId: 'driver', assetId: 'a1' });
 
   beforeEach(() => {

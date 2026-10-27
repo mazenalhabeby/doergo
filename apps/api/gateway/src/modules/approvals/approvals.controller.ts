@@ -13,7 +13,7 @@ import {
   Query,
   Request,
 } from '@nestjs/common';
-import { accessAllows, isAdmin, isApprovalKind, ownAccess } from '@hbcfield/shared';
+import { accessAllows, isAdmin, isApprovalKind, isRuleKind, ownAccess } from '@hbcfield/shared';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DecideApprovalDto } from './dto/decide.dto';
 import { DecideDayDto } from './dto/decide-day.dto';
@@ -95,6 +95,14 @@ export class ApprovalsController {
   async listRules(@Request() req: AuthedRequest) {
     assertManagesPeople(req.user);
     return { success: true, data: await this.rules.list(callerOrgId(req.user)) };
+  }
+
+  @Get('rules/insights')
+  @ApiOperation({ summary: 'What the rules of one kind did over the last 90 days, and the rules worth adding' })
+  async ruleInsights(@Query('kind') kind: string, @Request() req: AuthedRequest) {
+    assertManagesPeople(req.user);
+    if (!isRuleKind(kind)) throw new BadRequestException('kind is overtime, request or expense');
+    return { success: true, data: await this.rules.insights(callerOrgId(req.user), kind) };
   }
 
   @Post('rules')

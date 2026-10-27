@@ -9977,7 +9977,23 @@
         "upTo": "Eine Genehmigung bis {{to}}",
         "addHere": "Regel hinzufügen"
       },
-      "onlyFirstDone": "Nur die erste Genehmigung — dann fertig"
+      "onlyFirstDone": "Nur die erste Genehmigung — dann fertig",
+      "smart": {
+        "window_one": "{{count}} Antrag ({{kind}}) in den letzten {{days}} Tagen",
+        "window_other": "{{count}} Anträge ({{kind}}) in den letzten {{days}} Tagen",
+        "caught_one": "{{count}} ging an eine Regel",
+        "caught_other": "{{count}} gingen an eine Regel",
+        "alone_one": "{{count}} entschied eine Person allein",
+        "alone_other": "{{count}} entschied eine Person allein",
+        "suggest_one": "{{count}} Antrag über {{limit}} in {{where}} genehmigte eine Person allein. Zweite Genehmigung hinzufügen?",
+        "suggest_other": "{{count}} Anträge über {{limit}} in {{where}} genehmigte eine Person allein. Zweite Genehmigung hinzufügen?",
+        "fromItem": "Eine Regel wie beim geöffneten Antrag: {{where}}, mehr als {{limit}}.",
+        "add": "Regel hinzufügen",
+        "notNow": "Nicht jetzt",
+        "hits_one": "{{count}} in 90 Tagen",
+        "hits_other": "{{count}} in 90 Tagen",
+        "makeRule": "Eine Regel wie diese anlegen"
+      }
     }
   },
   "overtimePage": {

@@ -50,6 +50,13 @@ export function useRulesTree(enabled: boolean) {
     queryFn: approvalsApi.rules,
     enabled,
   })
+  // What the rules of this kind did over the last 90 days (counts only; refreshed with the rules).
+  const { data: insights } = useQuery({
+    queryKey: keys.approvals.ruleInsights(kind),
+    queryFn: () => approvalsApi.ruleInsights(kind),
+    enabled,
+    staleTime: 60_000,
+  })
   const { data: orgRoles } = useOrgRoles(undefined, { enabled })
   const { data: spaceRoles } = useOrgRoles("space", { enabled })
   const { data: spaces } = useSpaceDirectory({ enabled })
@@ -102,16 +109,28 @@ export function useRulesTree(enabled: boolean) {
    * A new rule — for one workspace, or every one when none is given. It asks the first role that can decide
    * for a second approval: a rule must DO something.
    */
-  const add = (spaceId: string | null = null) => {
+  const add = ({ spaceId = null, limit = null }: { spaceId?: string | null; limit?: number | null } = {}) => {
     const role = roles.find((r) => r.holders > 0) ?? roles[0]
     if (!role) return notify.error(t("approvals.tree.noRoles"))
-    save.mutate({ input: { kind, spaceId, secondRoleId: role.id, isActive: true } })
+    const at = (k: RuleKind) => (kind === k ? limit : null)
+    save.mutate({
+      input: {
+        kind,
+        spaceId,
+        minMinutes: at("overtime"),
+        minDays: at("request"),
+        minAmountCents: at("expense"),
+        secondRoleId: role.id,
+        isActive: true,
+      },
+    })
   }
 
   const ofKind = (rules ?? []).filter((r) => r.kind === kind)
   return {
     kind,
     setKind,
+    insights,
     rules: ofKind,
     counts: rules ?? [],
     isLoading,

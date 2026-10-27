@@ -8,6 +8,8 @@ import {
   type StandInInput,
   type ApprovalRuleInput,
   type ApprovalRuleView,
+  type RuleInsights,
+  type RuleKind,
   type StandInView,
   type StandInsResponse,
   type ApprovalsCount,
@@ -49,6 +51,11 @@ export const approvalsApi = {
   },
   rules: async (): Promise<ApprovalRuleView[]> => {
     const res = await call(approvalsEndpoints.rules) as ApiResponse<{ data: ApprovalRuleView[] }>;
+    if (res.error) throw apiError(res);
+    return res.data!.data;
+  },
+  ruleInsights: async (kind: RuleKind): Promise<RuleInsights> => {
+    const res = await call(approvalsEndpoints.ruleInsights, { kind }) as ApiResponse<{ data: RuleInsights }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },

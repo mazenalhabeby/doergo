@@ -243,6 +243,14 @@ export default function ApprovalsPage() {
                     text={describeApproval(current, t as ApprovalT, dateLocale(), user?.orgCurrency)}
                     busy={decide.isPending}
                     onDecide={onDecide}
+                    onMakeRule={
+                      managesPeople
+                        ? (link) => {
+                            window.history.replaceState(null, "", link)
+                            setTab("rules")
+                          }
+                        : undefined
+                    }
                   />
                 </Panel>
               ) : (

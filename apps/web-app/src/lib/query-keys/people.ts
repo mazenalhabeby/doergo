@@ -102,6 +102,7 @@ const approvalsKeys = {
   route: (kind: string, id: string) => named("approvals", ["route", kind, id]),
   standIns: () => named("approvals", ["stand-ins"]),
   rules: () => named("approvals", ["rules"]),
+  ruleInsights: (kind: string) => named("approvals", ["rules", "insights", kind]),
 } as const
 
 const shiftIssuesKeys = {

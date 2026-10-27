@@ -29,6 +29,8 @@ export interface RulesCtx {
   currency: string
   onChange: (r: ApprovalRuleView, patch: Partial<ApprovalRuleInput>) => void
   onRemove: (r: ApprovalRuleView) => void
+  /** How many items each rule would have taken over the last 90 days (absent while loading). */
+  hits?: Record<string, number>
 }
 const Ctx = createContext<RulesCtx | null>(null)
 
@@ -62,6 +64,7 @@ function PartNode({ data }: NodeProps<Node<PartData>>) {
         workspaces={ctx.workspaces}
         currency={ctx.currency}
         range={ctx.ranges[i]}
+        hits={ctx.hits ? (ctx.hits[rule.id] ?? 0) : undefined}
         onChange={(patch) => ctx.onChange(rule, patch)}
         onRemove={() => ctx.onRemove(rule)}
       />

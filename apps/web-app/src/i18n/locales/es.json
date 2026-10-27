@@ -9977,7 +9977,23 @@
         "upTo": "Una aprobación hasta {{to}}",
         "addHere": "Añadir regla"
       },
-      "onlyFirstDone": "Solo la primera aprobación — y listo"
+      "onlyFirstDone": "Solo la primera aprobación — y listo",
+      "smart": {
+        "window_one": "{{count}} solicitud ({{kind}}) en los últimos {{days}} días",
+        "window_other": "{{count}} solicitudes ({{kind}}) en los últimos {{days}} días",
+        "caught_one": "{{count}} fue a una regla",
+        "caught_other": "{{count}} fueron a una regla",
+        "alone_one": "{{count}} la decidió una sola persona",
+        "alone_other": "{{count}} las decidió una sola persona",
+        "suggest_one": "{{count}} solicitud de más de {{limit}} en {{where}} la aprobó una sola persona. ¿Añadir una segunda aprobación?",
+        "suggest_other": "{{count}} solicitudes de más de {{limit}} en {{where}} las aprobó una sola persona. ¿Añadir una segunda aprobación?",
+        "fromItem": "Una regla como la de la solicitud abierta: {{where}}, más de {{limit}}.",
+        "add": "Añadir regla",
+        "notNow": "Ahora no",
+        "hits_one": "{{count}} en 90 días",
+        "hits_other": "{{count}} en 90 días",
+        "makeRule": "Crear una regla como esta"
+      }
     }
   },
   "overtimePage": {

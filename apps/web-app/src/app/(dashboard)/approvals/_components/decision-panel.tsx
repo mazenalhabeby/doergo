@@ -29,6 +29,8 @@ import { FactRow } from "@/components/page/page-kit"
 import { WhoElse } from "./who-else"
 import { NoShowDecision } from "./no-show-decision"
 import { nameParts } from "./name-parts"
+import { ruleLinkForItem } from "../_lib/rule-link"
+import { Icon } from "@/components/ui/icon"
 
 /**
  * One decision, made here.
@@ -44,11 +46,14 @@ export function DecisionPanel({
   text,
   busy,
   onDecide,
+  onMakeRule,
 }: {
   item: ApprovalItem
   text: ApprovalText
   busy: boolean
   onDecide: (d: ApprovalDecision) => void
+  /** People who may set office rules: "make a rule like this" opens the rules page with one offered. */
+  onMakeRule?: (link: string) => void
 }) {
   const { t } = useTranslation()
   const actions = approvalActionsFor(item)
@@ -130,6 +135,17 @@ export function DecisionPanel({
             ? t("approvals.step.mine", { role: item.step.roleName })
             : t("approvals.step.waiting", { name: item.step.firstByName, role: item.step.roleName })}
         </p>
+      )}
+
+      {onMakeRule && ruleLinkForItem(item) && (
+        <button
+          type="button"
+          onClick={() => onMakeRule(ruleLinkForItem(item)!)}
+          className="inline-flex items-center gap-1.5 self-start text-[13px] font-semibold text-shell-accent hover:underline"
+        >
+          <Icon name="sparkles" size={15} />
+          {t("approvals.tree.smart.makeRule")}
+        </button>
       )}
 
       {/* A missed shift has its own answers (excused with a reason, absent, they were here). */}

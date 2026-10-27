@@ -219,6 +219,7 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
   'ApprovalsController.endStandIn': 'ApprovalsController',
   // Office rules: checked inside (admin, or canManageUsers org-wide on their OWN access — never an external member).
   'ApprovalsController.listRules': 'ApprovalsController',
+  'ApprovalsController.ruleInsights': 'ApprovalsController',
   'ApprovalsController.createRule': 'ApprovalsController',
   'ApprovalsController.updateRule': 'ApprovalsController',
   'ApprovalsController.deleteRule': 'ApprovalsController',

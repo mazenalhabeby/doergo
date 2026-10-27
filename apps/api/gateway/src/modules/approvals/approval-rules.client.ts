@@ -9,6 +9,7 @@ import {
   approvalRulesList,
   approvalRulesSave,
   approvalRulesDelete,
+  approvalRulesInsights,
 } from '@hbcfield/shared/microservices';
 
 /** Gateway → task-service for office rules and the open first steps. */
@@ -28,6 +29,12 @@ export class ApprovalRulesClient extends BaseGatewayService {
     return this.send<RpcReply<typeof approvalRulesList>>(pattern(approvalRulesList), {
       organizationId,
     } satisfies RpcRequest<typeof approvalRulesList>);
+  }
+  insights(organizationId: string, kind: RuleKind) {
+    return this.send<RpcReply<typeof approvalRulesInsights>>(pattern(approvalRulesInsights), {
+      organizationId,
+      kind,
+    } satisfies RpcRequest<typeof approvalRulesInsights>);
   }
   save(organizationId: string, userId: string, input: ApprovalRuleInput, id?: string) {
     return this.sendOnce<RpcReply<typeof approvalRulesSave>>(pattern(approvalRulesSave), {

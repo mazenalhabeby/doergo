@@ -56,6 +56,7 @@ export function RulePart({
   workspaces,
   currency,
   range,
+  hits,
   onChange,
   onRemove,
 }: {
@@ -66,6 +67,7 @@ export function RulePart({
   workspaces: { id: string; name: string }[]
   currency: string
   range: RuleRange
+  hits?: number
   onChange: (patch: Partial<ApprovalRuleInput>) => void
   onRemove: () => void
 }) {
@@ -115,6 +117,11 @@ export function RulePart({
             <button type="button" onClick={onRemove} aria-label={t("approvals.rules.remove")} className={BIN}>
               <Icon name="trash" size={15} />
             </button>
+            {hits != null && (
+              <span className="rounded-full bg-shell-chip px-2 py-0.5 text-[11.5px] font-semibold text-muted-foreground">
+                {t("approvals.tree.smart.hits", { count: hits })}
+              </span>
+            )}
           </div>
         </div>
       )

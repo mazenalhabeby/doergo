@@ -4,6 +4,7 @@ import { ApprovalRouteService } from './rules/approval-route.service';
 import { StandInsService } from './stand-ins.service';
 import { ApprovalRulesService } from './rules/approval-rules.service';
 import { ApprovalRulesAdminService } from './rules/approval-rules-admin.service';
+import { ApprovalRuleInsightsService } from './rules/approval-rule-insights.service';
 import {
   pattern,
   type RpcRequest,
@@ -13,6 +14,7 @@ import {
   standInsEnd,
   approvalSteps,
   approvalRulesList,
+  approvalRulesInsights,
   approvalRulesSave,
   approvalRulesDelete,
 } from '@hbcfield/shared/microservices';
@@ -25,6 +27,7 @@ export class ApprovalsController {
     private readonly standIns: StandInsService,
     private readonly rules: ApprovalRulesService,
     private readonly rulesAdmin: ApprovalRulesAdminService,
+    private readonly insights: ApprovalRuleInsightsService,
   ) {}
 
   @MessagePattern(pattern(approvalRouteRpc))
@@ -55,6 +58,11 @@ export class ApprovalsController {
   @MessagePattern(pattern(approvalRulesList))
   listRules(@Payload() data: RpcRequest<typeof approvalRulesList>) {
     return this.rulesAdmin.listRules(data.organizationId);
+  }
+
+  @MessagePattern(pattern(approvalRulesInsights))
+  ruleInsights(@Payload() data: RpcRequest<typeof approvalRulesInsights>) {
+    return this.insights.insights(data.organizationId, data.kind);
   }
 
   @MessagePattern(pattern(approvalRulesSave))
