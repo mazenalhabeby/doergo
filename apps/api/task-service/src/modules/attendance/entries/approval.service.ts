@@ -96,6 +96,8 @@ export class ApprovalService {
     approverId: string;
     organizationId: string;
     notes?: string;
+    /** One of a batch already announced ("Approve all"): the next approvers are told once, not per entry. */
+    quiet?: boolean;
   }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: {
@@ -137,6 +139,7 @@ export class ApprovalService {
         facts: hoursRuleFacts(entry),
         deciderId: data.approverId,
         subjectId: entry.userId,
+        quiet: data.quiet,
       },
       // Conditional on still waiting: a refusal at the same moment is never overwritten (already-decided.ts).
       () =>
@@ -261,10 +264,13 @@ export class ApprovalService {
       failed: [] as { id: string; reason: string }[],
     };
 
+    let told = false;
     for (const entryId of data.entryIds) {
       try {
         const done = await this.approveEntry({
           entryId,
+          // The next approvers hear about the batch once — not once per entry.
+          quiet: told,
           approverId: data.approverId,
           organizationId: data.organizationId,
           // Only the caller's granted spaces — an entry outside them reads as
@@ -275,8 +281,10 @@ export class ApprovalService {
           notes: data.notes,
         });
         const step = done.data as { stage?: string; waitingFor?: string } | undefined;
-        if (step?.stage === 'FIRST_STEP') results.waiting.push({ id: entryId, waitingFor: step.waitingFor ?? '' });
-        else results.approved.push(entryId);
+        if (step?.stage === 'FIRST_STEP') {
+          results.waiting.push({ id: entryId, waitingFor: step.waitingFor ?? '' });
+          told = true;
+        } else results.approved.push(entryId);
       } catch (error) {
         results.failed.push({ id: entryId, reason: error.message });
       }

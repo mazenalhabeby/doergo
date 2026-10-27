@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
   activeWindowWhere,
-  ABSENCE_WHERE,
   APPROVAL_KIND_SPECS,
   delegationDay,
   grantHolds,
@@ -23,6 +22,7 @@ import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import type { ApprovalRouteInput as SharedApprovalRouteInput } from '@hbcfield/shared/microservices';
 import { decidersAbout, type WorkspaceDecider } from './workspace-deciders';
+import { awayOn, leaveDay } from './away-today';
 
 /** "Who else can decide" is a hint, not a directory: the first few, and how many more. */
 const MAX_DECIDERS = 8;
@@ -94,7 +94,7 @@ export class ApprovalRouteService {
     exclude: readonly string[] = [],
   ): Promise<WorkspaceDecider[]> {
     const now = new Date();
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const today = leaveDay(now);
     const [members, org] = await Promise.all([
       orgMembersWithAccess(this.prisma, { organizationId, exclude: [...exclude], spaceId, now }),
       orgTimezone(this.prisma, organizationId),
@@ -129,17 +129,11 @@ export class ApprovalRouteService {
 
     // Who of them is away today — said, so an item is not left waiting on somebody on holiday.
     if (out.length) {
-      const away = await this.prisma.timeOff.findMany({
-        where: {
-          technicianId: { in: out.map((d) => d.id) },
-          status: 'APPROVED',
-          ...ABSENCE_WHERE,
-          startDate: { lte: today },
-          endDate: { gte: today },
-        },
-        select: { technicianId: true },
-      });
-      const off = new Set(away.map((a) => a.technicianId));
+      const off = await awayOn(
+        this.prisma,
+        out.map((d) => d.id),
+        today,
+      );
       for (const d of out) d.onLeave = off.has(d.id);
     }
     return out;

@@ -44,6 +44,22 @@ export function hoursRuleFacts(
 }
 
 /** An expense as a rule judges it: the workspace of its asset's kind, and the amount. */
-export function expenseRuleFacts(spaceId: string | null | undefined, amountCents: number | null | undefined): RuleFacts {
+export function expenseRuleFacts(
+  spaceId: string | null | undefined,
+  amountCents: number | null | undefined,
+): RuleFacts {
   return { spaceIds: spaceIdsOf(spaceId), amountCents: amountCents ?? 0 };
+}
+
+/**
+ * Overtime as a rule judges it: the shift's WHOLE overtime — every round already approved on it (and time counted
+ * before the start) plus the one being decided — so 59-minute rounds, or overtime split between a round and time
+ * outside the shift, are no way round a one-hour rule.
+ */
+export function overtimeRuleFacts(
+  spaceId: string | null | undefined,
+  minutes: number,
+  approvedBefore: number,
+): RuleFacts {
+  return { spaceIds: spaceIdsOf(spaceId), minutes: minutes + approvedBefore };
 }

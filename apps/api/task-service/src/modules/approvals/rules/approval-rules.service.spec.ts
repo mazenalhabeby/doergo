@@ -31,7 +31,14 @@ describe('ApprovalRulesService.gate', () => {
       ),
       createMany: jest.fn(async ({ data }: any) => {
         for (const d of data)
-          steps.push({ id: `s${steps.length}`, doneRoleIds: [], approverIds: [], firstAt: new Date(), ...d, consumedAt: null });
+          steps.push({
+            id: `s${steps.length}`,
+            doneRoleIds: [],
+            approverIds: [],
+            firstAt: new Date(),
+            ...d,
+            consumedAt: null,
+          });
         return { count: data.length };
       }),
       create: jest.fn(async ({ data }: any) => {

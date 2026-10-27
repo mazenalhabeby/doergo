@@ -2,6 +2,8 @@ import { formatDistance } from '../utils/distance';
 import { formatDuration } from '../utils/date';
 import { formatMoney } from '../utils/money';
 import type { ApprovalItem } from './approval-kinds';
+import { isLabelCode } from '../attendance/labels/contract';
+import { labelWord } from '../attendance/labels/catalogue';
 
 /**
  * What one waiting decision says, in the reader's language — web and phone.
@@ -71,7 +73,10 @@ export function describeApproval(
       add('shift', from && to ? `${from} – ${to}` : from);
       add('worked', num(d.minutes) != null ? formatDuration(num(d.minutes)) : null);
       const flags = (str(d.flags) ?? '').split(',').filter(Boolean);
-      add('flags', flags.map((f) => t(`approvals.flag.${camel(f)}`, { defaultValue: f })).join(', ') || null, 'warn');
+      // The ONE label catalogue (attendance/labels) — the attendance screens' own words; older codes keep theirs.
+      const word = (f: string) =>
+        isLabelCode(f) ? labelWord(f, locale) : t(`approvals.flag.${camel(f)}`, { defaultValue: f });
+      add('flags', flags.map(word).join(', ') || null, 'warn');
       return { headline: t('approvals.headline.hours'), facts };
     }
     case 'away':

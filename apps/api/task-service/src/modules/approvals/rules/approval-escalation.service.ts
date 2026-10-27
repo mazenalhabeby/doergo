@@ -5,6 +5,7 @@ import {
   SERVICE_NAMES,
   noticeDue,
   pickRule,
+  requiredRoleIds,
   roleHolderIds,
   runWithCronLock,
   type NoticeStage,
@@ -14,6 +15,8 @@ import { PrismaService } from '@hbcfield/shared';
 import { ApprovalRouteService } from './approval-route.service';
 import { RuleFactsReader, type RuleItem } from './rule-facts.reader';
 import { emitEvent, approvalReminderEvent } from '@hbcfield/shared/microservices';
+import { awayOn, leaveDay } from './away-today';
+import { parseStoredFacts, stepRules } from './approval-steps';
 
 /**
  * WHEN NOBODY ANSWERS (shared `approval-rules.ts` → `noticeDue`).
@@ -85,10 +88,11 @@ export class ApprovalEscalationService {
           (
             await this.prisma.approvalStep.findMany({
               where: { organizationId, kind, itemId: { in: items.map((i) => i.itemId) }, consumedAt: null },
-              select: { itemId: true, requiredRoleIds: true, doneRoleIds: true, approverIds: true },
+              select: { itemId: true, requiredRoleIds: true, doneRoleIds: true, approverIds: true, facts: true },
             })
           ).map((st) => [st.itemId, st]),
         );
+        const gating = half.size ? await stepRules(this.prisma, organizationId, [kind]) : [];
         const sentFor = new Map<string, Set<NoticeStage>>();
         for (const n of notices)
           (sentFor.get(n.itemId) ?? sentFor.set(n.itemId, new Set()).get(n.itemId)!).add(n.stage as NoticeStage);
@@ -124,16 +128,23 @@ export class ApprovalEscalationService {
                   }),
                 )
               : [];
+          // Half-way: whom it still waits for by the rules as they are NOW (the gate's own reading), minus who
+          // already approved and anybody on leave today.
           const step = half.get(item.itemId);
-          const waitingOn = step?.requiredRoleIds.find((r) => !step.doneRoleIds.includes(r));
-          if (stage === 'REMIND' && step && waitingOn)
-            recipientIds = await roleHolderIds(this.prisma, {
+          const facts = step ? parseStoredFacts(step.facts) : null;
+          const needed = step ? (facts ? requiredRoleIds(gating, facts) : step.requiredRoleIds) : [];
+          const waitingOn = needed.find((r) => !step!.doneRoleIds.includes(r));
+          if (stage === 'REMIND' && step && waitingOn) {
+            const holders = await roleHolderIds(this.prisma, {
               organizationId,
               roleId: waitingOn,
               spaceIds: item.facts.spaceIds,
               exclude: [...step.approverIds, ...(item.subjectId ? [item.subjectId] : [])],
               now,
             });
+            const away = await awayOn(this.prisma, holders, leaveDay(now));
+            recipientIds = holders.filter((id) => !away.has(id));
+          }
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.
           if (!recipientIds.length)
             recipientIds = await cached(`usual|${who}`, () => this.usualDeciders(organizationId, kind, item));

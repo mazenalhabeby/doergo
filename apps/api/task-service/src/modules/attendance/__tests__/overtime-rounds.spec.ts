@@ -40,6 +40,7 @@ describe('overtime rounds', () => {
     prisma = {
       timeEntry: {
         findFirst: jest.fn().mockResolvedValue(ENTRY),
+        findMany: jest.fn().mockResolvedValue([]),
         update: jest.fn().mockResolvedValue({}),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
@@ -135,7 +136,8 @@ describe('overtime rounds', () => {
       });
       expect(prisma.overtimeRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'ot9' },
+          // Only while it still waits: a refusal at the same moment is never overwritten.
+          where: { id: 'ot9', status: 'PENDING_APPROVAL' },
           data: expect.objectContaining({
             status: 'APPROVED',
             approvedById: 'leader',

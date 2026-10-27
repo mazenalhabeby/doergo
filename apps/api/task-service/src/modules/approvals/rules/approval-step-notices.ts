@@ -1,6 +1,6 @@
 import type { Logger } from '@nestjs/common';
 import type { ClientProxy } from '@nestjs/microservices';
-import { orgAdminIds, roleHolderIds, type PrismaService } from '@hbcfield/shared';
+import { orgAdminIds, peopleNames, personName, roleHolderIds, type PrismaService } from '@hbcfield/shared';
 import { emitEvent, approvalSecondStepEvent } from '@hbcfield/shared/microservices';
 import type { RuleGateInput } from './approval-rules-helpers';
 
@@ -36,13 +36,16 @@ export async function tellNextApprovers(
         .map((a) => a.id)
         .filter((id) => !exclude.includes(id));
     if (!recipientIds.length) return;
+    // Whom it is about, by name ("approve Anna's hours") — read only when somebody is told.
+    const subjectName =
+      input.subjectName ?? (input.subjectId ? personName((await peopleNames(prisma, [input.subjectId]))[0] ?? {}) : '');
     emitEvent(notifications, approvalSecondStepEvent, {
       organizationId,
       recipientIds,
       kind: input.kind,
       itemId: input.itemId,
       firstName,
-      subjectName: input.subjectName ?? '',
+      subjectName,
     });
   } catch (e) {
     logger.warn(`second-step notice failed: ${(e as Error).message}`);

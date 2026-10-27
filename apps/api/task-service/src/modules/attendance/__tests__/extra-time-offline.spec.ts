@@ -20,6 +20,8 @@ function service(entry: any, round: any = { id: 'round-1' }) {
   svc.prisma = {
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(entry),
+      // Time counted before the start (office rules add it to the shift's overtime): none here.
+      findMany: jest.fn().mockResolvedValue([]),
       update: jest.fn((args: any) => ({ kind: 'entry.update', args })),
       updateMany: jest.fn((args: any) => ({ kind: args.where.status ? 'entry.nudge' : 'entry.outsideDecided', args })),
     },

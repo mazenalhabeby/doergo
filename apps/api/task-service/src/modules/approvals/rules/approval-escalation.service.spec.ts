@@ -28,6 +28,8 @@ describe('ApprovalEscalationService.sweep', () => {
   const prisma: any = {
     approvalRule: { findMany: jest.fn() },
     approvalStep: { findMany: jest.fn(async () => openSteps) },
+    // Who is away today (nobody is reminded on holiday).
+    timeOff: { findMany: jest.fn(async () => away.map((technicianId) => ({ technicianId }))) },
     assetMoney: { findMany: jest.fn() },
     asset: { findMany: jest.fn().mockResolvedValue([{ id: 'a1', category: { spaceId: 's1' } }]) },
     // Two reads: the people an item is about, and the holders of the escalation role (`roleHolderIds`, an OR).
@@ -47,6 +49,7 @@ describe('ApprovalEscalationService.sweep', () => {
   };
   let holders = ['fin1'];
   let openSteps: unknown[] = [];
+  let away: string[] = [];
   const route: any = {
     route: jest.fn().mockResolvedValue({
       deciders: [
@@ -58,12 +61,7 @@ describe('ApprovalEscalationService.sweep', () => {
     }),
   };
   const notifications: any = { emit: jest.fn() };
-  const svc = new ApprovalEscalationService(
-    prisma,
-    route,
-    new RuleFactsReader(prisma, {} as any),
-    notifications,
-  );
+  const svc = new ApprovalEscalationService(prisma, route, new RuleFactsReader(prisma, {} as any), notifications);
   const slip = (id: string, ageH: number, cents: number) => ({
     id,
     createdAt: hoursAgo(ageH),
@@ -76,6 +74,7 @@ describe('ApprovalEscalationService.sweep', () => {
     notices = [];
     holders = ['fin1'];
     openSteps = [];
+    away = [];
     jest.clearAllMocks();
     prisma.approvalRule.findMany.mockResolvedValue([rule]);
   });
@@ -100,6 +99,18 @@ describe('ApprovalEscalationService.sweep', () => {
     );
     expect(prisma.user.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ id: { notIn: ['mgr', 'driver'] } }) }),
+    );
+  });
+
+  it('half-way: a holder of the missing role who is on leave today is not reminded', async () => {
+    openSteps = [{ itemId: 'e6', requiredRoleIds: ['finance'], doneRoleIds: [], approverIds: ['mgr'] }];
+    holders = ['fin1', 'fin2'];
+    away = ['fin1'];
+    prisma.assetMoney.findMany.mockResolvedValue([slip('e6', 5, 30000)]);
+    await svc.sweep(now);
+    expect(notifications.emit).toHaveBeenCalledWith(
+      'approval_reminder',
+      expect.objectContaining({ recipientIds: ['fin2'], stage: 'REMIND' }),
     );
   });
 

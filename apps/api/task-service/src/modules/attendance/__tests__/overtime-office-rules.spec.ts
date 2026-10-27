@@ -33,6 +33,7 @@ describe('adding overtime to a finished shift asks the office rules', () => {
     const svc = Object.create(ExtraTimeDecisionService.prototype) as any;
     svc.prisma = {
       timeEntry: { findFirst: jest.fn().mockResolvedValue({ ...ENTRY, overtimeRequests: [] }) },
+      overtimeRequest: { findFirst: jest.fn().mockResolvedValue(null) },
       $transaction: jest.fn(),
     };
     svc.approval = {

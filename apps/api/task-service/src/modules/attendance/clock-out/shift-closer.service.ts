@@ -19,9 +19,8 @@ import { emitEvent, attendanceClockOutEvent, attendancePendingApprovalEvent } fr
 import { attendanceShiftClosedProvisionallyEvent } from '@hbcfield/shared/microservices';
 
 /**
- * The ONE way a shift closes (closeEntry), the provisional close, the flag
- * tolerance, and the pending-approval alert — held once, used by every closer
- * (the clock-out, a close by decision, the sweeps).
+ * The ONE way a shift closes (closeEntry), the provisional close, the flag tolerance, and the pending-approval
+ * alert — held once, used by every closer (the clock-out, a close by decision, the sweeps).
  */
 @Injectable()
 export class ShiftCloser {
@@ -165,8 +164,9 @@ export class ShiftCloser {
       flagsChanged = true;
     }
 
-    // Changed by hand while running, past a rule: labelled, so it waits (core/hand-edit-review.ts).
-    const handHold = await handHoldAtClose(this.rules, entry, at, flagsChanged ? closeFlags : baseFlags);
+    // Changed by hand while running: its original end is known now; past a rule it waits (hand-edit-review.ts).
+    const closing = { ...entry, ...(spec.fields as object) };
+    const handHold = await handHoldAtClose(this.rules, closing, at, flagsChanged ? closeFlags : baseFlags);
     const result = await this.prisma.$transaction(async (tx) => {
       const claim = await tx.timeEntry.updateMany({
         where:

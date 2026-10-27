@@ -49,7 +49,7 @@ describe('overtime self-approval (AT-B1)', () => {
     },
     // Array form (the batched writes) and callback form (interactive) both.
     $transaction: jest.fn((ops: any) => (Array.isArray(ops) ? Promise.all(ops) : ops(prisma))),
-    timeEntry: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+    timeEntry: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
     spaceAssignment: { findFirst: jest.fn(), findMany: jest.fn() },
     user: { findFirst: jest.fn() },
   };

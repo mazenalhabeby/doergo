@@ -2892,6 +2892,8 @@ model TimeEntry {
   outsideDecidedAt      DateTime?
   outsideDecidedById    String?
   outsideCountedMinutes Int?
+  /// …of which BEFORE the planned start (the rest became an overtime round): overtime an office rule counts too.
+  outsideBeforeMinutes  Int?
   /// Where they are working now — ON_SITE | FIELD | REMOTE — decided from evidence
   /// (see packages/shared/src/attendance/presence.ts) and written only on a change.
   /// Display only: nothing that counts time reads it.

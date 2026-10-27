@@ -11,7 +11,9 @@ import { CountedTimeService } from '../core/counted-time.service';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { approvedOvertimeByEntry, overtimeRuleFacts } from './overtime-rule-facts';
+import { approvedOvertimeByEntry, closeLapsedOvertimeSteps } from './overtime-rule-facts';
+import { overtimeRuleFacts } from '@hbcfield/shared';
+import { alreadyDecided } from '../../approvals/rules/already-decided';
 
 /**
  * Approving extra time — the ONE decision path (office rules, self-decision,
@@ -86,13 +88,10 @@ export class ExtraTimeApprovalService {
     if (round) await this.rules.clearBefore(data.organizationId, 'overtime', entry.id, round.createdAt);
     // No round asked for (extra time approved straight from the shift): it is written as one, or the next decision
     // on this shift would count it as nothing — 50-minute approvals, one after another, past a one-hour rule.
+    // …and approvals half-way for a round that lapsed since are not about this decision either.
     const lastCycle = round
-      ? null
-      : await this.prisma.overtimeRequest.findFirst({
-          where: { timeEntryId: entry.id },
-          orderBy: { cycle: 'desc' },
-          select: { cycle: true },
-        });
+      ? 0
+      : await closeLapsedOvertimeSteps(this.prisma, this.rules, data.organizationId, entry.id);
 
     // Office rules: past a threshold this approval is one of several, and the shift waits for the others.
     const decided = await this.rules.decide(
@@ -130,54 +129,60 @@ export class ExtraTimeApprovalService {
         });
         const remindFrom = newExpected.getTime() > now.getTime() ? newExpected : now;
 
-        await this.prisma.$transaction([
-          this.prisma.timeEntry.update({
-            where: { id: entry.id },
-            data: closed
-              ? { expectedClockOutAt: newExpected }
-              : {
-                  expectedClockOutAt: newExpected,
-                  reminderState: 'OVERTIME_APPROVED',
-                  reminderCount: 0,
-                  nextRemindAt: new Date(remindFrom.getTime() + graceMin * 60_000),
-                },
-          }),
-          ...(round
-            ? [
-                this.prisma.overtimeRequest.update({
-                  where: { id: round.id },
-                  data: {
-                    status: 'APPROVED',
-                    approvedById: data.approverId,
-                    approvedAt: now,
-                    maxDurationMinutes: minutes,
-                    overtimeEndAt: newExpected,
-                    approvalMethod: automatic ? 'AUTOMATIC' : data.signature ? 'SIGNATURE' : 'REMOTE',
-                    leaderSignature: data.signature ?? null,
-                    approverNotes: data.notes ?? null,
+        /*
+          Claimed: the end moves only from the end this decision READ, and a round only while it waits — two leaders
+          approving at once write one round, never two with the same number (the second gets "decided a moment ago").
+        */
+        await this.prisma
+          .$transaction([
+            this.prisma.timeEntry.update({
+              where: { id: entry.id, expectedClockOutAt: entry.expectedClockOutAt },
+              data: closed
+                ? { expectedClockOutAt: newExpected }
+                : {
+                    expectedClockOutAt: newExpected,
+                    reminderState: 'OVERTIME_APPROVED',
+                    reminderCount: 0,
+                    nextRemindAt: new Date(remindFrom.getTime() + graceMin * 60_000),
                   },
-                }),
-              ]
-            : [
-                this.prisma.overtimeRequest.create({
-                  data: {
-                    timeEntryId: entry.id,
-                    cycle: (lastCycle?.cycle ?? 0) + 1,
-                    technicianId: entry.userId,
-                    locationId: entry.locationId,
-                    organizationId: data.organizationId,
-                    status: 'APPROVED',
-                    approvalMethod: automatic ? 'AUTOMATIC' : 'MANAGER',
-                    approvedById: data.approverId,
-                    approvedAt: now,
-                    approverNotes: data.notes ?? null,
-                    maxDurationMinutes: minutes,
-                    overtimeStartAt: entry.expectedClockOutAt ?? now,
-                    overtimeEndAt: newExpected,
-                  },
-                }),
-              ]),
-        ]);
+            }),
+            ...(round
+              ? [
+                  this.prisma.overtimeRequest.update({
+                    where: { id: round.id, status: 'PENDING_APPROVAL' },
+                    data: {
+                      status: 'APPROVED',
+                      approvedById: data.approverId,
+                      approvedAt: now,
+                      maxDurationMinutes: minutes,
+                      overtimeEndAt: newExpected,
+                      approvalMethod: automatic ? 'AUTOMATIC' : data.signature ? 'SIGNATURE' : 'REMOTE',
+                      leaderSignature: data.signature ?? null,
+                      approverNotes: data.notes ?? null,
+                    },
+                  }),
+                ]
+              : [
+                  this.prisma.overtimeRequest.create({
+                    data: {
+                      timeEntryId: entry.id,
+                      cycle: lastCycle + 1,
+                      technicianId: entry.userId,
+                      locationId: entry.locationId,
+                      organizationId: data.organizationId,
+                      status: 'APPROVED',
+                      approvalMethod: automatic ? 'AUTOMATIC' : 'MANAGER',
+                      approvedById: data.approverId,
+                      approvedAt: now,
+                      approverNotes: data.notes ?? null,
+                      maxDurationMinutes: minutes,
+                      overtimeStartAt: entry.expectedClockOutAt ?? now,
+                      overtimeEndAt: newExpected,
+                    },
+                  }),
+                ]),
+          ])
+          .catch(alreadyDecided('OVERTIME_ALREADY_DECIDED', 'This overtime was decided a moment ago.'));
 
         // Closed: the timesheet already counted it — count it again with the approval.
         if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });

@@ -5,10 +5,18 @@ import { PrismaService } from '@hbcfield/shared';
 export type { RuleItem, RuleItemWindow } from './rule-items';
 import { CoverService } from '../../technicians/cover.service';
 import { OutsideShiftService } from '../../attendance/extra-time/outside-shift.service';
-import { approvedOvertimeByEntry, overtimeRuleFacts } from '../../attendance/extra-time/overtime-rule-facts';
+import { approvedOvertimeByEntry } from '../../attendance/extra-time/overtime-rule-facts';
+import { overtimeRuleFacts } from '@hbcfield/shared';
 import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort } from './request-rule-facts';
 import { inSpaces, type RuleItem, type RuleItemWindow } from './rule-items';
-import { MAX_ITEMS, clientRequestItems, hoursItems, peopleNameMap, noShowItems, proposalItems } from './rule-facts-kinds';
+import {
+  MAX_ITEMS,
+  clientRequestItems,
+  hoursItems,
+  peopleNameMap,
+  noShowItems,
+  proposalItems,
+} from './rule-facts-kinds';
 
 /**
  * The items of one kind as office rules read them — the ONE place a kind's facts (workspace, minutes, days,
@@ -107,6 +115,7 @@ export class RuleFactsReader {
       select: {
         timeEntryId: true,
         status: true,
+        cycle: true,
         createdAt: true,
         technicianRespondedAt: true,
         locationId: true,
@@ -121,12 +130,17 @@ export class RuleFactsReader {
     const outside = await this.moduleRef
       .get(OutsideShiftService, { strict: false })
       .ruleItems(organizationId, window, MAX_ITEMS);
-    // Judged as the gate judges it: the shift's whole overtime (the rounds approved on it, never this one twice).
+    // Judged as the gate judged it: this round on top of what was approved BEFORE it — a waiting round, everything
+    // approved on the shift; a decided one (the rules page), only the earlier rounds, never later ones.
     const approved = await approvedOvertimeByEntry(this.prisma, [...new Set(rows.map((o) => o.timeEntryId))]);
+    const later = (o: (typeof rows)[number]) =>
+      rows
+        .filter((r) => r.timeEntryId === o.timeEntryId && r.status === 'APPROVED' && r.cycle >= o.cycle)
+        .reduce((n, r) => n + (r.maxDurationMinutes ?? 0), 0);
     return [
       ...rows.map((o) => {
         const round = o.maxDurationMinutes ?? 0;
-        const before = (approved.get(o.timeEntryId) ?? 0) - (o.status === 'APPROVED' ? round : 0);
+        const before = (approved.get(o.timeEntryId) ?? 0) - later(o);
         return {
           itemId: o.timeEntryId,
           since: o.technicianRespondedAt ?? o.createdAt,

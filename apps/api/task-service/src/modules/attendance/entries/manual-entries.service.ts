@@ -15,6 +15,7 @@ import {
   manualTargetDates,
   type ManualEntriesInput,
 } from './manual-entries-steps';
+import { BACK_TO_PENDING, withHoursChanged } from '../core/hand-edit-review';
 
 /** Hours the office adds by hand ("they were here") — one person or several, one day or many. */
 @Injectable()
@@ -113,7 +114,8 @@ export class ManualEntriesService {
       const asks = await this.rules.needsMoreFor(data.organizationId, 'hours', toCreate.map(facts));
       toCreate.forEach((e, i) => {
         if (!asks[i]) return;
-        Object.assign(e, { approvalStatus: 'PENDING', approvedById: null, approvedAt: null, approvalNotes: null });
+        // Labelled, so setting the day's hours (or any re-labelling) can never make it automatic (hand-edit-review).
+        Object.assign(e, BACK_TO_PENDING, { flagReasons: withHoursChanged((e.flagReasons as string[]) ?? [], true) });
         ruled.add(e);
       });
       await this.writeManualEntries(data, toCreate, { breakOffsetMin, breakMin, reason });

@@ -23,6 +23,12 @@ import { ApprovalRuleInsightsService } from './approval-rule-insights.service';
     ApprovalStepsReader,
     ApprovalRuleInsightsService,
   ],
-  exports: [ApprovalRulesService, ApprovalStepsReader, ApprovalRulesAdminService, ApprovalRouteService, ApprovalRuleInsightsService],
+  exports: [
+    ApprovalRulesService,
+    ApprovalStepsReader,
+    ApprovalRulesAdminService,
+    ApprovalRouteService,
+    ApprovalRuleInsightsService,
+  ],
 })
 export class ApprovalRulesModule {}

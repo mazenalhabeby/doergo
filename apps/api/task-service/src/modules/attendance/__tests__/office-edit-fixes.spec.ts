@@ -257,7 +257,10 @@ describe('edit history', () => {
 describe('office edit — a rule on changed hours', () => {
   function withRule(entry: Record<string, any>, secondStep: string | null) {
     const { prisma } = build(entry);
-    const rules = { secondStepFor: jest.fn().mockResolvedValue(secondStep), clear: jest.fn() };
+    const rules = {
+      needsMoreFor: jest.fn(async (_o: string, _k: string, facts: unknown[]) => facts.map(() => !!secondStep)),
+      clear: jest.fn(),
+    };
     const svc = entryServices(
       prisma,
       new CountedTimeService(prisma),
@@ -274,7 +277,7 @@ describe('office edit — a rule on changed hours', () => {
     const approved = closedEntry({ approvalStatus: 'APPROVED', approvedById: 'boss', approvedAt: t('17:00') });
     const { svc, prisma, rules } = withRule(approved, 'HR');
     await edit(svc, { clockOutAt: t('19:00').toISOString() });
-    expect(rules.secondStepFor).toHaveBeenCalledWith(ORG, 'hours', { spaceIds: ['loc-1'], minutes: 180 });
+    expect(rules.needsMoreFor).toHaveBeenCalledWith(ORG, 'hours', [{ spaceIds: ['loc-1'], minutes: 180 }]);
     expect(written(prisma)).toEqual(expect.objectContaining({ approvalStatus: 'PENDING', approvedById: null }));
   });
 
@@ -287,7 +290,7 @@ describe('office edit — a rule on changed hours', () => {
     });
     const { svc, rules } = withRule(edited, null);
     await edit(svc, { clockOutAt: t('18:00').toISOString() });
-    expect(rules.secondStepFor).toHaveBeenCalledWith(ORG, 'hours', expect.objectContaining({ minutes: 120 }));
+    expect(rules.needsMoreFor).toHaveBeenCalledWith(ORG, 'hours', [expect.objectContaining({ minutes: 120 })]);
   });
 
   it('leaves the decision alone when no rule asks for more people', async () => {

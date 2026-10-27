@@ -2,19 +2,18 @@ import type { TimeEntry } from '@prisma/client';
 import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, refusalSettlesOutside, success, TimeEntryStatus } from '@hbcfield/shared';
-import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
+import { scopeWhere, overtimeRuleFacts, type AttendanceScope } from '@hbcfield/shared';
 import { decidableExtraTimeWhere, overtimeEndFor, refusalNudge } from './extra-time-helpers';
 import { CountedTimeService } from '../core/counted-time.service';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { overtimeRuleFacts } from './overtime-rule-facts';
+import { closeLapsedOvertimeSteps } from './overtime-rule-facts';
+import { alreadyDecided } from '../../approvals/rules/already-decided';
 
-/**
- * The office deciding extra time after the fact: refusing it, taking back approved
- * overtime, adding overtime to a closed shift.
- */
+/** The office deciding extra time after the fact: refusing it, taking back approved overtime, adding it. */
+
 /** Overtime added to a closed shift by a leader. */
 type OvertimeAdd = {
   approverId: string;
@@ -137,6 +136,8 @@ export class ExtraTimeDecisionService {
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
     await this.approval.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
+    // Approvals half-way for a round that lapsed since are not about this decision.
+    await closeLapsedOvertimeSteps(this.prisma, this.rules, data.organizationId, entry.id);
     // Office rules: adding it is approving it — past a threshold it waits for the others, nothing written yet.
     const decided = await this.rules.decide(
       {
@@ -183,27 +184,32 @@ export class ExtraTimeDecisionService {
       select: { cycle: true },
     });
 
-    await this.prisma.$transaction([
-      this.prisma.timeEntry.update({ where: { id: entry.id }, data: { expectedClockOutAt: newExpected } }),
-      this.prisma.overtimeRequest.create({
-        data: {
-          timeEntryId: entry.id,
-          cycle: (previous?.cycle ?? 0) + 1,
-          technicianId: entry.userId,
-          locationId: entry.locationId,
-          organizationId: data.organizationId,
-          status: 'APPROVED',
-          approvalMethod: 'MANAGER',
-          approvedById: data.approverId,
-          approvedAt: now,
-          approverNotes: data.reason?.trim().slice(0, 500) || null,
-          maxDurationMinutes: minutes,
-          overtimeStartAt: entry.expectedClockOutAt ?? entry.clockOutAt,
-          overtimeEndAt: newExpected,
-          actualEndAt: entry.clockOutAt,
-        },
-      }),
-    ]);
+    // Claimed on the end this decision read: two at once write one round (already-decided.ts), never two.
+    const moved = this.prisma.timeEntry.update({
+      where: { id: entry.id, expectedClockOutAt: entry.expectedClockOutAt },
+      data: { expectedClockOutAt: newExpected },
+    });
+    const round = this.prisma.overtimeRequest.create({
+      data: {
+        timeEntryId: entry.id,
+        cycle: (previous?.cycle ?? 0) + 1,
+        technicianId: entry.userId,
+        locationId: entry.locationId,
+        organizationId: data.organizationId,
+        status: 'APPROVED',
+        approvalMethod: 'MANAGER',
+        approvedById: data.approverId,
+        approvedAt: now,
+        approverNotes: data.reason?.trim().slice(0, 500) || null,
+        maxDurationMinutes: minutes,
+        overtimeStartAt: entry.expectedClockOutAt ?? entry.clockOutAt,
+        overtimeEndAt: newExpected,
+        actualEndAt: entry.clockOutAt,
+      },
+    });
+    await this.prisma
+      .$transaction([moved, round])
+      .catch(alreadyDecided('OVERTIME_ALREADY_DECIDED', 'Decided a moment ago.'));
     await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
     await relabelAfterEndMoved(this.prisma, entry, newExpected);
 

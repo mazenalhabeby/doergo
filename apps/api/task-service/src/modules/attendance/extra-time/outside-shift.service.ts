@@ -24,7 +24,8 @@ import { AttendanceRoutingService } from '../core/attendance-routing.service';
 import { askAboutOwnRequest } from '../../approvals/own-request-route';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { ExtraTimeDecisionService } from './extra-time-decision.service';
-import { approvedOvertimeByEntry, overtimeRuleFacts } from './overtime-rule-facts';
+import { approvedOvertimeByEntry } from './overtime-rule-facts';
+import { overtimeRuleFacts } from '@hbcfield/shared';
 
 /** How far back an undecided outside time is still asked about — older belongs to closed payroll. */
 const LOOKBACK_DAYS = 31;
@@ -256,7 +257,11 @@ export class OutsideShiftService {
           kind: 'overtime',
           itemId: stepId,
           // Overtime already approved on the shift counts too (`overtimeRuleFacts`); this decision agrees to its own.
-          facts: overtimeRuleFacts(entry.locationId, plan.counted, await this.approval.approvedOvertimeMinutes(entry.id)),
+          facts: overtimeRuleFacts(
+            entry.locationId,
+            plan.counted,
+            await this.approval.approvedOvertimeMinutes(entry.id),
+          ),
           agreeMinutes: plan.counted,
           deciderId: data.approverId,
           subjectId: entry.userId,
@@ -318,16 +323,22 @@ export class OutsideShiftService {
 
   /** Claim the decision, move the plan, recount — or put the claim back if any of it fails. */
   private async write(entry: TimeEntry, plan: ReturnType<typeof planAfterCounting>, data: OutsideDecision) {
-    // Claimed first: two leaders deciding at once cannot both count it.
+    const before = entry.expectedClockInAt!.getTime() - plan.expectedClockInAt.getTime();
+    const after = plan.expectedClockOutAt.getTime() - entry.expectedClockOutAt!.getTime();
+    // Claimed first: two leaders deciding at once cannot both count it. The part before the start is kept: it is
+    // overtime an office rule counts (the part after the end becomes a round, counted as one).
     const claimed = await this.prisma.timeEntry.updateMany({
       where: { id: entry.id, outsideDecidedAt: null },
-      data: { outsideDecidedAt: new Date(), outsideDecidedById: data.approverId, outsideCountedMinutes: plan.counted },
+      data: {
+        outsideDecidedAt: new Date(),
+        outsideDecidedById: data.approverId,
+        outsideCountedMinutes: plan.counted,
+        outsideBeforeMinutes: Math.max(0, Math.round(before / 60_000)),
+      },
     });
     if (!claimed.count)
       throw new ConflictException({ code: 'OUTSIDE_ALREADY_DECIDED', message: 'This time was already decided.' });
 
-    const before = entry.expectedClockInAt!.getTime() - plan.expectedClockInAt.getTime();
-    const after = plan.expectedClockOutAt.getTime() - entry.expectedClockOutAt!.getTime();
     try {
       if (before > 0) {
         await this.prisma.timeEntry.update({
@@ -355,6 +366,7 @@ export class OutsideShiftService {
           outsideDecidedAt: null,
           outsideDecidedById: null,
           outsideCountedMinutes: null,
+          outsideBeforeMinutes: null,
           expectedClockInAt: entry.expectedClockInAt,
         },
       });

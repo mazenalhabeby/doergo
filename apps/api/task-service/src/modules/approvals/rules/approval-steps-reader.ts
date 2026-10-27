@@ -31,7 +31,14 @@ export class ApprovalStepsReader {
         chunks.map((chunk) =>
           this.prisma.approvalStep.findMany({
             where: { organizationId, consumedAt: null, itemId: { in: chunk } },
-            select: { kind: true, itemId: true, firstById: true, requiredRoleIds: true, doneRoleIds: true, facts: true },
+            select: {
+              kind: true,
+              itemId: true,
+              firstById: true,
+              requiredRoleIds: true,
+              doneRoleIds: true,
+              facts: true,
+            },
           }),
         ),
       )

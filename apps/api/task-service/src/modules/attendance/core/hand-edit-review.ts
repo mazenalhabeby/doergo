@@ -3,7 +3,13 @@ import type { ApprovalRulesService } from '../../approvals/rules/approval-rules.
 
 type HandChanged = Parameters<typeof handChangedMinutes>[0] & { locationId?: string | null };
 
-export { hoursRuleFacts };
+/** What the office writes when a change by hand is held: waiting, nobody's approval yet. */
+export const BACK_TO_PENDING = {
+  approvalStatus: 'PENDING',
+  approvedById: null,
+  approvedAt: null,
+  approvalNotes: null,
+} as const;
 
 /**
  * Is a change by hand past an office rule? Then the entry carries `HOURS_CHANGED` — a review label, so every
@@ -11,7 +17,7 @@ export { hoursRuleFacts };
  * its status out again as automatic. A change back under the rule drops the label.
  */
 export async function handChangeHolds(rules: ApprovalRulesService, organizationId: string, facts: RuleFacts) {
-  return (facts.minutes ?? 0) > 0 && !!(await rules.secondStepFor(organizationId, 'hours', facts));
+  return (facts.minutes ?? 0) > 0 && (await rules.needsMoreFor(organizationId, 'hours', [facts]))[0] === true;
 }
 
 /** The entry's labels with `HOURS_CHANGED` added or removed. */
@@ -21,28 +27,45 @@ export function withHoursChanged(flags: readonly string[], holds: boolean): stri
 }
 
 /**
- * Does a shift the office changed BY HAND while it was running have to wait for approval when it closes? Yes
- * when the whole change from what was clocked is past an office rule on changed hours — an edit with no clock-out
- * cannot be judged in full yet (entry-edit.service.ts). Untouched shifts ask nothing (no query).
+ * What the times were before ANY hand change — the baseline a hand change is measured from, kept on the first edit.
+ * ⚠️ A day TYPED IN by the office keeps no original clock-in (null): it is by hand from start to end, and stays so.
+ * ⚠️ A clocked shift still running has no clock-out yet: its original end is filled at the close
+ * (`handHoldAtClose`), or, when the OFFICE closes it, it is the moment they did — it was running until then.
+ * Never "none" once it ends, or every later change of the clock-out would count as nothing.
  */
-export async function handEditNeedsReview(
-  rules: ApprovalRulesService,
-  entry: HandChanged & { organizationId: string },
-  clockOutAt: Date,
-): Promise<boolean> {
-  if (!entry.isEdited) return false;
-  // A running shift has no clocked end to compare: the change is the clock-in's (its end is the real one now).
-  const facts = hoursRuleFacts({ ...entry, originalClockOut: entry.originalClockOut ?? clockOutAt, clockOutAt });
-  return handChangeHolds(rules, entry.organizationId, facts);
+export function originalTimes(
+  entry: {
+    isEdited?: boolean | null;
+    originalClockIn?: Date | null;
+    originalClockOut?: Date | null;
+    clockInAt: Date;
+    clockOutAt?: Date | null;
+  },
+  closingNow?: Date,
+): { originalClockIn: Date | null; originalClockOut: Date | null } {
+  if (!entry.isEdited)
+    return { originalClockIn: entry.clockInAt, originalClockOut: entry.clockOutAt ?? closingNow ?? null };
+  const clocked = entry.originalClockIn != null;
+  return {
+    originalClockIn: entry.originalClockIn ?? null,
+    originalClockOut: entry.originalClockOut ?? (clocked ? (closingNow ?? null) : null),
+  };
 }
 
-/** What the close writes for such a shift: waiting, and labelled — nothing when it is not held. */
+/**
+ * What a close writes for a shift changed BY HAND while it was running: its original end is now known (the real
+ * clock-out), and past an office rule on changed hours it waits, labelled. Untouched shifts: nothing, no query.
+ */
 export async function handHoldAtClose(
   rules: ApprovalRulesService,
   entry: HandChanged & { organizationId: string },
   clockOutAt: Date,
   flags: readonly string[],
-): Promise<{ approvalStatus?: 'PENDING'; flagReasons?: string[] }> {
-  if (!(await handEditNeedsReview(rules, entry, clockOutAt))) return {};
-  return { approvalStatus: 'PENDING', flagReasons: withHoursChanged(flags, true) };
+): Promise<{ approvalStatus?: 'PENDING'; flagReasons?: string[]; originalClockOut?: Date }> {
+  if (!entry.isEdited) return {};
+  // A clocked shift's original end, now known; a typed-in day keeps none (by hand from start to end).
+  const fill = entry.originalClockIn != null && entry.originalClockOut == null ? { originalClockOut: clockOutAt } : {};
+  const facts = hoursRuleFacts({ ...entry, originalClockOut: entry.originalClockOut ?? clockOutAt, clockOutAt });
+  if (!(await handChangeHolds(rules, entry.organizationId, facts))) return fill;
+  return { ...fill, approvalStatus: 'PENDING', flagReasons: withHoursChanged(flags, true) };
 }

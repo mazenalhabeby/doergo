@@ -9,6 +9,13 @@ import { ApprovalRuleRolesService } from './approval-rule-roles.service';
 
 @Module({
   controllers: [ApprovalsController],
-  providers: [ApprovalsService, ApprovalDaysService, ApprovalRouteService, StandInsService, ApprovalRulesClient, ApprovalRuleRolesService],
+  providers: [
+    ApprovalsService,
+    ApprovalDaysService,
+    ApprovalRouteService,
+    StandInsService,
+    ApprovalRulesClient,
+    ApprovalRuleRolesService,
+  ],
 })
 export class ApprovalsModule {}
