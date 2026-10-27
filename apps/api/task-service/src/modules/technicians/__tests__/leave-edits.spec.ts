@@ -24,6 +24,8 @@ describe('LeaveEditsService.updateTimeOff', () => {
       timeOff: {
         findFirst: jest.fn().mockResolvedValueOnce(row(status)).mockResolvedValueOnce(null),
         update: jest.fn(async ({ data }: any) => ({ id: 't1', ...data })),
+        // Other leave the request touches (stretchWorkingDays): none here.
+        findMany: jest.fn().mockResolvedValue([]),
       },
       user: { findFirst: jest.fn().mockResolvedValue(null) },
     };

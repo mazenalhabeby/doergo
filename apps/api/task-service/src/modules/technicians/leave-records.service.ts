@@ -145,7 +145,7 @@ export class LeaveRecordsService {
         organizationId: data.organizationId,
         kind: 'request',
         itemId: created.id,
-        facts: await requestFactsFor(this.rules, this.cover, data.organizationId, created, workingDays),
+        facts: await requestFactsFor(this.rules, this.cover, data.organizationId, created, workingDays, this.prisma),
         deciderId: data.editorId,
         subjectId: data.technicianId,
       },

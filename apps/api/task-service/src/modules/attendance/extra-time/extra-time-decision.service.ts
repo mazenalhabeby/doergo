@@ -9,7 +9,7 @@ import { ApprovalRulesService } from '../../approvals/rules/approval-rules.servi
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { changedMeanwhile } from '../../approvals/rules/already-decided';
+import { overtimeWriteMissed } from './overtime-rule-facts';
 
 /** The office deciding extra time after the fact: refusing it, taking back approved overtime, adding it. */
 
@@ -204,9 +204,7 @@ export class ExtraTimeDecisionService {
         actualEndAt: entry.clockOutAt,
       },
     });
-    await this.prisma
-      .$transaction([moved, round])
-      .catch(changedMeanwhile('The shift changed a moment ago — try again.'));
+    await this.prisma.$transaction([moved, round]).catch(overtimeWriteMissed(this.prisma, entry.id));
     await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
     await relabelAfterEndMoved(this.prisma, entry, newExpected);
 

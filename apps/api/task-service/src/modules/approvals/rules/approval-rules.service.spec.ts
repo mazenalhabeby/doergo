@@ -389,4 +389,42 @@ describe('ApprovalRulesService.gate', () => {
       'd3',
     ]);
   });
+
+  it('a batch reaching two workspaces tells each group once — the second is never left silent', async () => {
+    const items = [
+      { itemId: 'w1', facts: { spaceIds: ['s1'], minutes: 180 } },
+      { itemId: 'w2', facts: { spaceIds: ['s1'], minutes: 240 } },
+      { itemId: 'w3', facts: { spaceIds: ['s2'], minutes: 240 } },
+    ];
+    await svc.firstOfMany({ organizationId: 'o', kind: 'overtime', deciderId: 'leader', subjectId: 'worker' }, items);
+    expect(notifications.emit).toHaveBeenCalledTimes(2);
+  });
+
+  it('decide(): changed meanwhile (not decided) — the approvals stay for a retry', async () => {
+    const { ChangedMeanwhileException } = jest.requireActual('./already-decided');
+    await svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
+    const moved = jest.fn(async () => {
+      throw new ChangedMeanwhileException('moved');
+    });
+    await expect(
+      svc.decide({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }, moved),
+    ).rejects.toThrow('moved');
+    expect(steps[0].consumedAt).toBeNull();
+  });
+
+  it('a "finished" step only this person ever approved is no way to finish alone', async () => {
+    steps.push({
+      id: 'solo',
+      itemId: 'entry1',
+      firstById: 'mgr',
+      approverIds: ['mgr'],
+      doneRoleIds: ['role-mgr'],
+      requiredRoleIds: ['role-mgr'],
+      firstAt: new Date(),
+      consumedAt: null,
+    });
+    await expect(
+      svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }),
+    ).rejects.toMatchObject({ response: { code: 'SECOND_STEP_SAME_PERSON' } });
+  });
 });

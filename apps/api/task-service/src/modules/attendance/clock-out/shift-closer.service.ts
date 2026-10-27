@@ -164,8 +164,8 @@ export class ShiftCloser {
       flagsChanged = true;
     }
 
-    // Changed by hand while running: its original end is known now; past a rule it waits (hand-edit-review.ts).
-    const closing = { ...entry, ...(spec.fields as object) };
+    // Changed by hand while running: its original end is known now (never a provisional guess); past a rule it waits.
+    const closing = { ...entry, ...(spec.fields as object), clockOutProvisional: !!spec.fields.clockOutProvisional };
     const handHold = await handHoldAtClose(this.rules, closing, at, flagsChanged ? closeFlags : baseFlags);
     const result = await this.prisma.$transaction(async (tx) => {
       const claim = await tx.timeEntry.updateMany({

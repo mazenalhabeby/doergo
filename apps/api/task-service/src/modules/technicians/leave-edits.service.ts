@@ -86,7 +86,7 @@ export class LeaveEditsService {
         organizationId: data.organizationId,
         kind: 'request',
         itemId: data.timeOffId,
-        facts: await requestFactsFor(this.rules, this.cover, data.organizationId, row, workingDays),
+        facts: await requestFactsFor(this.rules, this.cover, data.organizationId, row, workingDays, this.prisma),
         deciderId: data.editorId,
         subjectId: timeOff.technicianId,
       },

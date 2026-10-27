@@ -29,6 +29,8 @@ run('office rules against a real database', () => {
       take: 2,
     });
     people = members.map((m) => m.id);
+    // Two people, or the "same instant" test proves nothing.
+    expect(people).toHaveLength(2);
     // A role neither of them holds: nobody here can give the next approval.
     const role = await prisma.accessRole.findFirstOrThrow({
       where: { organizationId: org, isActive: true, id: { notIn: members.map((m) => m.memberRoleId!) } },

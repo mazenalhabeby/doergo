@@ -118,6 +118,9 @@ export class EntryEditService {
       Checked on the RESULTING pair, so moving only the clock-in past an existing
       clock-out is caught too.
     */
+    // …and never in the future: a clock-out typed for later than now is a guess, not a correction.
+    if (editedOut && editedOut.getTime() > Date.now() + 5 * 60_000)
+      throw new BadRequestException({ code: 'CLOCK_OUT_IN_FUTURE', message: 'The clock-out cannot be in the future.' });
     if (timesChanged && newClockOut && newClockOut.getTime() <= newClockIn.getTime()) {
       throw new BadRequestException({
         code: 'CLOCK_OUT_BEFORE_CLOCK_IN',

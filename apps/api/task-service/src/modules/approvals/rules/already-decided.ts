@@ -17,10 +17,22 @@ export function alreadyDecided(code: string, message: string) {
 /** The code of a write refused because the item CHANGED meanwhile (not decided): `decide()` keeps the approvals. */
 export const CHANGED_MEANWHILE = 'CHANGED_MEANWHILE';
 
+/** A write refused because something else moved the item meanwhile — nobody decided it (`decide()` reopens). */
+export class ChangedMeanwhileException extends ConflictException {
+  constructor(message: string) {
+    super({ code: CHANGED_MEANWHILE, message });
+  }
+}
+
 /**
- * A conditional write that missed because something else moved the item meanwhile (another path moved a shift's
- * end) — nobody decided it, so the approvals given stay for a retry (`decide()` reopens the step for this code).
+ * A conditional write that missed: DECIDED meanwhile (refused, approved by somebody else) → `decidedCode`, and the
+ * approvals end with it; only CHANGED meanwhile (another path moved the item, it still waits) → the approvals stay
+ * for a retry. `stillWaiting` re-reads the item to tell the two apart — never a guess from the miss itself.
  */
-export function changedMeanwhile(message: string) {
-  return alreadyDecided(CHANGED_MEANWHILE, message);
+export function missedWrite(stillWaiting: () => Promise<boolean>, decidedCode: string, message: string) {
+  return async (e: unknown): Promise<never> => {
+    if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025')) throw e;
+    if (await stillWaiting()) throw new ChangedMeanwhileException('It changed a moment ago — try again.');
+    throw new ConflictException({ code: decidedCode, message });
+  };
 }

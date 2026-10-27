@@ -18,7 +18,7 @@ import { CoverService } from './cover.service';
 import { requestFactsFor, type RequestRuleRow } from '../approvals/rules/request-rule-facts';
 import { workingDaysOf } from './member-requests';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
-import { alreadyDecided } from '../approvals/rules/already-decided';
+import { missedWrite } from '../approvals/rules/already-decided';
 
 /** Deciding time off: approve or refuse, cancel, change, delete. Cover and working days as the member saw them. */
 @Injectable()
@@ -108,7 +108,8 @@ export class TimeOffDecisionService {
     const write = () =>
       this.prisma.timeOff
         .update({
-          where: { id: timeOffId, status: 'PENDING' },
+          // …and only the dates the approvers saw: moved dates are a new decision (leave-edits).
+          where: { id: timeOffId, status: 'PENDING', startDate: timeOff.startDate, endDate: timeOff.endDate },
           data: {
             ...(workingDays !== undefined ? { workingDays } : {}),
             status: approved ? 'APPROVED' : 'REJECTED',
@@ -123,7 +124,13 @@ export class TimeOffDecisionService {
             space: { select: SPACE_BRIEF },
           },
         })
-        .catch(alreadyDecided('TIME_OFF_DECIDED', 'This request was decided a moment ago.'));
+        .catch(
+          missedWrite(
+            async () => (await this.prisma.timeOff.count({ where: { id: timeOffId, status: 'PENDING' } })) > 0,
+            'TIME_OFF_DECIDED',
+            'This request was decided a moment ago.',
+          ),
+        );
     let updated: Awaited<ReturnType<typeof write>>;
     if (approved) {
       // The one reader of a request's facts, shared with the sweep and the rules page; cover only when a rule asks.
@@ -133,7 +140,7 @@ export class TimeOffDecisionService {
           organizationId,
           kind: 'request',
           itemId: timeOffId,
-          facts: await requestFactsFor(this.rules, this.cover, organizationId, row, workingDays),
+          facts: await requestFactsFor(this.rules, this.cover, organizationId, row, workingDays, this.prisma),
           deciderId: approverId,
           subjectId: timeOff.technicianId,
         },

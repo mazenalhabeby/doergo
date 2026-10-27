@@ -11,9 +11,8 @@ import { CountedTimeService } from '../core/counted-time.service';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { approvedOvertimeByEntry, lastRoundCycle } from './overtime-rule-facts';
+import { approvedOvertimeByEntry, lastRoundCycle, overtimeWriteMissed } from './overtime-rule-facts';
 import { overtimeRuleFacts } from '@hbcfield/shared';
-import { changedMeanwhile } from '../../approvals/rules/already-decided';
 
 /**
  * Approving extra time — the ONE decision path (office rules, self-decision,
@@ -180,7 +179,7 @@ export class ExtraTimeApprovalService {
                   }),
                 ]),
           ])
-          .catch(changedMeanwhile('The shift changed a moment ago — try again.'));
+          .catch(overtimeWriteMissed(this.prisma, entry.id, round?.id));
 
         // Closed: the timesheet already counted it — count it again with the approval.
         if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });

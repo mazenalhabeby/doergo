@@ -119,33 +119,26 @@ export class ApprovalEscalationService {
             continue;
           }
           const who = `${item.facts.spaceIds.join(',')}|${item.subjectId ?? ''}`;
-          let recipientIds =
-            stage === 'ESCALATE'
-              ? await cached(`${rule.escalateRoleId}|${who}`, () =>
-                  roleHolderIds(this.prisma, {
-                    organizationId,
-                    roleId: rule.escalateRoleId!,
-                    spaceIds: item.facts.spaceIds,
-                    exclude: item.subjectId ? [item.subjectId] : [],
-                    now,
-                  }),
-                )
-              : [];
-          // Half-way: whom it still waits for by the rules as they are NOW (the gate's own reading), minus who
-          // already approved and anybody on leave today.
+          // Half-way: whom it still waits for by the rules as they are NOW (the gate's own reading).
           const step = half.get(item.itemId);
           const waitingOn = step ? rolesStillNeeded(step, gating)[0] : undefined;
-          if (stage === 'REMIND' && step && waitingOn) {
-            const holders = await roleHolderIds(this.prisma, {
-              organizationId,
-              roleId: waitingOn,
-              spaceIds: item.facts.spaceIds,
-              exclude: [...step.approverIds, ...(item.subjectId ? [item.subjectId] : [])],
-              now,
-            });
-            const away = await awayOn(this.prisma, holders, leaveDay(now, await zoneOf()));
-            recipientIds = holders.filter((id) => !away.has(id));
-          }
+          const roleId = stage === 'ESCALATE' ? rule.escalateRoleId : step ? waitingOn : null;
+          // The holders (asked once per role, workspace and person this sweep) — never who already approved, never
+          // anybody on leave today: the same for a reminder and an escalation.
+          const holders = roleId
+            ? await cached(`${roleId}|${who}`, async () => {
+                const ids = await roleHolderIds(this.prisma, {
+                  organizationId,
+                  roleId,
+                  spaceIds: item.facts.spaceIds,
+                  exclude: item.subjectId ? [item.subjectId] : [],
+                  now,
+                });
+                const away = await awayOn(this.prisma, ids, leaveDay(now, await zoneOf()));
+                return ids.filter((id) => !away.has(id));
+              })
+            : [];
+          let recipientIds = holders.filter((id) => !step?.approverIds.includes(id));
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.
           if (!recipientIds.length)
             recipientIds = (await cached(`usual|${who}`, () => this.usualDeciders(organizationId, kind, item))).filter(

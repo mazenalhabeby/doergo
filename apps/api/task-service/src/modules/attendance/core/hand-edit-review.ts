@@ -44,21 +44,32 @@ export function originalTimes(
     originalClockOut?: Date | null;
     clockInAt: Date;
     clockOutAt?: Date | null;
+    editedAt?: Date | null;
+    expectedClockOutAt?: Date | null;
   },
   closingAt?: Date,
 ): { originalClockIn: Date | null; originalClockOut: Date | null } {
   if (!entry.isEdited)
     return { originalClockIn: entry.clockInAt, originalClockOut: entry.clockOutAt ?? closingAt ?? null };
   const clocked = entry.originalClockIn != null;
+  // An older row (edited while running, closed before the end was kept): a clock-out written AFTER it ended may be
+  // a hand change itself — the planned end is the safer baseline then.
+  const handMadeOut = !!(entry.clockOutAt && entry.editedAt && entry.editedAt > entry.clockOutAt);
+  const closedAt = handMadeOut ? (entry.expectedClockOutAt ?? entry.clockOutAt) : entry.clockOutAt;
   return {
     originalClockIn: entry.originalClockIn ?? null,
-    originalClockOut: entry.originalClockOut ?? (clocked ? (entry.clockOutAt ?? closingAt ?? null) : null),
+    originalClockOut: entry.originalClockOut ?? (clocked ? (closedAt ?? closingAt ?? null) : null),
   };
 }
 
-/** Where a forgotten shift the office closes should have ended: its planned end, else when they were last seen. */
+/**
+ * Where a forgotten shift the office closes ended at the LATEST: the earliest of its planned end, the last moment
+ * the person was seen, and now — so a shift closed at 10:00 "at its planned 17:00" counts the 7 h it never worked,
+ * and a phone silent since 12:00 does not stretch to the planned end.
+ */
 export function forgottenEnd(entry: { expectedClockOutAt?: Date | null; lastSeenAt?: Date | null }, now: Date): Date {
-  return entry.expectedClockOutAt ?? entry.lastSeenAt ?? now;
+  const known = [entry.expectedClockOutAt, entry.lastSeenAt, now].filter((d): d is Date => d instanceof Date);
+  return new Date(Math.min(...known.map((d) => d.getTime())));
 }
 
 /**

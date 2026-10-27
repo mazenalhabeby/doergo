@@ -17,7 +17,7 @@ import {
 import type { Decided, GateVerdict, RuleGateInput } from './approval-rules-helpers';
 import { consumeStep, joinRoleNames, openStep, stepCreateData, stepRules, storedFacts } from './approval-steps';
 import { tellNextApprovers } from './approval-step-notices';
-import { CHANGED_MEANWHILE } from './already-decided';
+import { ChangedMeanwhileException } from './already-decided';
 
 export { type Decided, type GateVerdict, type RuleGateInput } from './approval-rules-helpers';
 
@@ -57,8 +57,8 @@ export class ApprovalRulesService {
     try {
       return { done: await write(verdict.minutes) };
     } catch (e) {
-      const changed = (e as { response?: { code?: string } }).response?.code === CHANGED_MEANWHILE;
-      const gone = e instanceof HttpException && [404, 409].includes(e.getStatus()) && !changed;
+      const gone =
+        e instanceof HttpException && [404, 409].includes(e.getStatus()) && !(e instanceof ChangedMeanwhileException);
       if (!gone) await this.reopen(verdict.stepId);
       throw e;
     }
@@ -120,11 +120,14 @@ export class ApprovalRulesService {
       `approverIds`), and not a leader and the stand-in deciding with the leader's authority.
     */
     const earlier = [...new Set([open.firstById, ...open.approverIds])];
-    const leftNames = left.length ? await this.roleLabel(left) : '';
+    // A "finished" step only this person ever approved is no decision by several — never a way to finish alone.
+    const alone = !left.length && earlier.every((id) => id === input.deciderId);
+    const leftNames = left.length || alone ? await this.roleLabel(left.length ? left : required) : '';
     if (
-      left.length &&
-      (earlier.includes(input.deciderId) ||
-        (await standInBetween(this.prisma, input.organizationId, input.deciderId, earlier, open.firstAt)))
+      alone ||
+      (left.length &&
+        (earlier.includes(input.deciderId) ||
+          (await standInBetween(this.prisma, input.organizationId, input.deciderId, earlier, open.firstAt))))
     ) {
       throw new ConflictException({
         message: `This needs another approval by ${leftNames}.`,
@@ -275,9 +278,9 @@ export class ApprovalRulesService {
     return joinRoleNames(roleIds, new Map(roles.map((r) => [r.id, r.name])));
   }
 
-  /** The holders of the next role needed are told (approval-step-notices.ts) — once per role and workspace in a batch. */
+  /** The holders of the next role needed are told (approval-step-notices.ts) — once per role, workspace and person in a batch. */
   private async tellNext(roleId: string, input: RuleGateInput, firstName: string) {
-    const key = `${roleId}|${[...input.facts.spaceIds].sort().join(',')}`;
+    const key = `${roleId}|${[...input.facts.spaceIds].sort().join(',')}|${input.subjectId ?? ''}`;
     if (input.toldOnce?.has(key)) return;
     input.toldOnce?.add(key);
     await tellNextApprovers(this.prisma, this.notifications, this.logger, roleId, input, firstName);

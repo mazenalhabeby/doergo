@@ -58,10 +58,16 @@ export function describeApproval(
   t: ApprovalT,
   locale: string,
   orgCurrency?: string | null,
+  /** Durations in the reader's language ("1 Std. 30 Min.") — each app passes its own; English "1h 30m" otherwise. */
+  formatMinutes: (minutes: number) => string = formatDuration,
 ): ApprovalText {
   const d = item.data as Data;
   const tz = str(d.timezone);
   const facts: ApprovalText['facts'] = [];
+  const dur = (v: unknown) => {
+    const n = num(v);
+    return n == null ? null : formatMinutes(n);
+  };
   const add = (labelKey: string, value: string | null | undefined, tone?: 'warn' | 'bad') => {
     if (value) facts.push({ label: t(`approvals.fact.${labelKey}`), value, tone });
   };
@@ -71,7 +77,7 @@ export function describeApproval(
       const from = when(locale, d.clockInAt, tz);
       const to = when(locale, d.clockOutAt, tz, false);
       add('shift', from && to ? `${from} – ${to}` : from);
-      add('worked', num(d.minutes) != null ? formatDuration(num(d.minutes)) : null);
+      add('worked', dur(d.minutes));
       const flags = (str(d.flags) ?? '').split(',').filter(Boolean);
       // The ONE label catalogue (attendance/labels) — the attendance screens' own words; older codes keep theirs.
       const word = (f: string) =>
@@ -81,14 +87,14 @@ export function describeApproval(
     }
     case 'away':
       add('left', when(locale, d.leftAt, tz));
-      add('asked', num(d.requestedMinutes) != null ? formatDuration(num(d.requestedMinutes)) : null);
+      add('asked', dur(d.requestedMinutes));
       add('distance', num(d.distanceM) != null ? formatDistance(num(d.distanceM), { locale: locale }) : null);
       add('reason', str(d.reason));
       return { headline: t('approvals.headline.away'), facts };
     case 'extraTime':
       add('clockedIn', when(locale, d.clockInAt, tz));
       add('plannedEnd', when(locale, d.plannedEnd, tz));
-      add('pastEnd', num(d.pastEndMinutes) ? formatDuration(num(d.pastEndMinutes)) : null, 'warn');
+      add('pastEnd', num(d.pastEndMinutes) ? dur(d.pastEndMinutes) : null, 'warn');
       if (d.stillWorking === true) add('status', t('approvals.stillWorking'), 'warn');
       return { headline: t('approvals.headline.extraTime'), facts };
     case 'outside': {
@@ -98,13 +104,13 @@ export function describeApproval(
       const to = when(locale, d.clockOutAt, tz, false);
       add('planned', ps && pe ? `${ps} – ${pe}` : null);
       add('clocked', from && to ? `${from} – ${to}` : null);
-      add('before', num(d.beforeMinutes) ? formatDuration(num(d.beforeMinutes)) : null, 'warn');
-      add('after', num(d.afterMinutes) ? formatDuration(num(d.afterMinutes)) : null, 'warn');
+      add('before', num(d.beforeMinutes) ? dur(d.beforeMinutes) : null, 'warn');
+      add('after', num(d.afterMinutes) ? dur(d.afterMinutes) : null, 'warn');
       return { headline: t('approvals.headline.outside'), facts };
     }
     case 'overtime':
       add('from', when(locale, d.overtimeStartAt, tz));
-      add('pastEnd', num(d.pastEndMinutes) ? formatDuration(num(d.pastEndMinutes)) : null, 'warn');
+      add('pastEnd', num(d.pastEndMinutes) ? dur(d.pastEndMinutes) : null, 'warn');
       add('round', num(d.cycle) != null ? String(num(d.cycle)) : null);
       add('reason', str(d.reason));
       return { headline: t('approvals.headline.overtime'), facts };
@@ -119,7 +125,7 @@ export function describeApproval(
       add('period', start && end && start !== end ? `${start} – ${end}` : start);
       if (str(d.startTime) || str(d.endTime)) add('hours', `${str(d.startTime) ?? '…'} – ${str(d.endTime) ?? '…'}`);
       add('days', num(d.workingDays) != null ? String(num(d.workingDays)) : null);
-      add('asked', num(d.minutes) != null ? formatDuration(num(d.minutes)) : null);
+      add('asked', dur(d.minutes));
       const level = str(d.coverLevel);
       if (level) {
         const worst = num(d.coverWorst);

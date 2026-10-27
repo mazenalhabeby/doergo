@@ -11,7 +11,7 @@ import { EntryChangeLog } from './entry-change-log';
 import type { TimeEntryStatus } from '@prisma/client';
 import { announceDayDecided, type DecidedEntry } from './day-decided';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
-import { alreadyDecided } from '../../approvals/rules/already-decided';
+import { missedWrite } from '../../approvals/rules/already-decided';
 
 @Injectable()
 export class ApprovalService {
@@ -145,7 +145,13 @@ export class ApprovalService {
       () =>
         this.prisma.timeEntry
           .update({
-            where: { id: data.entryId, approvalStatus: ApprovalStatus.PENDING },
+            // …and only the times the approvers saw: hours moved meanwhile are a new decision.
+            where: {
+              id: data.entryId,
+              approvalStatus: ApprovalStatus.PENDING,
+              clockInAt: entry.clockInAt,
+              clockOutAt: entry.clockOutAt,
+            },
             data: {
               approvalStatus: ApprovalStatus.APPROVED,
               approvedById: data.approverId,
@@ -157,7 +163,14 @@ export class ApprovalService {
               location: { select: { name: true, timezone: true } },
             },
           })
-          .catch(alreadyDecided('ENTRY_ALREADY_DECIDED', 'This entry was decided a moment ago.')),
+          .catch(
+            missedWrite(
+              async () =>
+                (await this.prisma.timeEntry.count({ where: { id: data.entryId, approvalStatus: 'PENDING' } })) > 0,
+              'ENTRY_ALREADY_DECIDED',
+              'This entry was decided a moment ago.',
+            ),
+          ),
     );
     if (decided.waiting)
       return success({ ...entry, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);

@@ -95,14 +95,13 @@ describe('ApprovalEscalationService.sweep', () => {
 
   it('half-way through its approvals: the reminder goes to whom it still waits for, never to who approved', async () => {
     openSteps = [{ itemId: 'e5', requiredRoleIds: ['finance'], doneRoleIds: [], approverIds: ['mgr'] }];
+    // The manager who gave step 1 also holds Finance: never reminded about what they already approved.
+    holders = ['fin1', 'mgr'];
     prisma.assetMoney.findMany.mockResolvedValue([slip('e5', 5, 30000)]);
     expect(await svc.sweep(now)).toBe(1);
     expect(notifications.emit).toHaveBeenCalledWith(
       'approval_reminder',
       expect.objectContaining({ recipientIds: ['fin1'], stage: 'REMIND', itemId: 'e5' }),
-    );
-    expect(prisma.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: { notIn: ['mgr', 'driver'] } }) }),
     );
   });
 
@@ -115,6 +114,18 @@ describe('ApprovalEscalationService.sweep', () => {
     expect(notifications.emit).toHaveBeenCalledWith(
       'approval_reminder',
       expect.objectContaining({ recipientIds: ['fin2'], stage: 'REMIND' }),
+    );
+  });
+
+  it('an escalation never reaches somebody on leave, or who already approved it', async () => {
+    openSteps = [{ itemId: 'e7', requiredRoleIds: ['finance'], doneRoleIds: [], approverIds: ['fin2'] }];
+    holders = ['fin1', 'fin2', 'fin3'];
+    away = ['fin3'];
+    prisma.assetMoney.findMany.mockResolvedValue([slip('e7', 30, 30000)]);
+    await svc.sweep(now);
+    expect(notifications.emit).toHaveBeenCalledWith(
+      'approval_reminder',
+      expect.objectContaining({ recipientIds: ['fin1'], stage: 'ESCALATE' }),
     );
   });
 

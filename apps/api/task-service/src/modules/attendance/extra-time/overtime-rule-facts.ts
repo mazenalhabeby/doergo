@@ -1,4 +1,5 @@
 import type { PrismaService } from '@hbcfield/shared';
+import { missedWrite } from '../../approvals/rules/already-decided';
 
 /* What an overtime rule needs from the database; the pure builder is shared (`overtimeRuleFacts`). */
 
@@ -33,4 +34,19 @@ export async function lastRoundCycle(prisma: PrismaService, entryId: string): Pr
     select: { cycle: true },
   });
   return last?.cycle ?? 0;
+}
+
+/**
+ * An overtime write that missed its claim (the end it read, or the round still waiting): decided meanwhile — the
+ * round refused or approved by somebody else, the shift gone — or only CHANGED (another path moved the end).
+ */
+export function overtimeWriteMissed(prisma: PrismaService, entryId: string, roundId?: string) {
+  return missedWrite(
+    async () =>
+      roundId
+        ? (await prisma.overtimeRequest.count({ where: { id: roundId, status: 'PENDING_APPROVAL' } })) > 0
+        : (await prisma.timeEntry.count({ where: { id: entryId } })) > 0,
+    'OVERTIME_ALREADY_DECIDED',
+    'This overtime was decided a moment ago.',
+  );
 }

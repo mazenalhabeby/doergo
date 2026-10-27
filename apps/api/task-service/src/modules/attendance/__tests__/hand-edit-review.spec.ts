@@ -90,9 +90,11 @@ describe('changed by hand — the hours rule', () => {
     expect(originalTimes(legacy)).toEqual({ originalClockIn: at(8), originalClockOut: at(17) });
   });
 
-  it('a forgotten shift the office closes ended at its planned end — not when the office got round to it', () => {
-    expect(forgottenEnd({ expectedClockOutAt: at(17), lastSeenAt: at(16) }, at(30))).toEqual(at(17));
-    expect(forgottenEnd({ expectedClockOutAt: null, lastSeenAt: at(16) }, at(30))).toEqual(at(16));
+  it('a forgotten shift the office closes ended at the EARLIEST of its planned end, the last time seen, and now', () => {
+    expect(forgottenEnd({ expectedClockOutAt: at(17), lastSeenAt: at(16) }, at(30))).toEqual(at(16));
+    expect(forgottenEnd({ expectedClockOutAt: at(17), lastSeenAt: null }, at(30))).toEqual(at(17));
+    // Closed at 10:00 "at its planned 17:00": the 7 h it never worked count as changed by hand.
+    expect(forgottenEnd({ expectedClockOutAt: at(17) }, at(10))).toEqual(at(10));
     expect(forgottenEnd({}, at(30))).toEqual(at(30));
   });
 
