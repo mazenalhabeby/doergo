@@ -30,5 +30,9 @@ export function ChoiceChip({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { on: boolean; variant?: keyof typeof VARIANTS }) {
   const v = VARIANTS[variant]
   // No default `type`: each call site passes what its copy had (inside a form, a missing type submits).
-  return <button className={cn(v.base, on ? v.on : OFF, className)} {...props} />
+  // A toggle says it is on to a screen reader too, not only in colour — unless a role says it another way
+  // (a chip that is a radio carries aria-checked).
+  return (
+    <button aria-pressed={props.role ? undefined : on} className={cn(v.base, on ? v.on : OFF, className)} {...props} />
+  )
 }

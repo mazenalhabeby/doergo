@@ -18,8 +18,6 @@ import { assetsApi, documentsApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
-import { Input } from "@/components/ui/input"
-import { formatDuration } from "@hbcfield/shared/client"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { UserAvatar } from "@/components/common/user-avatar"
@@ -28,6 +26,7 @@ import { cn } from "@/lib/utils"
 import { FactRow } from "@/components/page/page-kit"
 import { WhoElse } from "./who-else"
 import { NoShowDecision } from "./no-show-decision"
+import { DurationField, DURATION_MAX_MINUTES } from "./duration-field"
 import { nameParts } from "./name-parts"
 import { ruleLinkForItem } from "../_lib/rule-link"
 import { Icon } from "@/components/ui/icon"
@@ -58,24 +57,24 @@ export function DecisionPanel({
   const { t } = useTranslation()
   const actions = approvalActionsFor(item)
   const ruleLink = onMakeRule ? ruleLinkForItem(item) : null
+  const requested = (item.data as Record<string, unknown>).requestedMinutes
+  const initialMinutes = typeof requested === "number" ? requested : 30
   const [armed, setArmed] = useState<ApprovalActionSpec | null>(null)
   const [reason, setReason] = useState("")
-  const [minutes, setMinutes] = useState("30")
+  const [minutes, setMinutes] = useState<number | null>(30)
   const [expiresOn, setExpiresOn] = useState("")
 
   // A different item starts clean — a reason typed for one must never be sent for the next.
   useEffect(() => {
     setArmed(null)
     setReason("")
-    setMinutes(String((item.data as Record<string, unknown>).requestedMinutes ?? 30))
+    setMinutes(initialMinutes)
     setExpiresOn(typeof item.data.expiresOn === "string" ? String(item.data.expiresOn).slice(0, 10) : "")
-  }, [item.kind, item.id, item.data])
+  }, [item.kind, item.id, item.data, initialMinutes])
 
   const needsForm = (a: ApprovalActionSpec) => a.reason !== "none" || !!a.input
   const reasonMissing = armed?.reason === "required" && !reason.trim()
-  const minutesValue = Number(minutes)
-  const minutesBad =
-    armed?.input === "minutes" && !(Number.isInteger(minutesValue) && minutesValue >= 1 && minutesValue <= 1440)
+  const minutesBad = armed?.input === "minutes" && !(minutes != null && minutes >= 1 && minutes <= DURATION_MAX_MINUTES)
 
   const send = (a: ApprovalActionSpec) => {
     if (needsForm(a) && armed?.id !== a.id) {
@@ -88,7 +87,7 @@ export function DecisionPanel({
       id: item.id,
       action: a.id,
       reason: a.reason !== "none" && reason.trim() ? reason.trim() : undefined,
-      minutes: a.input === "minutes" ? minutesValue : undefined,
+      minutes: a.input === "minutes" ? minutes! : undefined,
       expiresOn: a.input === "expiresOn" && expiresOn ? expiresOn : undefined,
       spaceId:
         item.kind === "clientRequest"
@@ -155,23 +154,13 @@ export function DecisionPanel({
       {armed && (
         <div className="space-y-3">
           {armed.input === "minutes" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="approval-minutes">{t("approvals.minutes")}</Label>
-              <Input
-                id="approval-minutes"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={1440}
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
-                className="w-32"
-              />
-              {/* The number read as time (clock review C8): "90" is "1h 30m". */}
-              {Number.isInteger(minutesValue) && minutesValue >= 60 && (
-                <p className="text-xs text-muted-foreground">= {formatDuration(minutesValue)}</p>
-              )}
-            </div>
+            <DurationField
+              key={`${item.kind}:${item.id}`}
+              id="approval-minutes"
+              initialMinutes={initialMinutes}
+              invalid={minutesBad}
+              onChange={setMinutes}
+            />
           )}
           {armed.input === "expiresOn" && (
             <div className="space-y-1.5">

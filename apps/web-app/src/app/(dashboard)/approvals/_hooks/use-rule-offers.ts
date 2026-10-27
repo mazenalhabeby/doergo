@@ -91,5 +91,7 @@ export function useRuleOffers({
     setHidden((h) => new Set(h).add(`${kind}:${o.key}`))
     if (o.key === "item") setFromItem(null)
   }
-  return { offers, dismiss, notYours }
+  // The refused offer's line is closed like an offer ("Not now"): gone for this visit, the link already read.
+  const dismissNotYours = () => dismiss({ key: "item", spaceId: null, limit: null, why: "" })
+  return { offers, dismiss, notYours, dismissNotYours }
 }

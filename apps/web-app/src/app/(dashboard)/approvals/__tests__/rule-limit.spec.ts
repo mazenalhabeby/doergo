@@ -13,6 +13,13 @@ import {
 } from "../_lib/rule-limit"
 import { ruleLinkForItem } from "../_lib/rule-link"
 
+// The reader's language decides how a saved amount is shown ("12,50" / "12.50").
+let mockLocale = "en"
+jest.mock("@/lib/format-date", () => ({
+  ...jest.requireActual("@/lib/format-date"),
+  dateLocale: () => mockLocale,
+}))
+
 /*
   A rule's limit typed and read back: a duration (overtime, hours changed by hand) is hours + minutes and
   round-trips to the minute — decimal hours turned 50 min into "0.8 h" and saved it again as 48.
@@ -114,7 +121,7 @@ describe("a duration limit — hours and minutes", () => {
     expect(limitCapped("overtime", "")).toBe(false)
     const saved = limitPatchInput("overtime", limitPatch("overtime", durationValue("30", "")!)!)
     expect(durationFields(saved)).toEqual({ h: "24", m: "" })
-    expect(limitPatchInput("expense", limitPatch("expense", "12.5")!)).toBe("12.5")
+    expect(limitPatchInput("expense", limitPatch("expense", "12.5")!)).toBe("12.50")
     expect(limitPatchInput("overtime", limitPatch("overtime", "")!)).toBe("")
   })
 
@@ -123,7 +130,7 @@ describe("a duration limit — hours and minutes", () => {
   })
 
   it("other kinds keep their own unit", () => {
-    expect(limitInput(rule("expense", { minAmountCents: 1250 }))).toBe("12.5")
+    expect(limitInput(rule("expense", { minAmountCents: 1250 }))).toBe("12.50")
     expect(limitPatch("expense", "12.5")?.minAmountCents).toBe(1250)
     expect(limitPatch("request", "3")?.minDays).toBe(3)
     expect(limitPatch("noShow", "")?.minDays).toBeNull()
@@ -137,6 +144,61 @@ describe("a duration limit — hours and minutes", () => {
     expect(readLimitNumber("12,50")).toBe(12.5)
     expect(readLimitNumber("  ")).toBe("")
     expect(readLimitNumber("1 000")).toBeNull()
+  })
+})
+
+describe("a money limit — thousands separators, either way round", () => {
+  afterEach(() => (mockLocale = "en"))
+  const cents = (v: string) => limitPatch("expense", v)?.minAmountCents
+
+  it("1.000 and 1,000 are a thousand, never 1", () => {
+    expect(cents("1.000")).toBe(100_000)
+    expect(cents("1,000")).toBe(100_000)
+    expect(cents("12.000")).toBe(1_200_000)
+    expect(cents("1.000.000")).toBe(100_000_000)
+  })
+
+  it("both separators: the last one is the decimal", () => {
+    expect(cents("1.000,50")).toBe(100_050)
+    expect(cents("1,000.50")).toBe(100_050)
+    expect(readLimitNumber("1.000.000,5", true)).toBe(1_000_000.5)
+  })
+
+  it("a lone separator with one or two digits after it is the decimal", () => {
+    expect(cents("12,50")).toBe(1250)
+    expect(cents("12.5")).toBe(1250)
+    expect(cents("12.")).toBe(1200)
+    expect(cents("1000")).toBe(100_000)
+  })
+
+  it("what is still ambiguous, or badly grouped, is refused — never guessed", () => {
+    for (const v of ["0,500", "1234.567", "1.00.000", "1.000,505", "1,000,50.5", "1.000.5", "12,5,0", ".", "1.2345"])
+      expect(limitPatch("expense", v)).toBeNull()
+  })
+
+  it("a saved amount reads back in the reader's decimal style", () => {
+    expect(limitInput(rule("expense", { minAmountCents: 1250 }))).toBe("12.50")
+    expect(limitInput(rule("expense", { minAmountCents: 100_000 }))).toBe("1000")
+    mockLocale = "de"
+    expect(limitInput(rule("expense", { minAmountCents: 1250 }))).toBe("12,50")
+    expect(limitInput(rule("expense", { minAmountCents: 100_000 }))).toBe("1000")
+    // What is shown reads back as what was saved.
+    expect(cents(limitInput(rule("expense", { minAmountCents: 1250 })))).toBe(1250)
+  })
+})
+
+describe("a limit with no use for thousands — hours, minutes, days", () => {
+  it("a separator followed by exactly three digits is refused, never read as 1", () => {
+    expect(readLimitNumber("1.000")).toBeNull()
+    expect(readLimitNumber("1,000")).toBeNull()
+    expect(durationValue("1.000", "")).toBeNull()
+    expect(limitPatch("request", "1.000")).toBeNull()
+    expect(limitPatch("noShow", "2,000")).toBeNull()
+  })
+  it("decimals keep working", () => {
+    expect(readLimitNumber("1,5")).toBe(1.5)
+    expect(readLimitNumber("1.25")).toBe(1.25)
+    expect(readLimitNumber(",5")).toBe(0.5)
   })
 })
 
@@ -157,6 +219,15 @@ describe("make a rule like this", () => {
 
   it("a limit just under the item's own value", () => {
     expect(limitOf(ruleLinkForItem(item({ requestedMinutes: 90 })))).toBe("60")
+  })
+  it("time outside the shift is judged on before AND after", () => {
+    const outside = { ...item({ beforeMinutes: 40, afterMinutes: 80, requestedMinutes: 0 }), kind: "outside" }
+    expect(limitOf(ruleLinkForItem(outside as ApprovalItem))).toBe("90")
+  })
+  it("a kind with a limit and no figure on the item offers nothing — it would be every item", () => {
+    const hours = { ...item({ minutes: 480 }), kind: "hours" } as ApprovalItem
+    expect(ruleLinkForItem(hours)).toBeNull()
+    expect(ruleLinkForItem(item({}))).toBeNull()
   })
   it("a limit that rounds to nothing sends none — the rule is for every one", () => {
     expect(limitOf(ruleLinkForItem(item({ requestedMinutes: 20 })))).toBeNull()

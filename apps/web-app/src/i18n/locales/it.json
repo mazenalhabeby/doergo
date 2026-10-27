@@ -9734,13 +9734,16 @@
     },
     "reasonRequired": "Motivo (obbligatorio)",
     "reasonOptional": "Motivo (facoltativo)",
-    "minutes": "Minuti",
+    "duration": "Durata",
+    "durationRange": "Tra 1 min e 24 h.",
     "expiresOn": "Valido fino al",
     "openPage": "Apri la pagina completa",
     "decided": "Fatto — {{name}}",
     "someone": "Qualcuno",
     "empty": "Nulla attende una sua decisione",
     "emptyHint": "Le nuove richieste compaiono qui appena arrivano.",
+    "emptyKind": "Niente in attesa di questo tipo",
+    "showAll": "Mostra tutto",
     "pick": "Scelga un elemento per vedere i dettagli",
     "unavailable": "Impossibile caricare: {{kinds}}. Aggiorni.",
     "yes": "Sì",
@@ -9749,24 +9752,10 @@
     "blocksWork": "Necessario prima di lavorare",
     "back": "Indietro",
     "flag": {
-      "overtime": "Straordinario",
-      "missedClockOut": "Uscita non timbrata",
       "outsideGeofence": "Fuori dal geofence",
-      "lateArrival": "Arrivo in ritardo",
-      "earlyDeparture": "Uscita anticipata",
-      "unscheduledDay": "Giorno non pianificato",
       "needsReview": "Da verificare",
-      "outsideGeofenceIn": "Entrata fuori sede",
-      "outsideGeofenceOut": "Uscita fuori sede",
-      "missedBreak": "Pausa saltata",
-      "autoClockIn": "Entrata auto",
-      "autoClockOut": "Uscita auto",
-      "autoRest": "Pausa auto",
-      "remoteWithWorkspace": "Da remoto con spazio assegnato",
       "earlyArrival": "Arrivo anticipato",
-      "missingClockout": "Uscita non timbrata",
-      "clockOutProvisional": "Uscita impostata dal sistema",
-      "recordedOffline": "Registrato senza segnale"
+      "missingClockout": "Uscita non timbrata"
     },
     "leave": {
       "VACATION": "Ferie",
@@ -9884,11 +9873,12 @@
         "AGREED": "Concordato con me",
         "OTHER": "Altro"
       },
+      "reasonLabel": "Motivo",
       "wasHere": "Era presente",
       "wasHereHelp": "Aggiungi le ore di questo turno. L’assenza si chiude al salvataggio.",
       "wholeRun": "Decidi tutti i {{count}} giorni insieme",
       "save": "Salva",
-      "fixRota": "Correggi il turno"
+      "fixRota": "Correggi la pianificazione"
     },
     "day": {
       "label": "Giornata di lavoro",
@@ -9998,6 +9988,7 @@
       "smart": {
         "window_one": "{{count}} richiesta ({{kind}}) negli ultimi {{days}} giorni",
         "window_other": "{{count}} richieste ({{kind}}) negli ultimi {{days}} giorni",
+        "none": "Ancora niente negli ultimi {{days}} giorni",
         "caught_one": "{{count}} è passata da una regola",
         "caught_other": "{{count}} sono passate da una regola",
         "alone_one": "{{count}} l'ha decisa una sola persona",
@@ -10012,7 +10003,7 @@
         "makeRule": "Crea una regola come questa",
         "fromItemAny": "Una regola come per la richiesta aperta: {{where}}, tutte.",
         "approver": "Seconda approvazione di {{role}} — modificabile nella tela",
-        "notYours": "La regola della richiesta aperta non viene proposta: qui non si possono aggiungere regole per {{where}}."
+        "notYours": "La regola della richiesta aperta non viene proposta: non si possono aggiungere regole per {{where}}."
       },
       "assetKind": "Tipo di bene",
       "anyAssetKind": "Qualsiasi tipo di bene",

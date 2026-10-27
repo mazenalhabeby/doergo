@@ -43,9 +43,15 @@ export function useApprovalsPage() {
   // The inbox (a fan-out over every kind) is read only once the tab is known, and only while it is shown.
   const [tabKnown, setTabKnown] = useState(false)
   useEffect(() => {
-    const want = new URLSearchParams(window.location.search).get("tab")
-    if (want === "rules" || want === "stand") setTabState(want)
+    // Read on arrival and again on Back / Forward ("make a rule like this" adds an entry: Back is the inbox).
+    const read = () => {
+      const want = new URLSearchParams(window.location.search).get("tab")
+      setTabState(want === "rules" || want === "stand" ? want : "decide")
+    }
+    read()
     setTabKnown(true)
+    window.addEventListener("popstate", read)
+    return () => window.removeEventListener("popstate", read)
   }, [])
   // The open tab stays in the address, so a reload or a shared link lands on it.
   const setTab = useCallback((next: ApprovalsTab) => {

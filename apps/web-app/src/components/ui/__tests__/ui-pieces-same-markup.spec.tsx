@@ -61,6 +61,7 @@ describe("shared UI pieces render what their copies rendered", () => {
       ).toBe(
         html(
           <button
+            aria-pressed={on}
             disabled={isLast}
             className={cn(
               "rounded-full border px-2.5 py-1 text-xs transition-colors",

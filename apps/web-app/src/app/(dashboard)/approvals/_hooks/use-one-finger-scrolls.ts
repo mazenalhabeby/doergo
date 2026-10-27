@@ -8,6 +8,11 @@ import { useEffect, useRef } from "react"
  * every touch gesture), and a lone finger's touchstart never reaches the pan handler; a tap still opens a node (a
  * click). Any touch screen counts, not only a narrow one: an iPad is wider than a phone and just as touched. A mouse
  * is unaffected (touch-action and touchstart are about fingers).
+ *
+ * The pinch still zooms although the first finger's touchstart was stopped: d3-zoom (React Flow's pan/zoom) reads
+ * `event.touches` — EVERY finger down — on the second finger's touchstart, so it takes up both at once and the
+ * gesture is a two-finger zoom from its first move (d3-zoom 3 `touchstarted`; a lone finger's touchmove is then
+ * ignored, as no gesture is running). Not tried on a device yet; the + / − buttons zoom too.
  */
 const TOUCH_SCREEN = "(max-width: 767px), (any-pointer: coarse)"
 export function useOneFingerScrolls() {

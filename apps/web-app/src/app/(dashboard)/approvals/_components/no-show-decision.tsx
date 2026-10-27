@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ArrowUpRight, CalendarPlus, Loader2 } from "lucide-react"
@@ -107,17 +107,22 @@ export function NoShowDecision({
           onSelect={() => setChoice("excuse")}
           title={t("approvals.actions.excuse")}
           help={t("approvals.noShow.excusedHelp")}
-        >
-          {choice === "excuse" && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {NO_SHOW_EXCUSE_REASONS.map((r) => (
-                <ChoiceChip key={r} type="button" on={reasonCode === r} onClick={() => setReasonCode(r)}>
-                  {t(`approvals.noShow.reasons.${r}`)}
-                </ChoiceChip>
-              ))}
-            </div>
-          )}
-        </ChoiceCard>
+        />
+        {/* What happened, AFTER the answer it belongs to: inside a radio its buttons would be hidden from a screen
+            reader (a radio's content is presentational) and its keys would choose the answer instead. */}
+        {choice === "excuse" && (
+          <div
+            role="group"
+            aria-label={t("approvals.noShow.reasonLabel")}
+            className="-mt-1.5 ml-7 flex flex-wrap gap-1.5"
+          >
+            {NO_SHOW_EXCUSE_REASONS.map((r) => (
+              <ChoiceChip key={r} type="button" on={reasonCode === r} onClick={() => setReasonCode(r)}>
+                {t(`approvals.noShow.reasons.${r}`)}
+              </ChoiceChip>
+            ))}
+          </div>
+        )}
 
         <ChoiceCard
           value="absent"
@@ -193,7 +198,6 @@ function ChoiceCard({
   onSelect,
   title,
   help,
-  children,
 }: {
   value: Choice
   /** The one answer Tab stops on (roving tabindex). */
@@ -202,7 +206,6 @@ function ChoiceCard({
   onSelect: () => void
   title: string
   help: string
-  children?: ReactNode
 }) {
   return (
     <div
@@ -212,7 +215,8 @@ function ChoiceCard({
       tabIndex={focusable ? 0 : -1}
       onClick={onSelect}
       onKeyDown={(e) => {
-        if (e.key === " " || e.key === "Enter") {
+        // Only a key on the answer itself: one from a control inside it is that control's own.
+        if (e.target === e.currentTarget && (e.key === " " || e.key === "Enter")) {
           e.preventDefault()
           onSelect()
         }
@@ -232,10 +236,9 @@ function ChoiceCard({
       >
         {selected && <span className="size-1.5 rounded-full bg-primary" />}
       </span>
-      <span className="min-w-0 flex-1" onClick={(e) => selected && e.stopPropagation()}>
+      <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium text-foreground">{title}</span>
         <span className="block text-xs text-muted-foreground">{help}</span>
-        {children}
       </span>
     </div>
   )

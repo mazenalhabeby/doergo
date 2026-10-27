@@ -8,6 +8,7 @@ import { assetsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
+import { notify } from "@/lib/toast"
 import {
   durationFields,
   durationValue,
@@ -57,24 +58,47 @@ export function WhenNode({
     setHm(durationFields(stored))
   }, [stored])
   const typed = duration ? durationValue(hm.h, hm.m) : limit
-  // Saved on Enter, on leaving the field, and when the editor closes (Escape or a click away) — never on unmount,
-  // which is also what a DELETED rule does. The fields then show what was SAVED (1.5 h reads 1 h 30 min).
-  const commit = () => {
+  // Is the editor open? A blur that comes AFTER it closed (the focus going back to the node) is not a save:
+  // Escape has just thrown the typing away, a click away has just saved it.
+  const editing = useRef(false)
+  // The fields back to the saved limit, nothing said.
+  const revert = () => {
+    setCapped(false)
+    setUnreadable(false)
+    setLimit(sent.current)
+    setHm(durationFields(sent.current))
+  }
+  // Saved on Enter, on leaving the field, and when the editor closes by a click away — never on unmount, which is
+  // also what a DELETED rule does; Escape throws it away. The fields then show what was SAVED (1.5 h reads
+  // 1 h 30 min). False when what was typed could not be read: nothing is saved and the fields go back.
+  const commit = (): boolean => {
+    if (!editing.current) return true
     const patch = typed == null ? null : limitPatch(rule.kind, typed)
-    setUnreadable(!patch)
     if (!patch || typed == null) {
-      setCapped(false)
-      setLimit(sent.current)
-      setHm(durationFields(sent.current))
-      return
+      revert()
+      setUnreadable(true)
+      return false
     }
     const saved = limitPatchInput(rule.kind, patch)
+    setUnreadable(false)
     setCapped(limitCapped(rule.kind, typed))
     setLimit(saved)
     setHm(durationFields(saved))
-    if (saved === sent.current) return
-    sent.current = saved
-    onChange(patch)
+    if (saved !== sent.current) {
+      sent.current = saved
+      onChange(patch)
+    }
+    return true
+  }
+  const onOpen = () => {
+    editing.current = true
+    revert()
+  }
+  const onClose = (how: "escape" | "away") => {
+    if (how === "escape") revert()
+    // The editor's own line goes with it: a refusal is then said where it is still seen.
+    else if (!commit()) notify.error(t("approvals.tree.unreadable"))
+    editing.current = false
   }
   // Under the fields, one line: "No limit" while they are empty (no placeholder to clip), that it was capped, or
   // that what was typed could not be read.
@@ -139,7 +163,8 @@ export function WhenNode({
       value={value}
       bad={range.shadowedBy != null}
       readOnly={rule.editable === false}
-      onClose={commit}
+      onOpen={onOpen}
+      onClose={onClose}
       sub={
         range.shadowedBy != null
           ? t("approvals.tree.range.twin", { n: range.shadowedBy })

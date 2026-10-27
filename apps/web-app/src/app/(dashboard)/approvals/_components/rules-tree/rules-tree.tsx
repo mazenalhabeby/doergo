@@ -84,7 +84,7 @@ export function RulesTree() {
     (spaceId: string | null) => everywhere || (!!spaceId && workspaces.some((w) => w.id === spaceId)),
     [everywhere, workspaces],
   )
-  const { offers, dismiss, notYours } = useRuleOffers({
+  const { offers, dismiss, notYours, dismissNotYours } = useRuleOffers({
     kind: tree.kind,
     setKind: tree.setKind,
     insights: tree.insights,
@@ -135,6 +135,14 @@ export function RulesTree() {
         <p role="status" className="flex items-center gap-2 text-[13px] text-muted-foreground">
           <Icon name="alertLine" size={15} />
           {notYours}
+          <button
+            type="button"
+            onClick={dismissNotYours}
+            aria-label={t("approvals.tree.smart.notNow")}
+            className="grid size-7 shrink-0 place-items-center rounded-full hover:bg-accent"
+          >
+            <Icon name="closeLine" size={14} />
+          </button>
         </p>
       )}
       <SuggestionBar

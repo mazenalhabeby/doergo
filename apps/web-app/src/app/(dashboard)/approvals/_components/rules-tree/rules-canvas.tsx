@@ -246,7 +246,7 @@ export function RulesCanvas(props: {
               edgesFocusable={false}
               minZoom={0.25}
               maxZoom={1.4}
-              // The page scrolls over the canvas; zoom is a pinch or the buttons.
+              // The page scrolls over the canvas; zoom is a two-finger pinch (use-one-finger-scrolls.ts) or the buttons.
               zoomOnScroll={false}
               preventScrolling={false}
               proOptions={{ hideAttribution: true }}

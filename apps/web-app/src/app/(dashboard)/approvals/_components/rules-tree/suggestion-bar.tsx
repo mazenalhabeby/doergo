@@ -46,13 +46,20 @@ export function SuggestionBar({
       {insights && (
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
           <Icon name="sparkles" size={15} className="text-shell-accent" />
-          <span>
-            {t("approvals.tree.smart.window", { count: insights.total, kind: kindLabel, days: insights.days })}
-          </span>
-          <span className="font-semibold text-foreground">
-            {t("approvals.tree.smart.caught", { count: insights.total - insights.uncovered })}
-          </span>
-          <span>{t("approvals.tree.smart.alone", { count: insights.uncovered })}</span>
+          {/* Nothing in the window: one calm line, never "0 went to a rule · 0 were decided by one person". */}
+          {insights.total === 0 ? (
+            <span>{t("approvals.tree.smart.none", { days: insights.days })}</span>
+          ) : (
+            <>
+              <span>
+                {t("approvals.tree.smart.window", { count: insights.total, kind: kindLabel, days: insights.days })}
+              </span>
+              <span className="font-semibold text-foreground">
+                {t("approvals.tree.smart.caught", { count: insights.total - insights.uncovered })}
+              </span>
+              <span>{t("approvals.tree.smart.alone", { count: insights.uncovered })}</span>
+            </>
+          )}
         </p>
       )}
       {offers.length > 0 && (

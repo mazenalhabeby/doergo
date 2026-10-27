@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useRef, type ReactNode } from "react"
 import type { IconName } from "@hbcfield/shared/client"
 import { Icon } from "@/components/ui/icon"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -36,6 +36,7 @@ export function FlowNode({
   sub,
   bad,
   readOnly,
+  onOpen,
   onClose,
   children,
 }: {
@@ -46,10 +47,14 @@ export function FlowNode({
   bad?: boolean
   /** Shown, never opened: a rule the caller may read but not change. */
   readOnly?: boolean
-  /** The editor closed (click away, Escape, or the node again) — save what was typed. */
-  onClose?: () => void
+  /** The editor opened — a word left from the last time (a refusal, a cap) is cleared. */
+  onOpen?: () => void
+  /** The editor closed: by Escape (throw away what was typed), or a click away / the node again (save it). */
+  onClose?: (how: "escape" | "away") => void
   children: ReactNode
 }) {
+  // Escape is told apart from a click away: Radix closes both through the same onOpenChange.
+  const escaped = useRef(false)
   const face = (
     <>
       <span className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
@@ -64,9 +69,19 @@ export function FlowNode({
   )
   if (readOnly) return <div className={cn(NODE, "cursor-default border-border")}>{face}</div>
   return (
-    <Popover onOpenChange={(open) => !open && onClose?.()}>
+    <Popover
+      onOpenChange={(open) => {
+        if (open) onOpen?.()
+        else onClose?.(escaped.current ? "escape" : "away")
+        escaped.current = false
+      }}
+    >
       <PopoverTrigger className={cn(NODE, bad ? "border-shell-crit" : "border-border")}>{face}</PopoverTrigger>
-      <PopoverContent align="start" className="flex w-[300px] flex-col gap-3 rounded-2xl p-4 shadow-shell-pop">
+      <PopoverContent
+        align="start"
+        onEscapeKeyDown={() => (escaped.current = true)}
+        className="flex w-[300px] flex-col gap-3 rounded-2xl p-4 shadow-shell-pop"
+      >
         <b className="text-sm">{label}</b>
         {children}
       </PopoverContent>

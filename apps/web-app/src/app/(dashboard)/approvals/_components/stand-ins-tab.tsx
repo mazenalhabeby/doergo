@@ -1,9 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { DELEGATION_MAX_DAYS, localDateKey, standInDatesProblem, type StandInView } from "@hbcfield/shared/client"
+import { DELEGATION_MAX_DAYS, standInDatesProblem, type StandInView } from "@hbcfield/shared/client"
 
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
@@ -19,10 +19,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ListTableError } from "@/components/common/list-page"
 import { cn } from "@/lib/utils"
 import { useConfirmPress } from "../_hooks/use-confirm-press"
+import { useTodayKey } from "../_hooks/use-today-key"
 import { ConfirmHint } from "./confirm-hint"
 
-// Today on this device's calendar (the shared day key).
-const todayKey = () => localDateKey()
 const day = (k: string) => formatMediumDate(`${k}T12:00:00Z`)
 
 /**
@@ -40,8 +39,14 @@ export function StandInsTab() {
 
   const [toUserId, setTo] = useState("")
   const [fromUserId, setFrom] = useState("")
-  const [startsOn, setStart] = useState(todayKey())
-  const [endsOn, setEnd] = useState(todayKey())
+  const today = useTodayKey()
+  const [startsOn, setStart] = useState(today)
+  const [endsOn, setEnd] = useState(today)
+  // A day that passed while the tab stayed open moves on to today (the server refuses a start in the past).
+  useEffect(() => {
+    setStart((v) => (v && v < today ? today : v))
+    setEnd((v) => (v && v < today ? today : v))
+  }, [today])
   const [note, setNote] = useState("")
 
   const refresh = () => {
@@ -87,7 +92,7 @@ export function StandInsTab() {
 
   const canFill = !!data && (data.mayHandOver || data.mayArrange)
   // Longer than a stand-in may run: said beside the dates, and never sent (the server refuses it too).
-  const tooLong = standInDatesProblem(startsOn, endsOn, todayKey(), DELEGATION_MAX_DAYS) === "STAND_IN_TOO_LONG"
+  const tooLong = standInDatesProblem(startsOn, endsOn, today, DELEGATION_MAX_DAYS) === "STAND_IN_TOO_LONG"
   const ready = !!toUserId && !!startsOn && !!endsOn && endsOn >= startsOn && !tooLong && !create.isPending
 
   if (isError) return <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
@@ -143,7 +148,7 @@ export function StandInsTab() {
                 <DatePicker
                   id="stand-in-from"
                   value={startsOn}
-                  min={todayKey()}
+                  min={today}
                   // A first day after the last one moves the last one with it.
                   onChange={(v) => {
                     setStart(v)

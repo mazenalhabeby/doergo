@@ -25,8 +25,17 @@ export const isDurationKind = (kind: RuleKind) => RULE_LIMITS[kind]?.field === "
 export function limitInput(r: ApprovalRuleView): string {
   const n = ruleLimitOf(r)
   if (n == null) return ""
-  if (r.kind === "expense") return String(n / 100)
+  if (r.kind === "expense") return moneyInput(n)
   return String(n)
+}
+
+/** Cents as the money field shows them, in the reader's decimal style ("12,50" / "12.50", whole euros "1000"). */
+function moneyInput(cents: number): string {
+  return (cents / 100).toLocaleString(dateLocale(), {
+    useGrouping: false,
+    minimumFractionDigits: cents % 100 ? 2 : 0,
+    maximumFractionDigits: 2,
+  })
 }
 
 /**
@@ -40,16 +49,49 @@ export function durationFields(minutes: string): { h: string; m: string } {
 }
 
 /**
- * A number as the office types it, with a comma or a dot as the decimal separator ("1,5" is "1.5", "12,50" is
- * 12.5): "" for an empty field, null for one that cannot be read (letters, two separators, a minus sign). The
- * fields are text, not number inputs: Safari reports a decimal comma in a number input as EMPTY, and an empty
- * field is "no limit" — "1,5" would have saved a rule that catches everything.
+ * A number as the office types it, with a comma or a dot as the decimal separator ("1,5" is "1.5"): "" for an
+ * empty field, null for one that cannot be read (letters, a minus sign, a misplaced separator). The fields are
+ * text, not number inputs: Safari reports a decimal comma in a number input as EMPTY, and an empty field is
+ * "no limit" — "1,5" would have saved a rule that catches everything.
+ *
+ * "1.000" is never read as 1. Money (`money`) takes thousands separators either way round — "1.000", "1,000",
+ * "1.000,50", "1,000.50" — a lone separator followed by exactly three digits being a thousands group; what is
+ * still ambiguous ("0,500", "1234.567") is refused. Every other limit (hours, minutes, days) has no use for a
+ * thousands separator, so a separator followed by exactly three digits is REFUSED there rather than guessed.
  */
-export function readLimitNumber(v: string): number | "" | null {
+export function readLimitNumber(v: string, money = false): number | "" | null {
   const s = v.trim()
   if (s === "") return ""
-  if (!/^(\d+[.,]?\d*|[.,]\d+)$/.test(s)) return null
-  return Number(s.replace(",", "."))
+  if (!/^[\d.,]+$/.test(s) || !/\d/.test(s)) return null
+  const seps = s.match(/[.,]/g) ?? []
+  if (seps.length === 0) return Number(s)
+  if (!money) {
+    if (seps.length > 1 || /^\d+[.,]\d{3}$/.test(s)) return null
+    return Number(s.replace(",", "."))
+  }
+  return readMoney(s)
+}
+
+/** Grouped thousands: 1–3 digits, then groups of exactly three ("1.000.000"), never a leading 0. */
+const grouped = (s: string, sep: string) => new RegExp(`^[1-9]\\d{0,2}(\\${sep}\\d{3})+$`).test(s)
+
+/** Money with either separator for thousands and the other (or a lone one, not followed by three digits) for cents. */
+function readMoney(s: string): number | null {
+  const last = Math.max(s.lastIndexOf("."), s.lastIndexOf(","))
+  const [whole, cents] = [s.slice(0, last), s.slice(last + 1)]
+  const sep = s[last]!
+  const other = sep === "." ? "," : "."
+  // Both separators: the last one is the decimal, the other only groups thousands ("1.000,50", "1,000.50").
+  if (whole.includes(other)) {
+    if (whole.includes(sep) || !grouped(whole, other) || !/^\d{1,2}$/.test(cents)) return null
+    return Number(whole.split(other).join("") + "." + cents)
+  }
+  // One kind, several times: thousands groups only ("1.000.000").
+  if (whole.includes(sep)) return grouped(s, sep) ? Number(s.split(sep).join("")) : null
+  // One separator: three digits after it is a thousands group ("1.000"); 1–2 (or none) are cents ("12,50", "12.").
+  if (cents.length === 3) return grouped(s, sep) ? Number(whole + cents) : null
+  if (cents.length > 3 || (whole === "" && cents === "")) return null
+  return Number((whole || "0") + "." + (cents || "0"))
 }
 
 /**
@@ -79,7 +121,7 @@ export function limitFields(kind: RuleKind, stored: number | null): Partial<Appr
  * cannot be read — the saved limit then stays; only an EMPTY field removes it.
  */
 export function limitPatch(kind: RuleKind, v: string): Partial<ApprovalRuleInput> | null {
-  const typed = readLimitNumber(v)
+  const typed = readLimitNumber(v, kind === "expense")
   if (typed === null) return null
   if (typed === "") return limitFields(kind, null)
   const stored = Math.round(kind === "expense" ? typed * 100 : typed)
@@ -96,7 +138,7 @@ export function limitMax(kind: RuleKind): number | undefined {
 /** Was the typed value above the kind's ceiling (so what is saved is the ceiling, not what was typed)? */
 export function limitCapped(kind: RuleKind, v: string): boolean {
   const max = limitMax(kind)
-  const typed = readLimitNumber(v)
+  const typed = readLimitNumber(v, kind === "expense")
   return typeof typed === "number" && max != null && typed > max
 }
 

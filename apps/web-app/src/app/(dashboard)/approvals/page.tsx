@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { AlertTriangle, ChevronLeft, Inbox, UserRoundCheck } from "lucide-react"
+import { AlertTriangle, ChevronLeft, UserRoundCheck } from "lucide-react"
 import { APPROVAL_GROUPS, APPROVAL_KINDS, type ApprovalT, describeApproval } from "@hbcfield/shared/client"
 
 import { dateLocale } from "@/lib/format-date"
@@ -18,6 +18,7 @@ import { ApprovalRow } from "./_components/approval-row"
 import { DayRow } from "./_components/day-row"
 import { DayPanel } from "./_components/day-panel"
 import { InboxActions } from "./_components/inbox-actions"
+import { InboxEmpty } from "./_components/inbox-empty"
 import { tabKeyTarget } from "./_lib/tab-keys"
 
 // Its own tab: never part of the inbox's first load; the tab's own shape while its code arrives, never a blank panel.
@@ -142,7 +143,11 @@ export default function ApprovalsPage() {
         </div>
       )}
 
-      <div id="approvals-panel" role="tabpanel" aria-labelledby={`approvals-tab-${shown}`}>
+      {/* A tab panel only while its tab list is drawn — otherwise its label would point at a tab that is not there. */}
+      <div
+        id="approvals-panel"
+        {...(settled && tabs.length > 1 && { role: "tabpanel", "aria-labelledby": `approvals-tab-${shown}` })}
+      >
         {/* Which tab, and who is asking, not known yet: a neutral shape — not the inbox's, which may not be the tab. */}
         {!settled ? (
           <TabLoading />
@@ -190,11 +195,7 @@ export default function ApprovalsPage() {
                   ))}
                 </div>
               ) : visible.length === 0 && visibleDays.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                  <Inbox className="mx-auto mb-3 size-10 text-muted-foreground/60" />
-                  <p className="font-medium text-foreground">{t("approvals.empty")}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{t("approvals.emptyHint")}</p>
-                </div>
+                <InboxEmpty narrowed={filter !== "all" && items.length > 0} onShowAll={() => setFilter("all")} />
               ) : (
                 APPROVAL_GROUPS.map((g) => {
                   const rows = visible.filter((i) => i.group === g)
@@ -261,7 +262,8 @@ export default function ApprovalsPage() {
                       onMakeRule={
                         managesRules
                           ? (link) => {
-                              window.history.replaceState(null, "", link)
+                              // A new entry, so Back returns to the item the rule was made from.
+                              window.history.pushState(null, "", link)
                               setTab("rules")
                             }
                           : undefined
