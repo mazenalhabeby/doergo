@@ -64,7 +64,9 @@ describe('a working day in the inbox', () => {
 });
 
 describe('Approve day', () => {
-  const inbox = (decide: (kind: string, id: string) => { ok: boolean; code?: string }) => {
+  const inbox = (
+    decide: (kind: string, id: string) => { ok: boolean; code?: string; stage?: string; waitingFor?: string },
+  ) => {
     const item = jest.fn(async (_c: unknown, kind: string, id: string) =>
       id === 'gone' ? null : { kind, id, canDecide: id !== 'ro' },
     );
@@ -93,6 +95,27 @@ describe('Approve day', () => {
       { kind: 'hours', id: 'a', action: 'approve' },
       { kind: 'away', id: 'x', action: 'approve' },
     ]);
+  });
+
+  /*
+    ⚠️ An office rule may want a second person on one member: the caller's approval went through, but the day
+    is not done — it must never read "Day approved" while an item still waits.
+  */
+  it('a member held for another approval is approved by them, and the day is not complete', async () => {
+    const { svc } = inbox((_k, id) =>
+      id === 'b' ? { ok: true, stage: 'FIRST_STEP', waitingFor: 'HR' } : { ok: true },
+    );
+    const r = await svc.approveDay(caller, [
+      { kind: 'hours', id: 'a' },
+      { kind: 'hours', id: 'b' },
+    ]);
+    expect(r).toEqual({
+      complete: false,
+      results: [
+        { kind: 'hours', id: 'a', ok: true },
+        { kind: 'hours', id: 'b', ok: true, waitingFor: 'HR' },
+      ],
+    });
   });
 
   it('stops at the first refusal and says which', async () => {

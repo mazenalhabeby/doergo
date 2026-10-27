@@ -11,7 +11,7 @@ import { emitEvent, approvalReminderEvent } from '@hbcfield/shared/microservices
 /**
  * WHEN NOBODY ANSWERS (shared `approval-rules.ts` → `noticeDue`).
  *
- * Every 15 minutes, under the cron lease: for each organization with a rule
+ * Every 10 minutes, under the cron lease: for each organization with a rule
  * that reminds or escalates, the items of that kind still waiting are read
  * (one query per organization and kind), and for each the rule that applies
  * decides what is due — remind the usual deciders, then pass it to the holders
@@ -75,9 +75,14 @@ export class ApprovalEscalationService {
         for (const n of notices)
           (sentFor.get(n.itemId) ?? sentFor.set(n.itemId, new Set()).get(n.itemId)!).add(n.stage as NoticeStage);
 
+        // Who to tell is the same for every item of one workspace and person: asked once per sweep.
+        const once = new Map<string, Promise<string[]>>();
+        const cached = (key: string, read: () => Promise<string[]>) =>
+          once.get(key) ?? (once.set(key, read()), once.get(key)!);
         for (const item of items) {
           const rule = pickRule(group as never[], item.facts) as (typeof group)[number] | null;
-          if (!rule) continue;
+          // A rule is about what is raised from the day it exists: switching one on does not nag about the backlog.
+          if (!rule || item.since < rule.createdAt) continue;
           const stage = noticeDue(rule, item.since, now, sentFor.get(item.itemId) ?? new Set());
           if (!stage) continue;
           // Claimed by the insert: two replicas, or two sweeps, say it once.
@@ -88,17 +93,21 @@ export class ApprovalEscalationService {
           } catch {
             continue;
           }
+          const who = `${item.facts.spaceIds.join(',')}|${item.subjectId ?? ''}`;
           let recipientIds =
             stage === 'ESCALATE'
-              ? await this.rules.holdersOf(
-                  organizationId,
-                  rule.escalateRoleId!,
-                  item.facts.spaceIds,
-                  item.subjectId ? [item.subjectId] : [],
+              ? await cached(`${rule.escalateRoleId}|${who}`, () =>
+                  this.rules.holdersOf(
+                    organizationId,
+                    rule.escalateRoleId!,
+                    item.facts.spaceIds,
+                    item.subjectId ? [item.subjectId] : [],
+                  ),
                 )
               : [];
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.
-          if (!recipientIds.length) recipientIds = await this.usualDeciders(organizationId, kind, item);
+          if (!recipientIds.length)
+            recipientIds = await cached(`usual|${who}`, () => this.usualDeciders(organizationId, kind, item));
           if (!recipientIds.length) continue;
           emitEvent(this.notifications, approvalReminderEvent, {
             organizationId,

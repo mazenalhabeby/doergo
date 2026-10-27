@@ -8,7 +8,8 @@ import { ApprovalEscalationService } from './approval-escalation.service';
 import { RuleFactsReader } from './rule-facts.reader';
 import { ApprovalRuleInsightsService } from './approval-rule-insights.service';
 
-/** One gate for every approve path that office rules apply to (overtime, requests, expenses). */
+/** One gate for every approve path office rules apply to (RULE_KINDS: overtime, requests, expenses, changed hours,
+ * missed clock-ins, asset papers, client requests). */
 @Global()
 @Module({
   imports: [ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],

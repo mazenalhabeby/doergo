@@ -28,6 +28,10 @@ import { ApprovalRulesClient } from './approval-rules.client';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { listAccessRoles } from '@hbcfield/shared/microservices';
+
+type RoleRow = { id: string; name: string; permissions?: Record<string, unknown>; memberCount?: number };
 import type { SessionUser } from '../../common/request.types';
 /**
  * Everything waiting for the caller to decide, in one place — see
@@ -45,6 +49,7 @@ export class ApprovalsController {
     private readonly standIns: StandInsService,
     private readonly rules: ApprovalRulesClient,
     private readonly days: ApprovalDaysService,
+    private readonly services: ServiceCalls,
   ) {}
 
   @Get()
@@ -95,6 +100,27 @@ export class ApprovalsController {
   @ApiOperation({ summary: "The office's approval rules (thresholds → a second approval)" })
   async listRules(@Request() req: AuthedRequest) {
     return { success: true, data: await this.rules.list(callerOrgId(req.user), rulesScope(req.user)) };
+  }
+
+  /**
+   * The roles a rule may name, for the rules page: id, name, org or workspace, and how many people hold it —
+   * never a role's permissions. `/organizations/roles` is for people who manage members; somebody who manages
+   * approval rules in one workspace needs only these four facts.
+   */
+  @Get('rules/roles')
+  @ApiOperation({ summary: 'The roles an approval rule can name, with how many people hold each' })
+  async ruleRoles(@Request() req: AuthedRequest) {
+    rulesScope(req.user);
+    const organizationId = callerOrgId(req.user);
+    const [org, space] = await Promise.all(
+      (['org', 'space'] as const).map((scope) => this.services.auth.ask(listAccessRoles, { organizationId, scope })),
+    );
+    const brief = (inSpace: boolean) => (r: RoleRow) =>
+      Object.values(r.permissions ?? {}).some(Boolean)
+        ? [{ id: r.id, name: r.name, inSpace, holders: r.memberCount ?? 0 }]
+        : [];
+    const rows = (reply: unknown) => ((reply as { data?: RoleRow[] })?.data ?? (reply as RoleRow[])) || [];
+    return { success: true, data: [...rows(org).flatMap(brief(false)), ...rows(space).flatMap(brief(true))] };
   }
 
   @Get('rules/insights')

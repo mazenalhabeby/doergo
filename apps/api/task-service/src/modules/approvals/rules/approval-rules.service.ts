@@ -199,9 +199,9 @@ export class ApprovalRulesService {
   }
 
   /** A rejection — by anybody who may decide — ends the two-step for this item. */
-  async clear(organizationId: string, kind: RuleKind, itemId: string): Promise<void> {
+  async clear(organizationId: string, kind: RuleKind, itemId: string | string[]): Promise<void> {
     await this.prisma.approvalStep.updateMany({
-      where: { organizationId, kind, itemId, consumedAt: null },
+      where: { organizationId, kind, itemId: { in: [itemId].flat() }, consumedAt: null },
       data: { consumedAt: new Date() },
     });
   }

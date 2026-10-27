@@ -33,8 +33,9 @@ export class ApprovalDaysService {
         results.push({ ...m, ok: false, code: r.code, message: r.message });
         return { results, complete: false };
       }
-      results.push({ ...m, ok: true });
+      // Approved by the caller; an office rule may still want somebody else — then the day is not finished.
+      results.push({ ...m, ok: true, ...(r.stage === 'FIRST_STEP' ? { waitingFor: r.waitingFor } : {}) });
     }
-    return { results, complete: true };
+    return { results, complete: results.every((x) => !x.waitingFor) };
   }
 }

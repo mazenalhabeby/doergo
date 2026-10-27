@@ -108,13 +108,23 @@ export class ApprovalRulesAdminService {
       remindAfterHours: input.remindAfterHours ?? null,
       escalateAfterHours: input.escalateAfterHours ?? null,
       escalateRoleId: input.escalateRoleId || null,
-      isActive: input.isActive ?? true,
+      // An edit that says nothing about on/off keeps it as it is; a new rule starts on.
+      ...(input.isActive != null || !id ? { isActive: input.isActive ?? true } : {}),
     };
     if (id) {
-      const { count } = await this.prisma.approvalRule.updateMany({ where: { id, organizationId }, data });
-      if (!count) throw new NotFoundException('Rule not found');
-      // Switched off: items half-way under it finish on their next approval, and stop saying "needs …" now.
-      if (!data.isActive) await closeStepsOf(this.prisma, organizationId, id);
+      const before = await this.prisma.approvalRule.findFirst({
+        where: { id, organizationId },
+        select: { kind: true, spaceId: true, secondRoleId: true },
+      });
+      if (!before) throw new NotFoundException('Rule not found');
+      await this.prisma.approvalRule.updateMany({ where: { id, organizationId }, data });
+      /*
+        Switched off, or now about something else (another kind, workspace or approver): items half-way under it
+        stop saying "needs …" now, and the next approval is judged by the rules as they are then.
+      */
+      const moved =
+        before.kind !== data.kind || before.spaceId !== data.spaceId || before.secondRoleId !== data.secondRoleId;
+      if (data.isActive === false || moved) await closeStepsOf(this.prisma, organizationId, id);
       return { id };
     }
     return this.prisma.approvalRule.create({

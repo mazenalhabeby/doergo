@@ -157,14 +157,20 @@ export class NoShowRecordService {
     const ids = data.wholeRun ? (run?.ids ?? [inst.id]) : [inst.id];
     const now = new Date();
     const excuse = data.action === 'excuse';
-    // Office rules: excusing a long run of missed days may need a second person; marking absent ends it.
-    if (!excuse) await this.rules.clear(data.organizationId, 'noShow', inst.id);
+    /*
+      Office rules: excusing a long run of missed days may need more people; marking absent ends it. The step
+      belongs to the RUN — kept under its newest day (the inbox item), found from any of its days — and the
+      days counted are the ones this decision closes: the whole run, or one day.
+    */
+    const runIds = run?.ids ?? [inst.id];
+    if (!excuse) await this.rules.clear(data.organizationId, 'noShow', runIds);
     const step = excuse
       ? await this.rules.firstStep({
           organizationId: data.organizationId,
           kind: 'noShow',
-          itemId: inst.id,
-          facts: { spaceIds: inst.spaceId ? [inst.spaceId] : [], days: run?.count ?? 1 },
+          itemId: data.wholeRun ? (run?.latestId ?? inst.id) : inst.id,
+          itemAliases: data.wholeRun ? runIds : [],
+          facts: { spaceIds: inst.spaceId ? [inst.spaceId] : [], days: ids.length },
           deciderId: data.excusedById ?? '',
           subjectId: inst.userId,
         })

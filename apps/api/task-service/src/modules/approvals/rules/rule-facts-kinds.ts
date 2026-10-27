@@ -1,6 +1,8 @@
 import type { ModuleRef } from '@nestjs/core';
 import {
   NO_SHOW_OPEN_STATES,
+  noShowRuns,
+  type NoShowRun,
   handChangedMinutes,
   isUrgentPriority,
   personName,
@@ -13,13 +15,14 @@ import { ProposalPlacesService } from '../../assets/proposals/proposal-places.se
 import type { RuleItem, RuleItemWindow } from './rule-facts.reader';
 
 /** People's names for a list of ids — one query. */
-async function namesOf(prisma: PrismaService, ids: string[]): Promise<Map<string, string>> {
+export async function namesOf(prisma: PrismaService, ids: string[]): Promise<Map<string, string>> {
   const people = await peopleNames(prisma, [...new Set(ids)]);
   return new Map(people.map((p) => [p.id, personName(p)]));
 }
 
-/** One read looks at no more than this many items per organization and kind. */
-const MAX_ITEMS = 500;
+/** One read looks at no more than this many items per organization and kind — the NEWEST, so a long backlog
+ * never hides what was raised today. */
+export const MAX_ITEMS = 500;
 
 /**
  * The items of the four newer rule kinds, as office rules read them (rule-facts.reader.ts holds the first three).
@@ -31,7 +34,13 @@ const MAX_ITEMS = 500;
 export async function hoursItems(prisma: PrismaService, organizationId: string, window: RuleItemWindow) {
   const rows = await prisma.timeEntry.findMany({
     where: window.since
-      ? { organizationId, clockInAt: { gte: window.since } }
+      ? // The window: finished entries a person looked at or changed — not every automatic shift of 90 days.
+        {
+          organizationId,
+          clockInAt: { gte: window.since },
+          status: { not: 'CLOCKED_IN' },
+          OR: [{ approvalStatus: { not: 'AUTO' } }, { isEdited: true }],
+        }
       : {
           organizationId,
           approvalStatus: 'PENDING',
@@ -49,7 +58,7 @@ export async function hoursItems(prisma: PrismaService, organizationId: string, 
       originalClockOut: true,
       user: { select: { firstName: true, lastName: true } },
     },
-    orderBy: { clockInAt: 'asc' },
+    orderBy: { clockInAt: 'desc' },
     take: MAX_ITEMS,
   });
   return rows.map((e): RuleItem => ({
@@ -61,11 +70,23 @@ export async function hoursItems(prisma: PrismaService, organizationId: string, 
   }));
 }
 
-/** Missed clock-ins still open; days = the run of consecutive missed days it belongs to. */
+/**
+ * Missed clock-ins that waited for a person; days = the run of consecutive missed days. A run is ONE item —
+ * its newest day, as the inbox and the decision key it — so a five-day run is not five reminders.
+ * The window counts days somebody had to answer: still open, marked absent, or excused BY A PERSON (a day the
+ * system closed itself — a late clock-in, leave — never asked anybody).
+ */
 export async function noShowItems(prisma: PrismaService, organizationId: string, window: RuleItemWindow) {
   const rows = await prisma.shiftInstance.findMany({
     where: window.since
-      ? { organizationId, expectedClockInAt: { gte: window.since }, state: { not: 'PLANNED' } }
+      ? {
+          organizationId,
+          expectedClockInAt: { gte: window.since },
+          OR: [
+            { state: { in: [...NO_SHOW_OPEN_STATES, 'ABSENT'] } },
+            { state: 'EXCUSED', closedAutomatically: false },
+          ],
+        }
       : { organizationId, state: { in: [...NO_SHOW_OPEN_STATES] }, expectedClockInAt: { lte: window.waitingBefore } },
     select: {
       id: true,
@@ -74,23 +95,48 @@ export async function noShowItems(prisma: PrismaService, organizationId: string,
       shiftId: true,
       expectedClockInAt: true,
     },
-    orderBy: { expectedClockInAt: 'asc' },
+    orderBy: { expectedClockInAt: 'desc' },
     take: MAX_ITEMS,
   });
   const [runs, names] = await Promise.all([
-    runsFor(prisma, rows, new Date()),
+    window.since ? decidedRuns(prisma, rows, window.since) : runsFor(prisma, rows, new Date()),
     namesOf(
       prisma,
       rows.map((r) => r.userId),
     ),
   ]);
-  return rows.map((i): RuleItem => ({
-    itemId: i.id,
-    since: i.expectedClockInAt,
-    subjectId: i.userId,
-    subjectName: names.get(i.userId) ?? '',
-    facts: { spaceIds: i.spaceId ? [i.spaceId] : [], days: runs.get(i.id)?.count ?? 1 },
-  }));
+  return rows
+    .filter((i) => !runs.get(i.id) || runs.get(i.id)!.latestId === i.id)
+    .map((i): RuleItem => ({
+      itemId: i.id,
+      since: i.expectedClockInAt,
+      subjectId: i.userId,
+      subjectName: names.get(i.userId) ?? '',
+      facts: { spaceIds: i.spaceId ? [i.spaceId] : [], days: runs.get(i.id)?.count ?? 1 },
+    }));
+}
+
+/**
+ * Runs among days already decided (the rules page's window): the same consecutive-days rule the inbox uses,
+ * with each day a person had to answer standing in as "open" and every other day of that shift breaking it.
+ * One query.
+ */
+async function decidedRuns(
+  prisma: PrismaService,
+  asked: { id: string; userId: string; shiftId: string | null }[],
+  since: Date,
+) {
+  if (!asked.length) return new Map<string, NoShowRun>();
+  const askedIds = new Set(asked.map((r) => r.id));
+  const all = await prisma.shiftInstance.findMany({
+    where: {
+      userId: { in: [...new Set(asked.map((r) => r.userId))] },
+      shiftId: { in: [...new Set(asked.map((r) => r.shiftId).filter((x): x is string => !!x))] },
+      expectedClockInAt: { gte: since },
+    },
+    select: { id: true, userId: true, spaceId: true, shiftId: true, localDate: true, state: true },
+  });
+  return noShowRuns(all.map((r) => ({ ...r, state: askedIds.has(r.id) ? NO_SHOW_OPEN_STATES[0] : 'CLOSED' })));
 }
 
 /** Asset papers members sent in; where they belong is the review queue's own place (the kind's, else the member's). */
@@ -111,7 +157,7 @@ export async function proposalItems(
       raisedById: true,
       createdAt: true,
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: 'desc' },
     take: MAX_ITEMS,
   });
   // The assets module owns where a proposal belongs; asked through the container, never imported into this module.
@@ -148,7 +194,7 @@ export async function clientRequestItems(prisma: PrismaService, organizationId: 
       spaceId: true,
       customer: { select: { name: true, portal: { select: { spaceId: true } } } },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: 'desc' },
     take: MAX_ITEMS,
   });
   return rows.map((t): RuleItem => {

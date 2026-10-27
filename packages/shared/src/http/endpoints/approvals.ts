@@ -15,6 +15,7 @@ import type {
   StandInsResponse,
   ApprovalRuleInput,
   ApprovalRuleView,
+  RuleRoleView,
   RuleInsights,
   RuleKind,
 } from '../../approvals';
@@ -40,6 +41,8 @@ export const approvalsEndpoints = defineEndpoints('approvals', {
   }),
   /** The office's rules: past a threshold, a second approval by a role. */
   rules: endpoint<void, ApprovalRuleView[]>({ method: 'GET', path: () => '/approvals/rules', keep: false }),
+  /** The roles a rule may name, with how many hold each (never their permissions). */
+  ruleRoles: endpoint<void, RuleRoleView[]>({ method: 'GET', path: () => '/approvals/rules/roles', keep: false }),
   /** What the rules of one kind did over the last 90 days, and the rules worth adding (counts only). */
   ruleInsights: endpoint<{ kind: RuleKind }, RuleInsights>({
     method: 'GET',

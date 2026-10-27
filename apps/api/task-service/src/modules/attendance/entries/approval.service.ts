@@ -278,8 +278,9 @@ export class ApprovalService {
       }
     }
 
-    if (results.approved.length) this.changes.announce(data.organizationId, 'bulk-approve');
-    return success(results, `Approved ${results.approved.length} entries`);
+    if (results.approved.length || results.waiting.length) this.changes.announce(data.organizationId, 'bulk-approve');
+    const waiting = results.waiting.length ? `; ${results.waiting.length} waiting for another approval` : '';
+    return success(results, `Approved ${results.approved.length} entries${waiting}`);
   }
 
   /** The person hears when the last waiting entry of their day is decided (day-decided.ts). Never fails the decision. */

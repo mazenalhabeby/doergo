@@ -42,7 +42,7 @@ describe('ApprovalRulesService.gate', () => {
         const hit = steps.filter(
           (s) =>
             (!where.id || s.id === where.id) &&
-            (!where.itemId || s.itemId === where.itemId) &&
+            (!where.itemId || (where.itemId.in ? where.itemId.in.includes(s.itemId) : s.itemId === where.itemId)) &&
             (!('consumedAt' in where) || !s.consumedAt) &&
             (!where.doneRoleIds || same(s.doneRoleIds, where.doneRoleIds.equals)),
         );
@@ -133,6 +133,12 @@ describe('ApprovalRulesService.gate', () => {
   it('a rejection drops the open step', async () => {
     await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
     await svc.clear('o', 'overtime', 'entry1');
+    expect(steps[0].consumedAt).not.toBeNull();
+  });
+
+  it('a rejection of a run drops the step whichever of its days it was opened under', async () => {
+    await svc.gate({ ...base, itemId: 'day1', facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
+    await svc.clear('o', 'overtime', ['day1', 'day2', 'day3']);
     expect(steps[0].consumedAt).not.toBeNull();
   });
 

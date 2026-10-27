@@ -242,3 +242,13 @@ export function noticeDue(
     return 'REMIND';
   return null;
 }
+
+/** A role an office rule may name, as the rules page sees it — never its permissions (`GET /approvals/rules/roles`). */
+export interface RuleRoleView {
+  id: string;
+  name: string;
+  /** A workspace role (held in a workspace), else an organization role. */
+  inSpace: boolean;
+  /** How many people hold it now. */
+  holders: number;
+}

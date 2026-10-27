@@ -143,8 +143,12 @@ export interface ApprovalInbox extends ApprovalsResponse {
   days?: ApprovalDay[];
 }
 
-/** "Approve day": what happened to each member, in order; the replay stops at the first refusal. */
+/**
+ * "Approve day": what happened to each member, in order; the replay stops at the first refusal. A member an
+ * office rule holds for more approvals is `ok` with `waitingFor` (the roles, in words) — and the day is not
+ * `complete` until nothing waits.
+ */
 export interface ApproveDayResult {
   complete: boolean;
-  results: Array<ApprovalDayMember & { ok: boolean; code?: string; message?: string }>;
+  results: Array<ApprovalDayMember & { ok: boolean; code?: string; message?: string; waitingFor?: string }>;
 }

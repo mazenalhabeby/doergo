@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { ABSENCE_WHERE, personName, peopleNames, type RuleFacts, type RuleKind } from '@hbcfield/shared';
+import { ABSENCE_WHERE, personName, type RuleFacts, type RuleKind } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { CoverService } from '../../technicians/cover.service';
-import { clientRequestItems, hoursItems, noShowItems, proposalItems } from './rule-facts-kinds';
-
-/** One read looks at no more than this many items per organization and kind. */
-const MAX_ITEMS = 500;
+import { MAX_ITEMS, clientRequestItems, hoursItems, namesOf, noShowItems, proposalItems } from './rule-facts-kinds';
 
 /** One item a rule could apply to, as a rule reads it. */
 export interface RuleItem {
@@ -58,7 +55,7 @@ export class RuleFactsReader {
           technicianId: true,
           technician: { select: { firstName: true, lastName: true, spaceAssignments: { select: { spaceId: true } } } },
         },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
         take: MAX_ITEMS,
       });
       const cover = needCover ? await this.coverShort(organizationId, rows) : new Map<string, boolean>();
@@ -78,7 +75,7 @@ export class RuleFactsReader {
       const rows = await this.prisma.assetMoney.findMany({
         where: { organizationId, ...(window.since ? {} : { status: 'SUBMITTED' as const }), createdAt: created },
         select: { id: true, createdAt: true, amountCents: true, authorId: true, assetId: true },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
         take: MAX_ITEMS,
       });
       // The asset's workspace is its KIND's; the author is a plain id — both read in one query each.
@@ -87,10 +84,10 @@ export class RuleFactsReader {
           where: { id: { in: [...new Set(rows.map((m) => m.assetId))] } },
           select: { id: true, category: { select: { spaceId: true } } },
         }),
-        peopleNames(this.prisma, [...new Set(rows.map((m) => m.authorId).filter(Boolean) as string[])]),
+        namesOf(this.prisma, rows.map((m) => m.authorId).filter(Boolean) as string[]),
       ]);
       const spaceOf = new Map(assets.map((a) => [a.id, a.category?.spaceId ?? null]));
-      const nameOf = new Map(authors.map((a) => [a.id, personName(a)]));
+      const nameOf = authors;
       return rows.map((m) => ({
         itemId: m.id,
         since: m.createdAt,
@@ -120,7 +117,7 @@ export class RuleFactsReader {
         technicianId: true,
         technician: { select: { firstName: true, lastName: true } },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: MAX_ITEMS,
     });
     return rows.map((o) => ({

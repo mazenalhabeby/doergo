@@ -17,6 +17,8 @@ function setup() {
       findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn(async () => ({ id: 'r-new' })),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      // The rule as it was before an edit: the same kind, everywhere, the same approver.
+      findFirst: jest.fn().mockResolvedValue({ kind: 'overtime', spaceId: null, secondRoleId: 'role-mgr' }),
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     approvalStep: { updateMany: jest.fn() },
@@ -105,9 +107,10 @@ describe('saving an office rule', () => {
 
   it("editing another organization's rule reads as missing", async () => {
     const { prisma, svc } = setup();
-    prisma.approvalRule.updateMany.mockResolvedValueOnce({ count: 0 });
+    prisma.approvalRule.findFirst.mockResolvedValueOnce(null);
     await expect(svc.saveRule(ORG, 'u1', rule, 'r1')).rejects.toThrow(NotFoundException);
-    expect(prisma.approvalRule.updateMany.mock.calls[0][0].where).toEqual({ id: 'r1', organizationId: ORG });
+    expect(prisma.approvalRule.findFirst.mock.calls[0][0].where).toEqual({ id: 'r1', organizationId: ORG });
+    expect(prisma.approvalRule.updateMany).not.toHaveBeenCalled();
     expect(prisma.approvalStep.updateMany).not.toHaveBeenCalled();
   });
 
@@ -194,5 +197,21 @@ describe('a caller who may manage approval rules in some workspaces only', () =>
       id: 'r-new',
     });
     expect(prisma.approvalRule.create).toHaveBeenCalled();
+  });
+
+  it('an edit that says nothing about on/off keeps it; a new rule starts on', async () => {
+    const { prisma, svc } = setup();
+    await svc.saveRule(ORG, 'u1', rule, 'r1');
+    expect(prisma.approvalRule.updateMany.mock.calls[0][0].data).not.toHaveProperty('isActive');
+    await svc.saveRule(ORG, 'u1', rule);
+    expect(prisma.approvalRule.create.mock.calls[0][0].data.isActive).toBe(true);
+  });
+
+  it('a rule now about another approver closes the steps opened under it', async () => {
+    const { prisma, svc } = setup();
+    await svc.saveRule(ORG, 'u1', { ...rule, secondRoleId: 'role-hr' }, 'r1');
+    expect(prisma.approvalStep.updateMany.mock.calls[0][0].where).toEqual(
+      expect.objectContaining({ ruleId: 'r1', consumedAt: null }),
+    );
   });
 });
