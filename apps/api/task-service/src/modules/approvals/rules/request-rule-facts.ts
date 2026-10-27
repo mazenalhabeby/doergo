@@ -1,4 +1,5 @@
 import { isAbsence, notEndedWhere, type RuleFacts } from '@hbcfield/shared';
+import { restGapOf, stretchWorkingDays, type LeaveCalendar, type StretchPrisma } from './leave-stretch';
 
 /**
  * A leave / request item as office rules read it — ONE builder for the approve path (time-off-decision), the
@@ -64,59 +65,12 @@ export async function requestsCoverShort(
   return out;
 }
 
-const DAY = 86_400_000;
-
-/** Two ranges touch when nothing but a weekend lies between them (Fri → Mon is one stretch of leave). */
-function touches(end: Date, start: Date): boolean {
-  const gap = start.getTime() - end.getTime();
-  if (gap <= 0 || gap > 4 * DAY) return false;
-  for (let d = end.getTime() + DAY; d < start.getTime(); d += DAY) {
-    const dow = new Date(d).getUTCDay();
-    if (dow !== 0 && dow !== 6) return false;
-  }
-  return true;
-}
-
-/**
- * The working days of the WHOLE stretch of leave a request belongs to: its own, plus every other waiting or approved
- * request of the same kind it touches (back to back, or with only a weekend between). Two 4-day requests in a row are
- * an 8-day absence — no way round a "5 working days or more" rule. One query.
- */
-export async function stretchWorkingDays(
-  prisma: {
-    timeOff: {
-      findMany(args: unknown): Promise<Array<{ startDate: Date; endDate: Date; workingDays: number | null }>>;
-    };
-  },
-  row: RequestRuleRow,
-  ownDays: number,
-): Promise<number> {
-  if (!isAbsence(row.kind)) return ownDays;
-  const others = await prisma.timeOff.findMany({
-    where: {
-      technicianId: row.technicianId,
-      kind: row.kind,
-      id: { not: row.id },
-      status: { in: ['PENDING', 'APPROVED'] },
-      startDate: { lte: new Date(row.endDate.getTime() + 90 * DAY) },
-      endDate: { gte: new Date(row.startDate.getTime() - 90 * DAY) },
-    },
-    select: { startDate: true, endDate: true, workingDays: true },
-  });
-  let [from, to, days] = [row.startDate, row.endDate, ownDays];
-  const left = [...others];
-  for (let grew = true; grew;) {
-    grew = false;
-    for (const o of [...left]) {
-      if (!(touches(o.endDate, from) || touches(to, o.startDate))) continue;
-      left.splice(left.indexOf(o), 1);
-      days += o.workingDays ?? Math.round((o.endDate.getTime() - o.startDate.getTime()) / DAY) + 1;
-      if (o.startDate < from) from = o.startDate;
-      if (o.endDate > to) to = o.endDate;
-      grew = true;
-    }
-  }
-  return days;
+/** What a request's facts need besides the row: the rules (does any ask about cover?), cover, the calendar. */
+export interface RequestFactDeps {
+  rules: { asksAboutCover(organizationId: string): Promise<boolean> };
+  cover: Parameters<typeof requestsCoverShort>[0];
+  calendar: LeaveCalendar;
+  prisma: StretchPrisma;
 }
 
 /**
@@ -125,16 +79,15 @@ export async function stretchWorkingDays(
  * reads of the wallchart). ONE call for approving, recording and re-dating leave.
  */
 export async function requestFactsFor(
-  rules: { asksAboutCover(organizationId: string): Promise<boolean> },
-  cover: Parameters<typeof requestsCoverShort>[0],
+  deps: RequestFactDeps,
   organizationId: string,
   row: RequestRuleRow,
   workingDays: number | null | undefined,
-  prisma: Parameters<typeof stretchWorkingDays>[0],
 ): Promise<RuleFacts> {
   const coverShort =
-    (await rules.asksAboutCover(organizationId)) &&
-    ((await requestsCoverShort(cover, organizationId, [row])).get(row.id) ?? false);
+    (await deps.rules.asksAboutCover(organizationId)) &&
+    ((await requestsCoverShort(deps.cover, organizationId, [row])).get(row.id) ?? false);
   const own = requestRuleFacts(row, coverShort, workingDays);
-  return { ...own, days: await stretchWorkingDays(prisma, row, own.days ?? 0) };
+  const rest = restGapOf(deps.calendar, organizationId, row.technicianId);
+  return { ...own, days: await stretchWorkingDays(deps.prisma, row, own.days ?? 0, rest) };
 }

@@ -1,4 +1,5 @@
-import type { RuleFacts, RuleKind } from '@hbcfield/shared';
+import type { BatchNotices } from './approval-step-notices';
+import { success, type RuleFacts, type RuleKind } from '@hbcfield/shared';
 
 /** One decision as the gate judges it. */
 export interface RuleGateInput {
@@ -20,10 +21,10 @@ export interface RuleGateInput {
    */
   agreeMinutes?: number;
   /**
-   * A batch ("Approve all"): who was already told, per role and workspace — the next approvers of each hear once
-   * for the batch, and a group the batch reaches later is still told.
+   * A batch ("Approve all"): the next approvers are collected and told once per role and workspace when the
+   * batch ends (`ApprovalRulesService.tellBatch`) — never one push per person.
    */
-  toldOnce?: Set<string>;
+  batch?: BatchNotices;
 }
 
 /** What a decision's approve path learns from the gate. */
@@ -51,3 +52,15 @@ const RULE_MESSAGES: Record<string, string> = {
 };
 
 export { RULE_MESSAGES };
+
+/**
+ * The reply when a decision is one of several approvals and still waits: the item, the stage, whom it waits for,
+ * and one sentence ("Approved — waiting for HR"). ONE shape for every approve path.
+ */
+export function waitingReply<T extends object>(
+  item: T,
+  waiting: { stage: 'FIRST_STEP'; waitingFor: string },
+  said = 'Approved',
+) {
+  return success({ ...item, ...waiting }, `${said} — waiting for ${waiting.waitingFor}`);
+}

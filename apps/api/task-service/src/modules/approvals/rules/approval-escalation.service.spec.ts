@@ -46,6 +46,10 @@ describe('ApprovalEscalationService.sweep', () => {
         notices.push(data);
         return data;
       }),
+      deleteMany: jest.fn(async ({ where }: any) => {
+        notices = notices.filter((n) => !(n.itemId === where.itemId && n.stage === where.stage));
+        return { count: 1 };
+      }),
     },
   };
   let holders = ['fin1'];
@@ -156,5 +160,14 @@ describe('ApprovalEscalationService.sweep', () => {
     prisma.assetMoney.findMany.mockResolvedValue([slip('e3', 30, 5000)]);
     expect(await svc.sweep(now)).toBe(0);
     expect(notifications.emit).not.toHaveBeenCalled();
+  });
+
+  it('nobody to tell today (everyone on leave): the notice is not used up — said once they are back', async () => {
+    holders = [];
+    route.route.mockResolvedValueOnce({ deciders: [{ id: 'away', onLeave: true }], moreDeciders: 0, told: [] });
+    prisma.assetMoney.findMany.mockResolvedValue([slip('e6', 5, 30000)]);
+    expect(await svc.sweep(now)).toBe(0);
+    expect(notices).toHaveLength(0);
+    expect(await svc.sweep(now)).toBe(1);
   });
 });

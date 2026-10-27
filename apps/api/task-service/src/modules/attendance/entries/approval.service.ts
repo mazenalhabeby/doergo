@@ -12,6 +12,8 @@ import type { TimeEntryStatus } from '@prisma/client';
 import { announceDayDecided, type DecidedEntry } from './day-decided';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { missedWrite } from '../../approvals/rules/already-decided';
+import { BatchNotices } from '../../approvals/rules/approval-step-notices';
+import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 @Injectable()
 export class ApprovalService {
@@ -96,8 +98,8 @@ export class ApprovalService {
     approverId: string;
     organizationId: string;
     notes?: string;
-    /** "Approve all": who was already told — once per role and workspace for the batch (approval-rules-helpers). */
-    toldOnce?: Set<string>;
+    /** "Approve all": the next approvers, told once per role and workspace when the batch ends. */
+    batch?: BatchNotices;
   }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: {
@@ -139,7 +141,7 @@ export class ApprovalService {
         facts: hoursRuleFacts(entry),
         deciderId: data.approverId,
         subjectId: entry.userId,
-        toldOnce: data.toldOnce,
+        batch: data.batch,
       },
       // Conditional on still waiting: a refusal at the same moment is never overwritten (already-decided.ts).
       () =>
@@ -172,8 +174,7 @@ export class ApprovalService {
             ),
           ),
     );
-    if (decided.waiting)
-      return success({ ...entry, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);
+    if (decided.waiting) return waitingReply(entry, decided.waiting);
     const updated = decided.done;
 
     this.logger.log(`Entry approved: entry=${data.entryId}, approver=${data.approverId}`);
@@ -277,13 +278,13 @@ export class ApprovalService {
       failed: [] as { id: string; reason: string }[],
     };
 
-    const toldOnce = new Set<string>();
+    const batch = new BatchNotices();
     for (const entryId of data.entryIds) {
       try {
         const done = await this.approveEntry({
           entryId,
           // The next approvers hear once per role and workspace for the batch — not once per entry.
-          toldOnce,
+          batch,
           approverId: data.approverId,
           organizationId: data.organizationId,
           // Only the caller's granted spaces — an entry outside them reads as
@@ -301,6 +302,7 @@ export class ApprovalService {
       }
     }
 
+    await this.rules.tellBatch(batch);
     if (results.approved.length || results.waiting.length) this.changes.announce(data.organizationId, 'bulk-approve');
     const waiting = results.waiting.length ? `; ${results.waiting.length} waiting for another approval` : '';
     return success(results, `Approved ${results.approved.length} entries${waiting}`);

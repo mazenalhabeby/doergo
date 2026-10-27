@@ -26,6 +26,7 @@ import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { ExtraTimeDecisionService } from './extra-time-decision.service';
 import { approvedOvertimeByEntry } from './overtime-rule-facts';
 import { overtimeRuleFacts, ruleStepItemId } from '@hbcfield/shared';
+import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /** How far back an undecided outside time is still asked about — older belongs to closed payroll. */
 const LOOKBACK_DAYS = 31;
@@ -272,11 +273,7 @@ export class OutsideShiftService {
           await this.write(entry, plan, data);
         },
       );
-      if (decided.waiting)
-        return success(
-          { entryId: entry.id, ...decided.waiting },
-          `Approved — waiting for ${decided.waiting.waitingFor}`,
-        );
+      if (decided.waiting) return waitingReply({ entryId: entry.id }, decided.waiting);
     }
     const after = plan.expectedClockOutAt.getTime() - entry.expectedClockOutAt!.getTime();
 

@@ -9,7 +9,8 @@ import { ApprovalRulesService } from '../../approvals/rules/approval-rules.servi
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { overtimeWriteMissed } from './overtime-rule-facts';
+import { COUNTED_ROUND_STATUSES, overtimeWriteMissed } from './overtime-rule-facts';
+import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /** The office deciding extra time after the fact: refusing it, taking back approved overtime, adding it. */
 
@@ -55,7 +56,7 @@ export class ExtraTimeDecisionService {
     scopeSpaceIds?: AttendanceScope;
   }) {
     const round = await this.prisma.overtimeRequest.findFirst({
-      where: { id: data.overtimeId, organizationId: data.organizationId, status: { in: ['APPROVED', 'COMPLETED'] } },
+      where: { id: data.overtimeId, organizationId: data.organizationId, status: { in: [...COUNTED_ROUND_STATUSES] } },
     });
     if (!round) throw new NotFoundException('Approved overtime not found');
     const entry = await this.prisma.timeEntry.findFirst({
@@ -67,7 +68,7 @@ export class ExtraTimeDecisionService {
     await this.approval.assertNotSelfOvertimeDecision(data.actorId, entry.userId, data.organizationId);
 
     const later = await this.prisma.overtimeRequest.count({
-      where: { timeEntryId: entry.id, status: { in: ['APPROVED', 'COMPLETED'] }, cycle: { gt: round.cycle } },
+      where: { timeEntryId: entry.id, status: { in: [...COUNTED_ROUND_STATUSES] }, cycle: { gt: round.cycle } },
     });
     if (later > 0) {
       throw new BadRequestException({
@@ -149,8 +150,7 @@ export class ExtraTimeDecisionService {
       },
       (agreed) => this.writeRound(entry, agreed ?? minutes, data),
     );
-    if (decided.waiting)
-      return success({ entryId: entry.id, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);
+    if (decided.waiting) return waitingReply({ entryId: entry.id }, decided.waiting);
     return decided.done;
   }
 
@@ -204,7 +204,9 @@ export class ExtraTimeDecisionService {
         actualEndAt: entry.clockOutAt,
       },
     });
-    await this.prisma.$transaction([moved, round]).catch(overtimeWriteMissed(this.prisma, entry.id));
+    await this.prisma
+      .$transaction([moved, round])
+      .catch(overtimeWriteMissed(this.prisma, entry.id, { afterCycle: previous?.cycle ?? 0 }));
     await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
     await relabelAfterEndMoved(this.prisma, entry, newExpected);
 

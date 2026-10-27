@@ -1,6 +1,9 @@
 import type { PrismaService } from '@hbcfield/shared';
 import { missedWrite } from '../../approvals/rules/already-decided';
 
+/** A round that counts as overtime already agreed: APPROVED, or COMPLETED (the legacy flow's word for it). */
+export const COUNTED_ROUND_STATUSES = ['APPROVED', 'COMPLETED'] as const;
+
 /* What an overtime rule needs from the database; the pure builder is shared (`overtimeRuleFacts`). */
 
 /**
@@ -13,7 +16,7 @@ export async function approvedOvertimeByEntry(prisma: PrismaService, entryIds: s
     prisma.overtimeRequest.groupBy({
       by: ['timeEntryId'],
       // COMPLETED: the older flow's word for an approved round that ran its course — still approved overtime.
-      where: { timeEntryId: { in: entryIds }, status: { in: ['APPROVED', 'COMPLETED'] } },
+      where: { timeEntryId: { in: entryIds }, status: { in: [...COUNTED_ROUND_STATUSES] } },
       _sum: { maxDurationMinutes: true },
     }),
     prisma.timeEntry.findMany({
@@ -38,14 +41,21 @@ export async function lastRoundCycle(prisma: PrismaService, entryId: string): Pr
 
 /**
  * An overtime write that missed its claim (the end it read, or the round still waiting): decided meanwhile — the
- * round refused or approved by somebody else, the shift gone — or only CHANGED (another path moved the end).
+ * round refused or approved by somebody else, a NEWER round written by somebody else (two adding at once), the
+ * shift gone — or only CHANGED (another path moved the end). `afterCycle` = the last round this decision read.
  */
-export function overtimeWriteMissed(prisma: PrismaService, entryId: string, roundId?: string) {
+export function overtimeWriteMissed(
+  prisma: PrismaService,
+  entryId: string,
+  seen: { roundId?: string; afterCycle: number },
+) {
   return missedWrite(
     async () =>
-      roundId
-        ? (await prisma.overtimeRequest.count({ where: { id: roundId, status: 'PENDING_APPROVAL' } })) > 0
-        : (await prisma.timeEntry.count({ where: { id: entryId } })) > 0,
+      seen.roundId
+        ? (await prisma.overtimeRequest.count({ where: { id: seen.roundId, status: 'PENDING_APPROVAL' } })) > 0
+        : (await prisma.timeEntry.count({ where: { id: entryId } })) > 0 &&
+          (await prisma.overtimeRequest.count({ where: { timeEntryId: entryId, cycle: { gt: seen.afterCycle } } })) ===
+            0,
     'OVERTIME_ALREADY_DECIDED',
     'This overtime was decided a moment ago.',
   );

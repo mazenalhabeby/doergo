@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { expenseRuleFacts, personName, type RuleKind } from '@hbcfield/shared';
+import { expenseRuleFacts, isAbsence, personName, type RuleKind } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 export type { RuleItem, RuleItemWindow } from './rule-items';
 import { CoverService } from '../../technicians/cover.service';
 import { OutsideShiftService } from '../../attendance/extra-time/outside-shift.service';
-import { approvedOvertimeByEntry } from '../../attendance/extra-time/overtime-rule-facts';
+import { COUNTED_ROUND_STATUSES, approvedOvertimeByEntry } from '../../attendance/extra-time/overtime-rule-facts';
 import { overtimeRuleFacts } from '@hbcfield/shared';
-import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort } from './request-rule-facts';
+import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort, type RequestRuleRow } from './request-rule-facts';
+import { restGapOf, stretchFrom, stretchWhere } from './leave-stretch';
+import { CalendarRulesService } from '../../calendar/calendar-rules.service';
 import { inSpaces, type RuleItem, type RuleItemWindow } from './rule-items';
 import {
   MAX_ITEMS,
@@ -28,6 +30,29 @@ export class RuleFactsReader {
     private readonly prisma: PrismaService,
     private readonly moduleRef: ModuleRef,
   ) {}
+
+  /**
+   * The whole stretch of leave each request belongs to, as the approve path judges it (leave-stretch.ts) — so a
+   * reminder rule catches what the approval would. ONE query for the batch; the calendar asked only for real gaps.
+   */
+  private async stretchDays(organizationId: string, rows: RequestRuleRow[]): Promise<Map<string, number>> {
+    const out = new Map<string, number>();
+    const leave = rows.filter((r) => isAbsence(r.kind));
+    if (!leave.length) return out;
+    const from = new Date(Math.min(...leave.map((r) => r.startDate.getTime())));
+    const to = new Date(Math.max(...leave.map((r) => r.endDate.getTime())));
+    const others = await this.prisma.timeOff.findMany({
+      where: stretchWhere([...new Set(leave.map((r) => r.technicianId))], from, to),
+      select: { id: true, technicianId: true, startDate: true, endDate: true, workingDays: true },
+    });
+    const calendar = this.moduleRef.get(CalendarRulesService, { strict: false });
+    for (const r of leave) {
+      const own = requestRuleFacts(r, false).days ?? 0;
+      const mine = others.filter((o) => o.technicianId === r.technicianId && o.id !== r.id);
+      out.set(r.id, await stretchFrom(r, own, mine, restGapOf(calendar, organizationId, r.technicianId)));
+    }
+    return out;
+  }
 
   async read(organizationId: string, kind: RuleKind, window: RuleItemWindow, needCover = false): Promise<RuleItem[]> {
     const created = window.since ? { gte: window.since } : { lte: window.waitingBefore };
@@ -62,13 +87,17 @@ export class RuleFactsReader {
       const cover = needCover
         ? await requestsCoverShort(this.moduleRef.get(CoverService, { strict: false }), organizationId, rows)
         : new Map<string, boolean>();
-      return rows.map((t) => ({
-        itemId: t.id,
-        since: t.createdAt,
-        subjectId: t.technicianId,
-        subjectName: personName(t.technician),
-        facts: requestRuleFacts(t, cover.get(t.id) ?? false),
-      }));
+      const days = await this.stretchDays(organizationId, rows);
+      return rows.map((t) => {
+        const facts = requestRuleFacts(t, cover.get(t.id) ?? false);
+        return {
+          itemId: t.id,
+          since: t.createdAt,
+          subjectId: t.technicianId,
+          subjectName: personName(t.technician),
+          facts: { ...facts, days: days.get(t.id) ?? facts.days },
+        };
+      });
     }
     if (kind === 'expense') {
       const rows = await this.prisma.assetMoney.findMany({
@@ -107,7 +136,7 @@ export class RuleFactsReader {
             createdAt: { gte: window.since },
             ...inSpaces(window, 'locationId'),
             // Rounds somebody decided on, or that wait for it — never a prompt that lapsed, or a refused one.
-            status: { in: ['APPROVED', 'COMPLETED', 'PENDING_APPROVAL'] },
+            status: { in: [...COUNTED_ROUND_STATUSES, 'PENDING_APPROVAL' as const] },
             maxDurationMinutes: { gt: 0 },
           }
         : {
@@ -142,7 +171,12 @@ export class RuleFactsReader {
     const approved = await approvedOvertimeByEntry(this.prisma, [...new Set(rows.map((o) => o.timeEntryId))]);
     const later = (o: (typeof rows)[number]) =>
       rows
-        .filter((r) => r.timeEntryId === o.timeEntryId && (r.status === 'APPROVED' || r.status === 'COMPLETED') && r.cycle >= o.cycle)
+        .filter(
+          (r) =>
+            r.timeEntryId === o.timeEntryId &&
+            (r.status === 'APPROVED' || r.status === 'COMPLETED') &&
+            r.cycle >= o.cycle,
+        )
         .reduce((n, r) => n + (r.maxDurationMinutes ?? 0), 0);
     return [
       ...rows.map((o) => {

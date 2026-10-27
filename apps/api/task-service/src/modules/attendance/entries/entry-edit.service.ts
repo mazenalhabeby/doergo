@@ -103,8 +103,10 @@ export class EntryEditService {
       }
       return d;
     };
-    const editedIn = parseTime(data.clockInAt);
-    const editedOut = parseTime(data.clockOutAt);
+    // A form sends both times on every save: a time counts as edited only when its MINUTE differs — a notes or
+    // break edit must not wipe approvals half-way, mark the day hand-changed, or cut the seconds off the clock.
+    const editedIn = changedMinute(parseTime(data.clockInAt), entry.clockInAt);
+    const editedOut = changedMinute(parseTime(data.clockOutAt), entry.clockOutAt);
     const newClockIn: Date = editedIn ?? entry.clockInAt;
     const newClockOut: Date | null = editedOut ?? entry.clockOutAt ?? null;
     const timesChanged = !!(editedIn || editedOut);
@@ -371,4 +373,10 @@ export class EntryEditService {
     });
     return success(updated, 'Time entry updated');
   }
+}
+
+/** The typed time, unless it is the stored one to the minute (then nothing was edited). */
+function changedMinute(typed: Date | undefined, stored: Date | null): Date | undefined {
+  if (!typed || !stored) return typed;
+  return Math.floor(typed.getTime() / 60_000) === Math.floor(stored.getTime() / 60_000) ? undefined : typed;
 }

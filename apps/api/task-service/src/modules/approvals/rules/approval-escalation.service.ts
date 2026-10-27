@@ -145,7 +145,13 @@ export class ApprovalEscalationService {
               // Never a reminder to somebody who already approved it (they would be refused).
               (id) => !step?.approverIds.includes(id),
             );
-          if (!recipientIds.length) continue;
+          // Nobody to tell right now (all on leave): the claim is given back, so a later sweep says it once they return.
+          if (!recipientIds.length) {
+            await this.prisma.approvalNotice.deleteMany({
+              where: { organizationId, kind, itemId: item.itemId, stage },
+            });
+            continue;
+          }
           emitEvent(this.notifications, approvalReminderEvent, {
             organizationId,
             recipientIds,

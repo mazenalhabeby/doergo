@@ -300,3 +300,22 @@ describe('office edit — a rule on changed hours', () => {
     expect(written(prisma).approvalStatus).toBeUndefined();
   });
 });
+
+describe('office edit — a form sends both times every time (round 8)', () => {
+  it('the same minutes back (a notes edit) are no time change: the clock keeps its seconds', async () => {
+    const { svc, prisma } = build(
+      closedEntry({ clockInAt: new Date('2026-09-07T08:00:37Z'), clockOutAt: new Date('2026-09-07T16:00:12Z') }),
+    );
+    await edit(svc, { clockInAt: t('08:00').toISOString(), clockOutAt: t('16:00').toISOString(), notes: 'gate code' });
+    const data = written(prisma);
+    expect(data).not.toHaveProperty('clockInAt');
+    expect(data).not.toHaveProperty('clockOutAt');
+    expect(data.notes).toBe('gate code');
+  });
+
+  it('a real minute moved is a change', async () => {
+    const { svc, prisma } = build(closedEntry());
+    await edit(svc, { clockInAt: t('08:00').toISOString(), clockOutAt: t('17:00').toISOString() });
+    expect(written(prisma).clockOutAt).toEqual(t('17:00'));
+  });
+});

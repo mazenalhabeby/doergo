@@ -19,6 +19,7 @@ import { REQUEST_REFUSALS, SPACE_BRIEF, requestFacts } from './technicians-helpe
 import { requestClashes } from './member-requests';
 import { ShiftResolverService } from '../attendance/core/shift-resolver.service';
 import { readDayHours } from './day-hours-read';
+import { waitingReply } from '../approvals/rules/approval-rules-helpers';
 
 export interface SetDayHoursInput {
   editorId: string;
@@ -172,8 +173,7 @@ export class DayHoursService {
       () =>
         this.applyApproved({ id: pending.id, organizationId, technicianId, editorId, spaceId, date: value.startDate }),
     );
-    if (decided.waiting)
-      return success({ ...pending, ...decided.waiting }, `Hours saved — waiting for ${decided.waiting.waitingFor}`);
+    if (decided.waiting) return waitingReply(pending, decided.waiting, 'Hours saved');
     const { saved, entriesChanged } = decided.done;
     return success({ ...saved, entriesChanged }, previous ? 'Hours for the day changed' : 'Hours for the day set');
   }

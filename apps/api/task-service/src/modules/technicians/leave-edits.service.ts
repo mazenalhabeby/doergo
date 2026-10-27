@@ -6,6 +6,7 @@ import { REQUEST_RULE_SELECT, requestFactsFor } from '../approvals/rules/request
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { CoverService } from './cover.service';
 import { workingDaysOf } from './member-requests';
+import { waitingReply } from '../approvals/rules/approval-rules-helpers';
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -22,6 +23,11 @@ export class LeaveEditsService {
     private readonly cover: CoverService,
     private readonly calendarRules: CalendarRulesService,
   ) {}
+
+  /** What a request's office-rule facts are read from (request-rule-facts.ts). */
+  private get factDeps() {
+    return { rules: this.rules, cover: this.cover, calendar: this.calendarRules, prisma: this.prisma };
+  }
 
   /** Admin edit of an existing day off (dates / reason), scoped to the org. */
   async updateTimeOff(data: {
@@ -86,7 +92,7 @@ export class LeaveEditsService {
         organizationId: data.organizationId,
         kind: 'request',
         itemId: data.timeOffId,
-        facts: await requestFactsFor(this.rules, this.cover, data.organizationId, row, workingDays, this.prisma),
+        facts: await requestFactsFor(this.factDeps, data.organizationId, row, workingDays),
         deciderId: data.editorId,
         subjectId: timeOff.technicianId,
       },
@@ -98,7 +104,7 @@ export class LeaveEditsService {
       where: { id: data.timeOffId },
       data: { ...fields, status: 'PENDING', approvedById: null, approvedAt: null },
     });
-    return success({ ...waiting, ...decided.waiting }, `Day off updated — waiting for ${decided.waiting.waitingFor}`);
+    return waitingReply(waiting, decided.waiting, 'Day off updated');
   }
 
   /** Admin delete of a day off, scoped to the org. Its half-way approvals end with it. */

@@ -18,6 +18,7 @@ import { CoverService } from './cover.service';
 import { workingDaysOf } from './member-requests';
 import { orgTimeOff } from './org-leave-list';
 import type { Prisma } from '@prisma/client';
+import { waitingReply } from '../approvals/rules/approval-rules-helpers';
 
 /** Leave as a record: entered by the office, listed, counted in working days, the balance. */
 @Injectable()
@@ -33,6 +34,11 @@ export class LeaveRecordsService {
     // Office rules: leave the office records follows the same rules as leave a member asks for.
     private readonly rules: ApprovalRulesService,
   ) {}
+
+  /** What a request's office-rule facts are read from (request-rule-facts.ts). */
+  private get factDeps() {
+    return { rules: this.rules, cover: this.cover, calendar: this.calendarRules, prisma: this.prisma };
+  }
 
   /** Time off across the organization — or across the spaces a member leads (org-leave-list.ts). */
   getOrgTimeOff(dto: GetOrgTimeOffDto & { scopeSpaceIds?: string[]; withCover?: boolean }) {
@@ -145,7 +151,7 @@ export class LeaveRecordsService {
         organizationId: data.organizationId,
         kind: 'request',
         itemId: created.id,
-        facts: await requestFactsFor(this.rules, this.cover, data.organizationId, created, workingDays, this.prisma),
+        facts: await requestFactsFor(this.factDeps, data.organizationId, created, workingDays),
         deciderId: data.editorId,
         subjectId: data.technicianId,
       },
@@ -155,11 +161,7 @@ export class LeaveRecordsService {
           data: { status: 'APPROVED', approvedById: data.editorId, approvedAt: new Date() },
         }),
     );
-    if (decided.waiting)
-      return success(
-        { id: created.id, ...decided.waiting },
-        `Day off added — waiting for ${decided.waiting.waitingFor}`,
-      );
+    if (decided.waiting) return waitingReply({ id: created.id }, decided.waiting, 'Day off added');
     return success(decided.done, 'Day off added');
   }
 

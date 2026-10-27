@@ -16,8 +16,7 @@ import {
 } from '@hbcfield/shared';
 import type { Decided, GateVerdict, RuleGateInput } from './approval-rules-helpers';
 import { consumeStep, joinRoleNames, openStep, stepCreateData, stepRules, storedFacts } from './approval-steps';
-import { tellNextApprovers } from './approval-step-notices';
-import { ChangedMeanwhileException } from './already-decided';
+import { BatchNotices, tellNextApprovers } from './approval-step-notices';
 
 export { type Decided, type GateVerdict, type RuleGateInput } from './approval-rules-helpers';
 
@@ -49,7 +48,8 @@ export class ApprovalRulesService {
    * THE approve path around its write. Not every approval given yet → `{ waiting }` and nothing is written (the
    * gateway reads `stage`). Otherwise the write runs with the minutes the approvers agreed (overtime: the smallest
    * any of them gave) and, if it throws, the step is opened again — the approvals already given are never lost.
-   * Unless the item was decided or removed meanwhile (404 / 409): then there is nothing left to approve.
+   * Unless the item was decided, removed or CHANGED meanwhile (404 / 409): the approvals were given for what the
+   * approvers saw, so they end with it — a reopened step would let the next person finish alone on new hours.
    */
   async decide<T>(input: RuleGateInput, write: (agreedMinutes?: number) => Promise<T>): Promise<Decided<T>> {
     const verdict = await this.gate(input);
@@ -57,8 +57,7 @@ export class ApprovalRulesService {
     try {
       return { done: await write(verdict.minutes) };
     } catch (e) {
-      const gone =
-        e instanceof HttpException && [404, 409].includes(e.getStatus()) && !(e instanceof ChangedMeanwhileException);
+      const gone = e instanceof HttpException && [404, 409].includes(e.getStatus());
       if (!gone) await this.reopen(verdict.stepId);
       throw e;
     }
@@ -198,10 +197,11 @@ export class ApprovalRulesService {
       skipDuplicates: true,
     });
     // Each group the batch reaches (the first role still needed, in its workspace) is told once.
-    const toldOnce = new Set<string>();
+    const batch = new BatchNotices();
     const name = decider ? personName(decider) : '';
     for (const i of waiting)
-      await this.tellNext(i.required[0], { ...input, itemId: i.itemId, facts: i.facts, toldOnce }, name);
+      await this.tellNext(i.required[0], { ...input, itemId: i.itemId, facts: i.facts, batch }, name);
+    await this.tellBatch(batch);
     return judged.filter((i) => !i.required.length).map((i) => i.itemId);
   }
 
@@ -278,11 +278,14 @@ export class ApprovalRulesService {
     return joinRoleNames(roleIds, new Map(roles.map((r) => [r.id, r.name])));
   }
 
-  /** The holders of the next role needed are told (approval-step-notices.ts) — once per role, workspace and person in a batch. */
+  /** The holders of the next role needed are told (approval-step-notices.ts) — in a batch, collected until it ends. */
   private async tellNext(roleId: string, input: RuleGateInput, firstName: string) {
-    const key = `${roleId}|${[...input.facts.spaceIds].sort().join(',')}|${input.subjectId ?? ''}`;
-    if (input.toldOnce?.has(key)) return;
-    input.toldOnce?.add(key);
+    if (input.batch) return input.batch.add(roleId, input, firstName);
     await tellNextApprovers(this.prisma, this.notifications, this.logger, roleId, input, firstName);
+  }
+
+  /** The end of a batch: one push per role and workspace it reached. */
+  async tellBatch(batch: BatchNotices): Promise<void> {
+    await batch.flush(this.prisma, this.notifications, this.logger);
   }
 }

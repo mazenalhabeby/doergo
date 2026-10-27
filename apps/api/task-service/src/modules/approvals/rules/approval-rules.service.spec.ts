@@ -400,7 +400,7 @@ describe('ApprovalRulesService.gate', () => {
     expect(notifications.emit).toHaveBeenCalledTimes(2);
   });
 
-  it('decide(): changed meanwhile (not decided) — the approvals stay for a retry', async () => {
+  it('decide(): changed meanwhile (new hours, new dates) — the approvals END: they were given for what it was', async () => {
     const { ChangedMeanwhileException } = jest.requireActual('./already-decided');
     await svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
     const moved = jest.fn(async () => {
@@ -409,7 +409,7 @@ describe('ApprovalRulesService.gate', () => {
     await expect(
       svc.decide({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }, moved),
     ).rejects.toThrow('moved');
-    expect(steps[0].consumedAt).toBeNull();
+    expect(steps[0].consumedAt).not.toBeNull();
   });
 
   it('a "finished" step only this person ever approved is no way to finish alone', async () => {

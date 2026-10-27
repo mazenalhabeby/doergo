@@ -19,6 +19,7 @@ import { requestFactsFor, type RequestRuleRow } from '../approvals/rules/request
 import { workingDaysOf } from './member-requests';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
 import { missedWrite } from '../approvals/rules/already-decided';
+import { waitingReply } from '../approvals/rules/approval-rules-helpers';
 
 /** Deciding time off: approve or refuse, cancel, change, delete. Cover and working days as the member saw them. */
 @Injectable()
@@ -31,6 +32,11 @@ export class TimeOffDecisionService {
     private readonly rules: ApprovalRulesService,
     @Optional() private readonly reshape?: DayHoursReshapeService,
   ) {}
+
+  /** What a request's office-rule facts are read from (request-rule-facts.ts). */
+  private get factDeps() {
+    return { rules: this.rules, cover: this.cover, calendar: this.calendarRules, prisma: this.prisma };
+  }
 
   private recountedWorkingDays(organizationId: string, userId: string, start: Date, end: Date) {
     return workingDaysOf(this.calendarRules, organizationId, userId, start, end, true);
@@ -108,8 +114,16 @@ export class TimeOffDecisionService {
     const write = () =>
       this.prisma.timeOff
         .update({
-          // …and only the dates the approvers saw: moved dates are a new decision (leave-edits).
-          where: { id: timeOffId, status: 'PENDING', startDate: timeOff.startDate, endDate: timeOff.endDate },
+          // …and only the dates, hours and minutes the approvers saw: moved ones are a new decision (leave-edits, day-hours).
+          where: {
+            id: timeOffId,
+            status: 'PENDING',
+            startDate: timeOff.startDate,
+            endDate: timeOff.endDate,
+            startTime: timeOff.startTime,
+            endTime: timeOff.endTime,
+            minutes: timeOff.minutes,
+          },
           data: {
             ...(workingDays !== undefined ? { workingDays } : {}),
             status: approved ? 'APPROVED' : 'REJECTED',
@@ -140,14 +154,13 @@ export class TimeOffDecisionService {
           organizationId,
           kind: 'request',
           itemId: timeOffId,
-          facts: await requestFactsFor(this.rules, this.cover, organizationId, row, workingDays, this.prisma),
+          facts: await requestFactsFor(this.factDeps, organizationId, row, workingDays),
           deciderId: approverId,
           subjectId: timeOff.technicianId,
         },
         write,
       );
-      if (decided.waiting)
-        return success({ ...timeOff, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);
+      if (decided.waiting) return waitingReply(timeOff, decided.waiting);
       updated = decided.done;
       // Changed hours for a day already clocked re-shape it, now that they are approved (day-hours' own rule).
       await this.reshape?.reshapeApprovedHours(updated, approverId, organizationId);

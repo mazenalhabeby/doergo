@@ -13,6 +13,7 @@ import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
 import { approvedOvertimeByEntry, lastRoundCycle, overtimeWriteMissed } from './overtime-rule-facts';
 import { overtimeRuleFacts } from '@hbcfield/shared';
+import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /**
  * Approving extra time — the ONE decision path (office rules, self-decision,
@@ -179,7 +180,7 @@ export class ExtraTimeApprovalService {
                   }),
                 ]),
           ])
-          .catch(overtimeWriteMissed(this.prisma, entry.id, round?.id));
+          .catch(overtimeWriteMissed(this.prisma, entry.id, { roundId: round?.id, afterCycle: lastCycle }));
 
         // Closed: the timesheet already counted it — count it again with the approval.
         if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
@@ -188,7 +189,7 @@ export class ExtraTimeApprovalService {
       },
     );
     if (decided.waiting) {
-      return success({ entryId: entry.id, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);
+      return waitingReply({ entryId: entry.id }, decided.waiting);
     }
     const newExpected = decided.done;
 

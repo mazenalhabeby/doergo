@@ -369,6 +369,7 @@ describe('self-decisions', () => {
     const svc = Object.create(ApprovalService.prototype) as any;
     svc.approveEntry = jest.fn().mockResolvedValue({});
     svc.changes = { announce: jest.fn() };
+    svc.rules = noOfficeRules();
     await svc.bulkApprove({ entryIds: ['e1'], approverId: 'm', organizationId: ORG, scopeSpaceIds: ['space-a'] });
     expect(svc.approveEntry.mock.calls[0][0].scopeSpaceIds).toEqual(['space-a']);
     expect(svc.approveEntry.mock.calls[0][0]).not.toHaveProperty('locationId');

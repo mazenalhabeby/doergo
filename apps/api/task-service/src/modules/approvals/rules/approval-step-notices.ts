@@ -20,9 +20,10 @@ export async function tellNextApprovers(
     'organizationId' | 'kind' | 'itemId' | 'facts' | 'deciderId' | 'subjectId' | 'subjectName'
   >,
   firstName: string,
+  alsoExclude: string[] = [],
 ): Promise<void> {
   try {
-    const exclude = [input.deciderId, ...(input.subjectId ? [input.subjectId] : [])];
+    const exclude = [input.deciderId, ...(input.subjectId ? [input.subjectId] : []), ...alsoExclude];
     const { organizationId, facts } = input;
     let recipientIds = await roleHolderIds(prisma, {
       organizationId,
@@ -49,5 +50,35 @@ export async function tellNextApprovers(
     });
   } catch (e) {
     logger.warn(`second-step notice failed: ${(e as Error).message}`);
+  }
+}
+
+type NoticeInput = Parameters<typeof tellNextApprovers>[4];
+
+/**
+ * A batch ("Approve all", days typed in together): the next approvers hear ONCE per role and workspace — after
+ * the batch, not per item. About one person → named ("approve Anna's request"); about several → one general
+ * line, and none of them is told about the others' items.
+ */
+export class BatchNotices {
+  private readonly groups = new Map<
+    string,
+    { roleId: string; input: NoticeInput; firstName: string; subjects: Set<string> }
+  >();
+
+  add(roleId: string, input: NoticeInput, firstName: string): void {
+    const key = `${roleId}|${[...input.facts.spaceIds].sort().join(',')}`;
+    const group = this.groups.get(key) ?? { roleId, input, firstName, subjects: new Set<string>() };
+    if (input.subjectId) group.subjects.add(input.subjectId);
+    this.groups.set(key, group);
+  }
+
+  async flush(prisma: PrismaService, notifications: ClientProxy, logger: Logger): Promise<void> {
+    for (const g of this.groups.values()) {
+      const many = g.subjects.size > 1;
+      const input = many ? { ...g.input, subjectId: undefined, subjectName: '' } : g.input;
+      await tellNextApprovers(prisma, notifications, logger, g.roleId, input, g.firstName, many ? [...g.subjects] : []);
+    }
+    this.groups.clear();
   }
 }

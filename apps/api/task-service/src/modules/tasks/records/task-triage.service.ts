@@ -23,6 +23,7 @@ import { portalRequestScope } from './portal-request';
 import { emitEvent, taskAssignedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import type { TaskPriority } from '@prisma/client';
 import { alreadyDecided } from '../../approvals/rules/already-decided';
+import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
 
 /** Turning a client's request into a job, closing it, or sending it back — triage. */
 @Injectable()
@@ -188,11 +189,7 @@ export class TaskTriageService {
           })
           .catch(alreadyDecided('REQUEST_ALREADY_ROUTED', 'This request was routed a moment ago.')),
     );
-    if (decided.waiting)
-      return success(
-        { id: task.id, triaged: false, ...decided.waiting },
-        `Approved — waiting for ${decided.waiting.waitingFor}`,
-      );
+    if (decided.waiting) return waitingReply({ id: task.id, triaged: false }, decided.waiting);
     const updated = decided.done;
 
     await this.support.createTaskEvent(data.id, data.userId, TaskEventType.UPDATED, {
