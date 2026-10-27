@@ -233,4 +233,15 @@ describe("make a rule like this", () => {
     expect(limitOf(ruleLinkForItem(item({ requestedMinutes: 20 })))).toBeNull()
     expect(ruleLinkForItem(item({ requestedMinutes: 20 }))).toContain("space=s1")
   })
+  it("changed hours step by a quarter hour, and no limit passes the kind's ceiling", () => {
+    const hours = { ...item({ handChangedMinutes: 75 }), kind: "hours" } as ApprovalItem
+    expect(limitOf(ruleLinkForItem(hours))).toBe("60")
+    expect(limitOf(ruleLinkForItem(item({ pastEndMinutes: 3000 })))).toBe("1440")
+  })
+  it("an item filed nowhere, of a kind with no limit, still offers 'every one'", () => {
+    const req = { ...item({}), kind: "clientRequest", space: null } as ApprovalItem
+    const q = new URLSearchParams(ruleLinkForItem(req)?.split("?")[1])
+    expect(q.get("ruleKind")).toBe("clientRequest")
+    expect(q.get("from")).toBe("item")
+  })
 })

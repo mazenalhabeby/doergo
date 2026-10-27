@@ -1,11 +1,12 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { type ApprovalItem, type ApprovalT, describeApproval } from "@hbcfield/shared/client"
-import { dateLocale, formatTimeAgo } from "@/lib/format-date"
+import { type ApprovalItem } from "@hbcfield/shared/client"
+import { formatTimeAgo } from "@/lib/format-date"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { Chip, ROW } from "@/components/page/page-kit"
 import { nameParts } from "./name-parts"
+import { describeItem } from "../_lib/describe"
 
 /** One decision in the inbox list: who, which kind (coral when it cannot wait), the headline, how long it waited. */
 export function ApprovalRow({
@@ -20,7 +21,7 @@ export function ApprovalRow({
   orgCurrency?: string | null
 }) {
   const { t } = useTranslation()
-  const text = describeApproval(item, t as ApprovalT, dateLocale(), orgCurrency)
+  const text = describeItem(item, t, orgCurrency)
   const lead = text.facts[0]
   return (
     <li>

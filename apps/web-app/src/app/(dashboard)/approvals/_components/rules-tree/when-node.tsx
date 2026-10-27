@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import {
+  limitCurrencySymbol,
   durationFields,
   durationValue,
   isDurationKind,
@@ -200,7 +201,7 @@ export function WhenNode({
             <span className="text-[13px] text-muted-foreground">
               {rule.kind === "hours"
                 ? t("approvals.tree.changedByHand")
-                : t(`approvals.tree.unit.${rule.kind}`, { currency })}
+                : t(`approvals.tree.unit.${rule.kind}`, { currency: limitCurrencySymbol(currency) })}
             </span>
           )}
           <p

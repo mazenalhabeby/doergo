@@ -96,6 +96,19 @@ export function useApprovalsPage() {
     [items, filter, dayState.grouped],
   )
   const currentDay = dayState.visibleDays.find((d) => d.key === selected) ?? null
+  // An item opened from a day ("Review"): Back returns to that day, not to the list.
+  const [returnTo, setReturnTo] = useState<{ day: string; item: string } | null>(null)
+  const review = useCallback((day: string, item: string) => {
+    setReturnTo({ day, item })
+    setFilter("all")
+    setSelected(item)
+  }, [])
+  const back = useCallback(
+    () => setSelected((s) => (returnTo && s === returnTo.item ? returnTo.day : null)),
+    [returnTo],
+  )
+  // Bumped when the reader gives the first of two approvals: the open form closes (the panel is keyed on it).
+  const [firstSteps, setFirstSteps] = useState(0)
 
   // The first item is chosen for you on a wide screen; a narrow one starts on the list.
   // A grouped item is opened from its day ("Review"), so it is found in the whole list.
@@ -140,6 +153,7 @@ export function useApprovalsPage() {
       if (res.stage === "FIRST_STEP") {
         // Step 1 of 2: theirs is in; the item stays, now waiting for the second person.
         notify.success(t("approvals.step.firstDone", { role: res.waitingFor ?? "" }))
+        setFirstSteps((n) => n + 1)
         qc.invalidateQueries({ queryKey: keys.approvals.all() })
         return
       }
@@ -188,6 +202,8 @@ export function useApprovalsPage() {
     // Not read yet because the tab or the reader is not known: still loading, never "nothing to decide".
     isLoading: isLoading || !tabKnown || !accessKnown,
     isError,
+    /** The last read failed, but an earlier one is still on screen: a line above it, never the error screen. */
+    hasData: data != null,
     error,
     refetch,
     isFetching,
@@ -201,6 +217,9 @@ export function useApprovalsPage() {
     unavailable,
     covering,
     currentDay,
+    review,
+    back,
+    firstSteps,
     ...dayState,
   }
 }

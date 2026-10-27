@@ -8,6 +8,7 @@ import {
   type RuleKind,
 } from "@hbcfield/shared/client"
 import { dateLocale } from "@/lib/format-date"
+import { currencySymbol } from "@/lib/money"
 import { formatRequestMinutes } from "@/lib/requests"
 
 /*
@@ -154,3 +155,6 @@ export function limitText(t: TFunction, kind: RuleKind, v: number, currency: str
   if (kind === "noShow") return t("approvals.tree.daysInARow", { count: v })
   return formatMoney(v, currency, dateLocale())
 }
+
+/** The currency's symbol in the reader's language ("€", not "EUR") — the one money helper's. */
+export const limitCurrencySymbol = (currency: string) => currencySymbol(currency, dateLocale())

@@ -45,10 +45,10 @@ export function useRuleOffers({
     setKind(k)
     // Read once: a reload, or a link copied from the address bar, does not offer the same rule again.
     const keep = new URLSearchParams(q)
-    for (const p of ["ruleKind", "space", "limit"]) keep.delete(p)
+    for (const p of ["ruleKind", "space", "limit", "from"]) keep.delete(p)
     window.history.replaceState(null, "", `${window.location.pathname}${keep.size ? `?${keep}` : ""}`)
     // Only a link from an item offers a rule; a plain link to a kind just opens it.
-    if (!q.get("space") && !limit) return
+    if (!q.get("space") && !limit && q.get("from") !== "item") return
     setFromItem({
       kind: k,
       spaceId: q.get("space"),

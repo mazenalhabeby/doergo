@@ -9,6 +9,7 @@ import { useResponsive } from '@/lib/responsive';
 import { centeredContent } from '@/components/screen-container';
 import { forgetApproval, knownApproval, loadApprovals } from './approvals-store';
 import { caught } from '@/lib/caught';
+import { durationMinutes, durationText, type DurationText } from './approval-duration';
 
 /** ApprovalDetail's state and handlers — everything before its markup, moved here unchanged. */
 export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKey'>) {
@@ -23,7 +24,8 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
   const [missing, setMissing] = useState(false);
   const [armed, setArmed] = useState<ApprovalActionSpec | null>(null);
   const [reason, setReason] = useState('');
-  const [minutes, setMinutes] = useState('30');
+  // The time a decision counts, as the two fields hold it (hours + minutes).
+  const [duration, setDuration] = useState<DurationText>(durationText(30));
   const [expiresOn, setExpiresOn] = useState('');
   // A missed shift: what happened, and whether the answer covers its whole run of days.
   const [reasonCode, setReasonCode] = useState<NoShowExcuseReason>('SICK');
@@ -45,7 +47,7 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
   useEffect(() => {
     if (!item) return;
     const d = item.data as Record<string, unknown>;
-    setMinutes(String(typeof d.requestedMinutes === 'number' ? d.requestedMinutes : 30));
+    setDuration(durationText(typeof d.requestedMinutes === 'number' ? d.requestedMinutes : 30));
     setExpiresOn(typeof d.expiresOn === 'string' ? d.expiresOn.slice(0, 10) : '');
   }, [item]);
 
@@ -61,7 +63,7 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
           id: item.id,
           action: a.id,
           reason: a.reason !== 'none' && reason.trim() ? reason.trim() : undefined,
-          minutes: a.input === 'minutes' ? Number(minutes) : undefined,
+          minutes: a.input === 'minutes' ? (durationMinutes(duration) ?? undefined) : undefined,
           expiresOn: a.input === 'expiresOn' && expiresOn ? expiresOn : undefined,
           reasonCode: a.input === 'excuseReason' ? reasonCode : undefined,
           wholeRun: runCount > 1 && wholeRun ? true : undefined,
@@ -85,7 +87,7 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
         setBusy(false);
       }
     },
-    [item, itemKey, reason, minutes, expiresOn, reasonCode, wholeRun, toast, t],
+    [item, itemKey, reason, duration, expiresOn, reasonCode, wholeRun, toast, t],
   ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const runCount = typeof item?.data.runCount === 'number' ? item.data.runCount : 0;
@@ -111,8 +113,8 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
     setArmed,
     reason,
     setReason,
-    minutes,
-    setMinutes,
+    duration,
+    setDuration,
     expiresOn,
     setExpiresOn,
     reasonCode,

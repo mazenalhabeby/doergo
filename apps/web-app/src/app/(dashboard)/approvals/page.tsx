@@ -1,16 +1,13 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { AlertTriangle, ChevronLeft, UserRoundCheck } from "lucide-react"
-import { APPROVAL_GROUPS, APPROVAL_KINDS, type ApprovalT, describeApproval } from "@hbcfield/shared/client"
+import { APPROVAL_GROUPS, APPROVAL_KINDS } from "@hbcfield/shared/client"
 
-import { dateLocale } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { ListTableError } from "@/components/common/list-page"
-import { GroupLabel, Notice, PageHeader, Panel } from "@/components/page/page-kit"
+import { GroupLabel, PageHeader, Panel } from "@/components/page/page-kit"
 import { DecisionPanel } from "./_components/decision-panel"
 import { useApprovalsPage, itemKey } from "./_hooks/use-approvals-page"
 import { KindRailItem } from "./_components/kind-rail-item"
@@ -19,7 +16,10 @@ import { DayRow } from "./_components/day-row"
 import { DayPanel } from "./_components/day-panel"
 import { InboxActions } from "./_components/inbox-actions"
 import { InboxEmpty } from "./_components/inbox-empty"
+import { InboxNotices } from "./_components/inbox-notices"
+import { BackButton } from "./_components/back-button"
 import { tabKeyTarget } from "./_lib/tab-keys"
+import { describeItem } from "./_lib/describe"
 
 // Its own tab: never part of the inbox's first load; the tab's own shape while its code arrives, never a blank panel.
 const TabLoading = () => <Skeleton className="h-[420px] w-full rounded-[22px]" />
@@ -58,6 +58,7 @@ export default function ApprovalsPage() {
     settled,
     isLoading,
     isError,
+    hasData,
     error,
     refetch,
     isFetching,
@@ -71,6 +72,9 @@ export default function ApprovalsPage() {
     unavailable,
     covering,
     currentDay,
+    review,
+    back,
+    firstSteps,
     visibleDays,
     membersOf,
     approveDay,
@@ -91,18 +95,12 @@ export default function ApprovalsPage() {
         }
       />
 
-      {covering.length > 0 && (
-        <Notice>
-          <UserRoundCheck />
-          {t("approvals.standIn.covering", { names: covering.join(", ") })}
-        </Notice>
-      )}
-
-      {unavailable.length > 0 && (
-        <Notice tone="warn">
-          <AlertTriangle />
-          {t("approvals.unavailable", { kinds: unavailable.map((k) => t(`approvals.kinds.${k}`)).join(", ") })}
-        </Notice>
+      {settled && shown === "decide" && (
+        <InboxNotices
+          covering={covering}
+          unavailable={unavailable}
+          staleSince={isError && hasData ? dataUpdatedAt : null}
+        />
       )}
 
       {settled && tabs.length > 1 && (
@@ -155,7 +153,7 @@ export default function ApprovalsPage() {
           <RulesTree />
         ) : shown === "stand" ? (
           <StandInsTab />
-        ) : isError ? (
+        ) : isError && !hasData ? (
           <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
         ) : (
           <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_minmax(320px,400px)]">
@@ -231,32 +229,24 @@ export default function ApprovalsPage() {
               <div>
                 {currentDay ? (
                   <Panel className="p-5">
+                    <BackButton onClick={() => setSelected(null)} />
                     <DayPanel
                       day={currentDay}
                       members={membersOf(currentDay)}
                       busy={approveDay.isPending}
                       onApprove={() => approveDay.mutate(currentDay)}
-                      onReview={(i) => {
-                        setFilter("all")
-                        setSelected(`${i.kind}:${i.id}`)
-                      }}
+                      onReview={(i) => review(currentDay.key, itemKey(i))}
                       orgCurrency={user?.orgCurrency}
                     />
                   </Panel>
                 ) : current ? (
                   <Panel className="p-5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="-ml-2 mb-3 rounded-full lg:hidden"
-                      onClick={() => setSelected(null)}
-                    >
-                      <ChevronLeft className="size-4" />
-                      {t("approvals.back")}
-                    </Button>
+                    <BackButton onClick={back} />
                     <DecisionPanel
+                      // A first of two approvals given: the form closes and the panel reads the item afresh.
+                      key={`${itemKey(current)}:${firstSteps}`}
                       item={current}
-                      text={describeApproval(current, t as ApprovalT, dateLocale(), user?.orgCurrency)}
+                      text={describeItem(current, t, user?.orgCurrency)}
                       busy={decide.isPending}
                       onDecide={onDecide}
                       onMakeRule={

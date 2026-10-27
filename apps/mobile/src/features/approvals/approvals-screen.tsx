@@ -24,6 +24,7 @@ import { approvalKey, loadApprovals } from './approvals-store';
 import { StandInSheet } from './stand-in-sheet';
 import { refreshControl } from '@/components/pull-refresh';
 import { ApprovalDayRow } from './approval-day-row';
+import { minutesText } from './approval-duration';
 
 /** A list row: one item, or a person's working day that groups several. */
 type Row = { day: ApprovalDay; item?: undefined } | { item: ApprovalItem; day?: undefined };
@@ -51,7 +52,8 @@ export function ApprovalsScreen() {
   // Arriving with ?kind= (a notification, or a screen that used to decide it): open on that kind.
   const { kind } = useLocalSearchParams<{ kind?: string }>();
   const [filter, setFilter] = useState<Filter>(() =>
-    kind && (APPROVAL_KINDS as readonly string[]).includes(kind) ? (kind as ApprovalKind) : 'all');
+    kind && (APPROVAL_KINDS as readonly string[]).includes(kind) ? (kind as ApprovalKind) : 'all',
+  );
   const [standIn, setStandIn] = useState(false);
   // An external member decides only in their workspace and never hands it on (the server refuses STAND_IN_EXTERNAL).
   const { user } = useAuth();
@@ -73,7 +75,11 @@ export function ApprovalsScreen() {
     }
   }, []);
   // Back from a decision — the item is gone, the counts moved.
-  useFocusEffect(useCallback(() => { void load(items ? 'refresh' : 'first'); }, [load])); // eslint-disable-line react-hooks/exhaustive-deps
+  useFocusEffect(
+    useCallback(() => {
+      void load(items ? 'refresh' : 'first');
+    }, [load]),
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const counts = useMemo(() => {
     const n = new Map<ApprovalKind, number>();
@@ -86,8 +92,12 @@ export function ApprovalsScreen() {
     () => (items ?? []).filter((i) => (filter === 'all' || i.kind === filter) && !grouped.has(approvalKey(i))),
     [items, filter, grouped],
   );
-  const shownDays = useMemo(() => days.filter((d) => filter === 'all' || d.members.some((m) => m.kind === filter)), [days, filter]);
-  const membersOf = (d: ApprovalDay) => (items ?? []).filter((i) => d.members.some((m) => memberKey(m) === approvalKey(i)));
+  const shownDays = useMemo(
+    () => days.filter((d) => filter === 'all' || d.members.some((m) => m.kind === filter)),
+    [days, filter],
+  );
+  const membersOf = (d: ApprovalDay) =>
+    (items ?? []).filter((i) => d.members.some((m) => memberKey(m) === approvalKey(i)));
   const sections = useMemo(
     () =>
       APPROVAL_GROUPS.map((g) => ({
@@ -103,7 +113,11 @@ export function ApprovalsScreen() {
   const tt = t as unknown as ApprovalT;
   // Whose decisions this member covers today — from the items themselves.
   const covering = useMemo(
-    () => [...new Set((items ?? []).filter((i) => i.why?.via === 'DELEGATED' && i.why.fromName).map((i) => i.why!.fromName!))],
+    () => [
+      ...new Set(
+        (items ?? []).filter((i) => i.why?.via === 'DELEGATED' && i.why.fromName).map((i) => i.why!.fromName!),
+      ),
+    ],
     [items],
   );
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/more' as Href));
@@ -112,14 +126,25 @@ export function ApprovalsScreen() {
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(2) }}>
       {counts.size > 1 ? (
         <FilterRow>
-          <FilterPill label={`${t('approvals.all')} ${items?.length ?? 0}`} on={filter === 'all'} onPress={() => setFilter('all')} />
+          <FilterPill
+            label={`${t('approvals.all')} ${items?.length ?? 0}`}
+            on={filter === 'all'}
+            onPress={() => setFilter('all')}
+          />
           {APPROVAL_KINDS.filter((k) => counts.has(k)).map((k) => (
-            <FilterPill key={k} label={`${t(`approvals.kinds.${k}`)} ${counts.get(k)}`} on={filter === k} onPress={() => setFilter(k)} />
+            <FilterPill
+              key={k}
+              label={`${t(`approvals.kinds.${k}`)} ${counts.get(k)}`}
+              on={filter === k}
+              onPress={() => setFilter(k)}
+            />
           ))}
         </FilterRow>
       ) : null}
       {covering.length ? (
-        <AText variant="caption" tone="accent">{t('approvals.standIn.covering', { names: covering.join(', ') })}</AText>
+        <AText variant="caption" tone="accent">
+          {t('approvals.standIn.covering', { names: covering.join(', ') })}
+        </AText>
       ) : null}
       {unavailable.length || failed ? (
         <AText variant="caption" tone="warn">
@@ -146,9 +171,11 @@ export function ApprovalsScreen() {
         ListHeaderComponent={header}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
-        refreshControl={
-          refreshControl({ refreshing: refreshing, onRefresh: () => void load('refresh'), color: c.accent })
-        }
+        refreshControl={refreshControl({
+          refreshing: refreshing,
+          onRefresh: () => void load('refresh'),
+          color: c.accent,
+        })}
         renderSectionHeader={({ section }) => (
           <SectionLabel
             tone={section.group === 'NOW' ? 'critical' : 'muted'}
@@ -156,24 +183,32 @@ export function ApprovalsScreen() {
               paddingTop: amazen.space(3),
               paddingBottom: amazen.space(1.5),
               paddingHorizontal: amazen.space(1),
-            }}>
+            }}
+          >
             {`${t(`approvals.groups.${section.group}`)} · ${section.data.length}`}
           </SectionLabel>
         )}
         ListEmptyComponent={
           <View style={{ paddingVertical: amazen.space(10), alignItems: 'center', gap: amazen.space(1.5) }}>
-            {!items ? <ActivityIndicator color={c.accent} /> : (
+            {!items ? (
+              <ActivityIndicator color={c.accent} />
+            ) : (
               <>
-                <AText variant="body" tone="strong" style={{ textAlign: 'center' }}>{t('approvals.empty')}</AText>
-                <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{t('approvals.emptyHint')}</AText>
+                <AText variant="body" tone="strong" style={{ textAlign: 'center' }}>
+                  {t('approvals.empty')}
+                </AText>
+                <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
+                  {t('approvals.emptyHint')}
+                </AText>
               </>
             )}
           </View>
         }
         renderItem={({ item: row, index, section }) => {
-          if (row.day) return <ApprovalDayRow day={row.day} members={membersOf(row.day)} onDone={() => void load('refresh')} />;
+          if (row.day)
+            return <ApprovalDayRow day={row.day} members={membersOf(row.day)} onDone={() => void load('refresh')} />;
           const item = row.item;
-          const text = describeApproval(item, tt, i18n.language);
+          const text = describeApproval(item, tt, i18n.language, undefined, (n) => minutesText(n, tt));
           const lead = text.facts[0]?.value;
           return (
             <WellRow
@@ -193,7 +228,9 @@ export function ApprovalsScreen() {
                   {item.raisedAt ? formatDay(item.raisedAt, i18n.language) : ''}
                 </AText>
               }
-              onPress={() => router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(item) } } as never)}
+              onPress={() =>
+                router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(item) } } as never)
+              }
             />
           );
         }}

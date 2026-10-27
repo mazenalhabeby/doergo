@@ -2,18 +2,13 @@
 
 import { useTranslation } from "react-i18next"
 import { CheckCheck, ChevronRight } from "lucide-react"
-import {
-  describeApproval,
-  kindNeedsMinutes,
-  type ApprovalDay,
-  type ApprovalItem,
-  type ApprovalT,
-} from "@hbcfield/shared/client"
-import { dateLocale, formatMediumDate } from "@/lib/format-date"
+import { kindNeedsMinutes, type ApprovalDay, type ApprovalItem } from "@hbcfield/shared/client"
+import { formatMediumDate } from "@/lib/format-date"
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { nameParts } from "./name-parts"
 import { DayChips } from "./day-row"
+import { describeItem } from "../_lib/describe"
 
 /**
  * One working day: what waits, each item one tap away ("Review"), and "Approve
@@ -64,7 +59,7 @@ export function DayPanel({
         </p>
         <ul className="divide-y divide-border overflow-hidden rounded-[14px] border border-border">
           {members.map((m) => {
-            const text = describeApproval(m, t as ApprovalT, dateLocale(), orgCurrency)
+            const text = describeItem(m, t, orgCurrency)
             return (
               <li key={`${m.kind}:${m.id}`}>
                 <button

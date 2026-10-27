@@ -1,0 +1,46 @@
+"use client"
+
+import { AlertTriangle, UserRoundCheck } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { ApprovalKind } from "@hbcfield/shared/client"
+import { formatTimeAgo } from "@/lib/format-date"
+import { Notice } from "@/components/page/page-kit"
+
+/**
+ * The lines above the inbox, on its own tab only: whose decisions the reader covers today, the kinds that could
+ * not be read, and a refresh that failed while the last good list stays on screen (never swapped for an error).
+ */
+export function InboxNotices({
+  covering,
+  unavailable,
+  staleSince,
+}: {
+  covering: string[]
+  unavailable: ApprovalKind[]
+  /** When the list on screen was read, if the latest refresh failed; null otherwise. */
+  staleSince: number | null
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      {staleSince != null && (
+        <Notice tone="warn">
+          <AlertTriangle />
+          {t("approvals.refreshFailed", { time: formatTimeAgo(staleSince) })}
+        </Notice>
+      )}
+      {covering.length > 0 && (
+        <Notice>
+          <UserRoundCheck />
+          {t("approvals.standIn.covering", { names: covering.join(", ") })}
+        </Notice>
+      )}
+      {unavailable.length > 0 && (
+        <Notice tone="warn">
+          <AlertTriangle />
+          {t("approvals.unavailable", { kinds: unavailable.map((k) => t(`approvals.kinds.${k}`)).join(", ") })}
+        </Notice>
+      )}
+    </>
+  )
+}

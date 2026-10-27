@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { formatTimeAgo } from "@/lib/format-date"
@@ -17,6 +18,12 @@ export function InboxActions({
   onRefresh: () => void
 }) {
   const { t } = useTranslation()
+  // "Updated 2 minutes ago" keeps counting while the page stays open, rather than freezing at "just now".
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((n) => n + 1), 30_000)
+    return () => window.clearInterval(id)
+  }, [])
   return (
     <>
       {updatedAt > 0 && (

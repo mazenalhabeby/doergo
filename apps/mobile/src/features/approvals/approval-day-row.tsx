@@ -18,6 +18,7 @@ import { caught } from '@/lib/caught';
 import { AText, Chip, PrimaryButton } from '@/components/amazen';
 import { WellRow } from '../register/well-row';
 import { approvalKey } from './approvals-store';
+import { minutesText } from './approval-duration';
 
 /**
  * One person's working day in the inbox: who, which day, why it waits (shared
@@ -115,7 +116,7 @@ export function ApprovalDayRow({
                 first={i === 0}
                 last={i === members.length - 1}
                 title={t(`approvals.kinds.${m.kind}`)}
-                detail={describeApproval(m, tt, i18n.language).headline}
+                detail={describeApproval(m, tt, i18n.language, undefined, (n) => minutesText(n, tt)).headline}
                 onPress={() =>
                   router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(m) } } as never)
                 }

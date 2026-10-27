@@ -51,6 +51,9 @@ export function NoShowDecision({
   const { t } = useTranslation()
   const qc = useQueryClient()
   const run = typeof item.data.runCount === "number" ? item.data.runCount : 0
+  // The reader gave the first of two approvals (excused): the second must be somebody else, so only "absent"
+  // is still theirs to give — the panel above says whom it waits for.
+  const choices: Choice[] = item.step?.mine ? ["absent"] : CHOICES
   const [choice, setChoice] = useState<Choice | null>(null)
   const [reasonCode, setReasonCode] = useState<NoShowExcuseReason>("SICK")
   const [note, setNote] = useState("")
@@ -91,23 +94,25 @@ export function NoShowDecision({
         aria-labelledby="noshow-what"
         className="flex flex-col gap-3"
         onKeyDown={(e) => {
-          const at = CHOICES.indexOf((e.target as HTMLElement).dataset.choice as Choice)
+          const at = choices.indexOf((e.target as HTMLElement).dataset.choice as Choice)
           const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]
           if (at < 0 || !step) return
           e.preventDefault()
-          const next = CHOICES[(at + step + CHOICES.length) % CHOICES.length]!
+          const next = choices[(at + step + choices.length) % choices.length]!
           setChoice(next)
           e.currentTarget.querySelector<HTMLElement>(`[data-choice="${next}"]`)?.focus()
         }}
       >
-        <ChoiceCard
-          value="excuse"
-          focusable={choice !== "absent"}
-          selected={choice === "excuse"}
-          onSelect={() => setChoice("excuse")}
-          title={t("approvals.actions.excuse")}
-          help={t("approvals.noShow.excusedHelp")}
-        />
+        {choices.includes("excuse") && (
+          <ChoiceCard
+            value="excuse"
+            focusable={choice !== "absent"}
+            selected={choice === "excuse"}
+            onSelect={() => setChoice("excuse")}
+            title={t("approvals.actions.excuse")}
+            help={t("approvals.noShow.excusedHelp")}
+          />
+        )}
         {/* What happened, AFTER the answer it belongs to: inside a radio its buttons would be hidden from a screen
             reader (a radio's content is presentational) and its keys would choose the answer instead. */}
         {choice === "excuse" && (
@@ -126,7 +131,7 @@ export function NoShowDecision({
 
         <ChoiceCard
           value="absent"
-          focusable={choice === "absent"}
+          focusable={choice === "absent" || !choices.includes("excuse")}
           selected={choice === "absent"}
           onSelect={() => setChoice("absent")}
           title={t("approvals.actions.absent")}

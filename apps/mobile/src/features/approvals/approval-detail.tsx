@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { NO_SHOW_EXCUSE_REASONS, formatDuration } from '@hbcfield/shared/client';
+import { NO_SHOW_EXCUSE_REASONS } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/island/island-context';
 import { approvalsApi } from '@/lib/api';
@@ -24,6 +24,7 @@ import { WhoElse } from './who-else';
 import { useApprovalDetail } from './use-approval-detail';
 import { ISO_DAY } from './approval-detail-helpers';
 import { ApprovalDetailView } from './approval-detail-view';
+import { ApprovalDurationField } from './approval-duration-field';
 import { FactsWell } from '@/components/facts-well';
 
 /**
@@ -45,8 +46,8 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
     setArmed,
     reason,
     setReason,
-    minutes,
-    setMinutes,
+    duration,
+    setDuration,
     expiresOn,
     setExpiresOn,
     reasonCode,
@@ -81,7 +82,7 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
     item,
     armed,
     reason,
-    minutes,
+    duration,
     expiresOn,
   });
 
@@ -180,18 +181,7 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
         title={armed ? t(`approvals.actions.${armed.labelKey}`) : ''}
         eyebrow={<SectionLabel>{item.subject.name}</SectionLabel>}
       >
-        {armed?.input === 'minutes' ? (
-          <>
-            <SectionLabel>{t('approvals.minutes')}</SectionLabel>
-            <GlassInput value={minutes} onChangeText={setMinutes} keyboardType="number-pad" maxLength={4} />
-            {/* The number read as time (clock review C8): "90" is "1h 30m". */}
-            {Number(minutes) >= 60 ? (
-              <AText variant="caption" tone="muted">
-                = {formatDuration(Number(minutes))}
-              </AText>
-            ) : null}
-          </>
-        ) : null}
+        {armed?.input === 'minutes' ? <ApprovalDurationField value={duration} onChange={setDuration} /> : null}
         {armed?.input === 'expiresOn' ? (
           <>
             <SectionLabel>{t('approvals.expiresOn')}</SectionLabel>

@@ -3,18 +3,26 @@ import { RULE_LIMITS, ruleKindOf, type ApprovalItem, type RuleKind } from "@hbcf
 /**
  * The link to the rules page offering one rule: `/approvals?tab=rules&ruleKind=…&space=…&limit=…`. Its own name
  * (`ruleKind`), never `kind` — that one opens the inbox on an approval kind, and some share a name ("overtime").
+ * `from=item` marks a link made from an inbox item: with no workspace and no limit (a client request filed
+ * nowhere) it still offers "every one", where a plain link to a kind only opens that kind.
  */
-export function ruleLinkFor(kind: RuleKind, spaceId: string | null, limit: number | null): string {
+export function ruleLinkFor(kind: RuleKind, spaceId: string | null, limit: number | null, fromItem = false): string {
   const q = new URLSearchParams({ tab: "rules", ruleKind: kind })
   if (spaceId) q.set("space", spaceId)
   if (limit != null) q.set("limit", String(limit))
+  if (fromItem) q.set("from", "item")
   return `/approvals?${q}`
 }
 
-/** A limit just under the item's own value, rounded the way a person would type it — so the rule catches it. */
+/**
+ * A limit just under the item's own value, rounded the way a person would type it (a quarter hour for changed
+ * hours, never "1 h 14 min") — so the rule catches it — and never above what the kind's limit may hold.
+ */
 function limitUnder(kind: RuleKind, v: number): number {
-  const step = kind === "overtime" ? 30 : kind === "expense" ? 1_000 : 1
-  return Math.max(0, Math.floor((v - 1) / step) * step)
+  const step = kind === "overtime" ? 30 : kind === "hours" ? 15 : kind === "expense" ? 1_000 : 1
+  const under = Math.max(0, Math.floor((v - 1) / step) * step)
+  const max = RULE_LIMITS[kind]?.max
+  return max != null ? Math.min(under, max) : under
 }
 
 /**
@@ -52,5 +60,5 @@ export function ruleLinkForItem(item: ApprovalItem): string | null {
   // A limit that rounds down to nothing (20 min of overtime) is no limit: the rule is offered for "every one",
   // and says so.
   const limit = value != null && value > 0 ? limitUnder(kind, value) : 0
-  return ruleLinkFor(kind, item.space?.id ?? null, limit > 0 ? limit : null)
+  return ruleLinkFor(kind, item.space?.id ?? null, limit > 0 ? limit : null, true)
 }

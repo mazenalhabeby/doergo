@@ -1,0 +1,16 @@
+"use client"
+
+import { ChevronLeft } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { Button } from "@/components/ui/button"
+
+/** A narrow screen shows one column at a time: the way back from a decision or a day. */
+export function BackButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <Button variant="ghost" size="sm" className="-ml-2 mb-3 rounded-full lg:hidden" onClick={onClick}>
+      <ChevronLeft className="size-4" />
+      {t("approvals.back")}
+    </Button>
+  )
+}

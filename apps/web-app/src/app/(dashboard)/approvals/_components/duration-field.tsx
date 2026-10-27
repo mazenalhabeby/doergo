@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { formatRequestMinutes } from "@/lib/requests"
+import { cn } from "@/lib/utils"
 import { durationFields, durationValue } from "../_lib/rule-limit"
 
 /** The longest time one decision may count (the server's own ceiling): 24 h. */
@@ -27,6 +29,12 @@ export function DurationField({
 }) {
   const { t } = useTranslation()
   const [hm, setHm] = useState(() => durationFields(String(initialMinutes)))
+  const total = durationValue(hm.h, hm.m)
+  // Decimal hours ("1,5") are read back as the time they mean, so nobody approves 1 h 50 min by mistake.
+  const echo =
+    total && /[.,]/.test(hm.h)
+      ? t("approvals.durationEquals", { time: formatRequestMinutes(Number(total), (k, o) => t(k, o)) })
+      : null
   const set = (next: { h: string; m: string }) => {
     setHm(next)
     const v = durationValue(next.h, next.m)
@@ -56,8 +64,14 @@ export function DurationField({
         {field("m")}
         <span>{t("approvals.tree.unit.min")}</span>
       </div>
-      <p id={`${id}-hint`} className={invalid ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
-        {t("approvals.durationRange")}
+      {/* What is wrong, said in words: a field that cannot be read is not "out of range". */}
+      <p
+        id={`${id}-hint`}
+        aria-live="polite"
+        className={cn("text-xs", invalid ? "text-destructive" : "text-muted-foreground")}
+      >
+        {total === null ? t("approvals.durationUnreadable") : t("approvals.durationRange")}
+        {echo && !invalid && <span className="ml-1.5 font-medium text-foreground">{echo}</span>}
       </p>
     </div>
   )
