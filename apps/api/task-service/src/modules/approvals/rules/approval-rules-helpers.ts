@@ -1,5 +1,11 @@
 /** What a decision's approve path learns from the gate. */
-export type GateVerdict = { finalize: true; minutes?: number } | { finalize: false; roleName: string };
+export type GateVerdict =
+  | {
+      finalize: true;
+      minutes?: number;
+      /** The step this approval finished — `reopen` it if the write fails. */ stepId?: string;
+    }
+  | { finalize: false; roleName: string };
 
 const RULE_MESSAGES: Record<string, string> = {
   RULE_KIND_INVALID:

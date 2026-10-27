@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { AssetExpenseReviewService } from '../expenses/asset-expense-review.service';
 import { AssetExpenseGateService } from '../expenses/asset-expense-gate.service';
 import { CustodyReadService } from '../custody/custody-read.service';
@@ -60,6 +62,7 @@ describe('AssetCustodyService.handOver', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         CustodyWriterService,
         AssetCustodyService,
         CustodyReadService,
@@ -73,7 +76,12 @@ describe('AssetCustodyService.handOver', () => {
 
   const call = (over: any = {}) =>
     service.handOver({
-      id: 'a1', to: [{ userId: 'u2' }], userId: 'actor', userRole: 'ADMIN', organizationId: 'org1', ...over,
+      id: 'a1',
+      to: [{ userId: 'u2' }],
+      userId: 'actor',
+      userRole: 'ADMIN',
+      organizationId: 'org1',
+      ...over,
     } as any);
 
   it('closes the open period and opens the next, in one transaction', async () => {
@@ -84,9 +92,7 @@ describe('AssetCustodyService.handOver', () => {
     await call();
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(tx.assetCustody.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: { in: ['c1'] } } }),
-    );
+    expect(tx.assetCustody.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { in: ['c1'] } } }));
     expect(tx.assetCustody.createMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: [expect.objectContaining({ userId: 'u2', assetId: 'a1' })] }),
     );
@@ -157,8 +163,14 @@ describe('AssetCustodyService.handOver', () => {
   */
   it('announces the handover once it has been written', async () => {
     const order: string[] = [];
-    prisma.$transaction.mockImplementation(async (fn: any) => { const r = await fn(tx); order.push('committed'); return r; });
-    notifier.handedOver.mockImplementation(async () => { order.push('announced'); });
+    prisma.$transaction.mockImplementation(async (fn: any) => {
+      const r = await fn(tx);
+      order.push('committed');
+      return r;
+    });
+    notifier.handedOver.mockImplementation(async () => {
+      order.push('announced');
+    });
     tx.assetCustody.findMany.mockResolvedValue([
       { id: 'c1', userId: 'u1', customerId: null, startedAt: new Date('2026-01-01'), endedAt: null },
     ]);
@@ -166,10 +178,14 @@ describe('AssetCustodyService.handOver', () => {
     await call();
 
     expect(order).toEqual(['committed', 'announced']);
-    expect(notifier.handedOver).toHaveBeenCalledWith(expect.objectContaining({
-      organizationId: 'org1', assetId: 'a1', actorId: 'actor',
-      plan: expect.objectContaining({ opening: [{ userId: 'u2' }] }),
-    }));
+    expect(notifier.handedOver).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 'org1',
+        assetId: 'a1',
+        actorId: 'actor',
+        plan: expect.objectContaining({ opening: [{ userId: 'u2' }] }),
+      }),
+    );
   });
 
   it('announces nothing when the handover is refused', async () => {
@@ -225,6 +241,7 @@ describe('filing an expense is gated on custody', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         AssetExpenseGateService,
         AssetExpenseService,
         AssetExpenseReviewService,
@@ -241,8 +258,13 @@ describe('filing an expense is gated on custody', () => {
 
   const submit = (over: any = {}) =>
     service.submit({
-      id: 'a1', category: 'Fuel', amountCents: 8141,
-      userId: 'u1', userRole: 'EMPLOYEE', organizationId: 'org1', ...over,
+      id: 'a1',
+      category: 'Fuel',
+      amountCents: 8141,
+      userId: 'u1',
+      userRole: 'EMPLOYEE',
+      organizationId: 'org1',
+      ...over,
     } as any);
 
   it('accepts one from the person who held it', async () => {
@@ -301,9 +323,15 @@ describe('filing an expense is gated on custody', () => {
     custody.heldBy.mockResolvedValue(true);
     await submit();
     expect(notifier.expenseSubmitted).toHaveBeenCalledTimes(1);
-    expect(notifier.expenseSubmitted).toHaveBeenCalledWith(expect.objectContaining({
-      assetId: 'a1', authorId: 'u1', status: 'SUBMITTED', amountCents: 8141, category: 'Fuel',
-    }));
+    expect(notifier.expenseSubmitted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assetId: 'a1',
+        authorId: 'u1',
+        status: 'SUBMITTED',
+        amountCents: 8141,
+        category: 'Fuel',
+      }),
+    );
   });
 
   /*
@@ -329,8 +357,9 @@ describe('filing an expense is gated on custody', () => {
 
   it('refuses a receipt dated in the future', async () => {
     custody.heldBy.mockResolvedValue(true);
-    await expect(submit({ occurredAt: new Date(Date.now() + 5 * 86_400_000).toISOString() }))
-      .rejects.toBeInstanceOf(BadRequestException);
+    await expect(submit({ occurredAt: new Date(Date.now() + 5 * 86_400_000).toISOString() })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   /*
@@ -342,8 +371,9 @@ describe('filing an expense is gated on custody', () => {
   */
   it('refuses a receipt key that is not this asset’s', async () => {
     custody.heldBy.mockResolvedValue(true);
-    await expect(submit({ receiptKey: 'other-org/asset-receipts/a9/x.jpg' }))
-      .rejects.toBeInstanceOf(BadRequestException);
+    await expect(submit({ receiptKey: 'other-org/asset-receipts/a9/x.jpg' })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('accepts one under this asset’s own prefix', async () => {
@@ -366,12 +396,16 @@ describe('filing an expense is gated on custody', () => {
 describe('reviewing one', () => {
   let service: AssetExpenseServiceParts;
   // `findFirst` + `user`: the review reads the author first, so nobody accepts their own slip.
-  const prisma: any = { assetMoney: { updateMany: jest.fn(), findFirst: jest.fn().mockResolvedValue({ authorId: 'member' }) }, user: { findFirst: jest.fn().mockResolvedValue(null) } };
+  const prisma: any = {
+    assetMoney: { updateMany: jest.fn(), findFirst: jest.fn().mockResolvedValue({ authorId: 'member' }) },
+    user: { findFirst: jest.fn().mockResolvedValue(null) },
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         AssetExpenseGateService,
         AssetExpenseService,
         AssetExpenseReviewService,
@@ -393,7 +427,13 @@ describe('reviewing one', () => {
   */
   it('only ever moves one that is still waiting', async () => {
     prisma.assetMoney.updateMany.mockResolvedValue({ count: 1 });
-    await service.review({ entryId: 'm1', decision: 'accept', userId: 'u', userRole: 'ADMIN', organizationId: 'org1' } as any);
+    await service.review({
+      entryId: 'm1',
+      decision: 'accept',
+      userId: 'u',
+      userRole: 'ADMIN',
+      organizationId: 'org1',
+    } as any);
     expect(prisma.assetMoney.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ status: 'SUBMITTED', organizationId: 'org1' }) }),
     );
@@ -402,7 +442,13 @@ describe('reviewing one', () => {
   it('refuses when it has already been decided', async () => {
     prisma.assetMoney.updateMany.mockResolvedValue({ count: 0 });
     await expect(
-      service.review({ entryId: 'm1', decision: 'accept', userId: 'u', userRole: 'ADMIN', organizationId: 'org1' } as any),
+      service.review({
+        entryId: 'm1',
+        decision: 'accept',
+        userId: 'u',
+        userRole: 'ADMIN',
+        organizationId: 'org1',
+      } as any),
     ).rejects.toThrow();
     // A decision that did not happen is not announced — the second reviewer
     // must not send the member a contradicting push.
@@ -412,10 +458,19 @@ describe('reviewing one', () => {
   it('tells the member what was decided, with the reason', async () => {
     prisma.assetMoney.updateMany.mockResolvedValue({ count: 1 });
     await service.review({
-      entryId: 'm1', decision: 'reject', note: '  Not our van  ', userId: 'u', userRole: 'ADMIN', organizationId: 'org1',
+      entryId: 'm1',
+      decision: 'reject',
+      note: '  Not our van  ',
+      userId: 'u',
+      userRole: 'ADMIN',
+      organizationId: 'org1',
     } as any);
     expect(notifier.expenseDecided).toHaveBeenCalledWith({
-      entryId: 'm1', organizationId: 'org1', decision: 'reject', note: 'Not our van', reviewerId: 'u',
+      entryId: 'm1',
+      organizationId: 'org1',
+      decision: 'reject',
+      note: 'Not our van',
+      reviewerId: 'u',
     });
   });
 });

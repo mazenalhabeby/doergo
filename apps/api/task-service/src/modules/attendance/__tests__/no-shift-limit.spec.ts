@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * Clocking in with no shift: allow, a daily limit, or shift only.
  *
@@ -8,8 +10,17 @@
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import {
-  QUEUE_NAMES, SERVICE_NAMES, TimeEntryStatus,
-  noShiftAllowance, noShiftAllowanceNow, countedMinutesBetween, countedMinutesOfDay, memberDayZone, startOfDayIn, endOfDayIn, clampDailyMinutes,
+  QUEUE_NAMES,
+  SERVICE_NAMES,
+  TimeEntryStatus,
+  noShiftAllowance,
+  noShiftAllowanceNow,
+  countedMinutesBetween,
+  countedMinutesOfDay,
+  memberDayZone,
+  startOfDayIn,
+  endOfDayIn,
+  clampDailyMinutes,
 } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
@@ -28,24 +39,46 @@ const MIN = 60_000;
 
 describe('the rule', () => {
   it('allows freely by default, and for a value it does not know', () => {
-    expect(noShiftAllowance({ policy: 'ALLOW', dailyMinutes: 480, workedTodayMinutes: 900, at: at('2026-09-15T12:00:00Z') }).kind).toBe('free');
-    expect(noShiftAllowance({ policy: 'SOMETHING', dailyMinutes: 480, workedTodayMinutes: 900, at: at('2026-09-15T12:00:00Z') }).kind).toBe('free');
+    expect(
+      noShiftAllowance({ policy: 'ALLOW', dailyMinutes: 480, workedTodayMinutes: 900, at: at('2026-09-15T12:00:00Z') })
+        .kind,
+    ).toBe('free');
+    expect(
+      noShiftAllowance({
+        policy: 'SOMETHING',
+        dailyMinutes: 480,
+        workedTodayMinutes: 900,
+        at: at('2026-09-15T12:00:00Z'),
+      }).kind,
+    ).toBe('free');
   });
 
   it('refuses outright when the workspace needs a shift', () => {
-    expect(noShiftAllowance({ policy: 'SHIFT_ONLY', dailyMinutes: 480, workedTodayMinutes: 0, at: at('2026-09-15T12:00:00Z') }))
-      .toMatchObject({ kind: 'refused', reason: 'SHIFT_ONLY' });
+    expect(
+      noShiftAllowance({
+        policy: 'SHIFT_ONLY',
+        dailyMinutes: 480,
+        workedTodayMinutes: 0,
+        at: at('2026-09-15T12:00:00Z'),
+      }),
+    ).toMatchObject({ kind: 'refused', reason: 'SHIFT_ONLY' });
   });
 
   it('counts until the hours left run out', () => {
-    const a = noShiftAllowance({ policy: 'LIMIT', dailyMinutes: 480, workedTodayMinutes: 300, at: at('2026-09-15T12:00:00Z') });
+    const a = noShiftAllowance({
+      policy: 'LIMIT',
+      dailyMinutes: 480,
+      workedTodayMinutes: 300,
+      at: at('2026-09-15T12:00:00Z'),
+    });
     expect(a).toMatchObject({ kind: 'limited', remainingMinutes: 180 });
     expect((a as any).until.toISOString()).toBe('2026-09-15T15:00:00.000Z');
   });
 
   it('refuses when nothing is left', () => {
-    expect(noShiftAllowance({ policy: 'LIMIT', dailyMinutes: 480, workedTodayMinutes: 480, at: at('2026-09-15T12:00:00Z') }))
-      .toMatchObject({ kind: 'refused', reason: 'NO_HOURS_LEFT', dailyMinutes: 480 });
+    expect(
+      noShiftAllowance({ policy: 'LIMIT', dailyMinutes: 480, workedTodayMinutes: 480, at: at('2026-09-15T12:00:00Z') }),
+    ).toMatchObject({ kind: 'refused', reason: 'NO_HOURS_LEFT', dailyMinutes: 480 });
   });
 
   it('keeps the limit between half an hour and a day', () => {
@@ -57,14 +90,20 @@ describe('the rule', () => {
   it('counts counted time, gives a session across midnight each day its share, and an open one up to now', () => {
     const from = at('2026-09-15T00:00:00Z');
     const to = at('2026-09-15T12:00:00Z');
-    expect(countedMinutesBetween([
-      // 22:00 → 02:00, 240 counted: two hours fall today.
-      { clockInAt: '2026-09-14T22:00:00Z', clockOutAt: '2026-09-15T02:00:00Z', paidMinutes: 240 },
-      // 08:00 → 10:00 with a 30-minute rest: 90 counted.
-      { clockInAt: '2026-09-15T08:00:00Z', clockOutAt: '2026-09-15T10:00:00Z', paidMinutes: 90 },
-      // Still open since 11:00.
-      { clockInAt: '2026-09-15T11:00:00Z', clockOutAt: null },
-    ], from, to)).toBe(120 + 90 + 60);
+    expect(
+      countedMinutesBetween(
+        [
+          // 22:00 → 02:00, 240 counted: two hours fall today.
+          { clockInAt: '2026-09-14T22:00:00Z', clockOutAt: '2026-09-15T02:00:00Z', paidMinutes: 240 },
+          // 08:00 → 10:00 with a 30-minute rest: 90 counted.
+          { clockInAt: '2026-09-15T08:00:00Z', clockOutAt: '2026-09-15T10:00:00Z', paidMinutes: 90 },
+          // Still open since 11:00.
+          { clockInAt: '2026-09-15T11:00:00Z', clockOutAt: null },
+        ],
+        from,
+        to,
+      ),
+    ).toBe(120 + 90 + 60);
   });
 
   /*
@@ -97,9 +136,18 @@ describe('the rule', () => {
   });
 
   it('a tag read yesterday starts the next day with nothing used', () => {
-    const tag = { policy: 'LIMIT' as const, dailyMinutes: 480, hasShiftNow: false, workedTodayMinutes: 480, dayEndsAt: '2026-09-15T22:00:00.000Z' };
+    const tag = {
+      policy: 'LIMIT' as const,
+      dailyMinutes: 480,
+      hasShiftNow: false,
+      workedTodayMinutes: 480,
+      dayEndsAt: '2026-09-15T22:00:00.000Z',
+    };
     expect(noShiftAllowanceNow(tag, at('2026-09-15T21:00:00Z')).kind).toBe('refused');
-    expect(noShiftAllowanceNow(tag, at('2026-09-16T06:00:00Z'))).toMatchObject({ kind: 'limited', remainingMinutes: 480 });
+    expect(noShiftAllowanceNow(tag, at('2026-09-16T06:00:00Z'))).toMatchObject({
+      kind: 'limited',
+      remainingMinutes: 480,
+    });
     expect(noShiftAllowanceNow({ ...tag, hasShiftNow: true }, at('2026-09-15T21:00:00Z')).kind).toBe('free');
   });
 });
@@ -109,21 +157,43 @@ describe('the rule', () => {
 const NOW = new Date('2026-09-15T12:00:00.000Z'); // 14:00 in Vienna
 const SITE = { lat: 47.9813, lng: 13.8269 };
 const location = {
-  id: 'loc-1', name: 'Main Office', organizationId: 'org-1', isActive: true, isRemote: false, workModel: 'NONE',
-  ...SITE, geofenceRadius: 50, geofencePolygon: null, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna',
-  noShiftPolicy: 'LIMIT', noShiftDailyMinutes: 480, updatedAt: new Date('2026-09-01T00:00:00.000Z'),
+  id: 'loc-1',
+  name: 'Main Office',
+  organizationId: 'org-1',
+  isActive: true,
+  isRemote: false,
+  workModel: 'NONE',
+  ...SITE,
+  geofenceRadius: 50,
+  geofencePolygon: null,
+  geofencePolicy: 'STRICT',
+  timezone: 'Europe/Vienna',
+  noShiftPolicy: 'LIMIT',
+  noShiftDailyMinutes: 480,
+  updatedAt: new Date('2026-09-01T00:00:00.000Z'),
 };
 
 async function build(opts: { worked?: any[]; shift?: any; space?: Partial<typeof location> } = {}) {
   const prisma: any = {
     user: {
-      findFirst: jest.fn().mockResolvedValue({ id: 'u1', organizationId: 'org-1', allowRemote: false, role: 'EMPLOYEE', organization: { timezone: 'Europe/Vienna' } }),
+      findFirst: jest
+        .fn()
+        .mockResolvedValue({
+          id: 'u1',
+          organizationId: 'org-1',
+          allowRemote: false,
+          role: 'EMPLOYEE',
+          organization: { timezone: 'Europe/Vienna' },
+        }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
     companyLocation: { findFirst: jest.fn().mockResolvedValue({ ...location, ...opts.space }) },
     timeOff: { findMany: jest.fn().mockResolvedValue([]) },
-    spaceAssignment: { findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null }), findMany: jest.fn().mockResolvedValue([]) },
+    spaceAssignment: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null }),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(null),
       // A close claims with every column in one write, then reads the row back.
@@ -144,16 +214,35 @@ async function build(opts: { worked?: any[]; shift?: any; space?: Partial<typeof
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
+      { provide: ApprovalRulesService, useValue: noOfficeRules() },
+      AttendanceService,
+      ...ATTENDANCE_SERVICE_PARTS,
+      {
+        provide: PresenceService,
+        useValue: {
+          atClockIn: jest.fn().mockResolvedValue({}),
+          onPosition: jest.fn().mockResolvedValue(undefined),
+          onBatch: jest.fn().mockResolvedValue(undefined),
+        },
+      },
       ...BREAK_SERVICES,
       CountedTimeService,
       BreakRulesService,
       BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
-      { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
-      { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } },
-      { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(opts.shift ?? null) } },
+      {
+        provide: getQueueToken(QUEUE_NAMES.OVERTIME),
+        useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) },
+      },
+      {
+        provide: NotificationRoutingService,
+        useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) },
+      },
+      {
+        provide: ShiftResolverService,
+        useValue: { resolveForClockIn: jest.fn().mockResolvedValue(opts.shift ?? null) },
+      },
     ],
   }).compile();
   const service = moduleRef.get(AttendanceService);
@@ -161,9 +250,18 @@ async function build(opts: { worked?: any[]; shift?: any; space?: Partial<typeof
   return { service, prisma };
 }
 
-const clockIn = (over: Record<string, unknown> = {}) => ({ userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', ...SITE, accuracy: 10, ...over });
+const clockIn = (over: Record<string, unknown> = {}) => ({
+  userId: 'u1',
+  organizationId: 'org-1',
+  locationId: 'loc-1',
+  ...SITE,
+  accuracy: 10,
+  ...over,
+});
 /** Five counted hours this morning. */
-const MORNING = [{ clockInAt: new Date('2026-09-15T05:00:00Z'), clockOutAt: new Date('2026-09-15T10:00:00Z'), paidMinutes: 300 }];
+const MORNING = [
+  { clockInAt: new Date('2026-09-15T05:00:00Z'), clockOutAt: new Date('2026-09-15T10:00:00Z'), paidMinutes: 300 },
+];
 
 describe('clocking in with no shift', () => {
   beforeAll(() => {
@@ -203,7 +301,18 @@ describe('clocking in with no shift', () => {
     day's limit. It used to extend only a session that still had hours left — somebody already
     at the limit was refused before the agreement was ever read.
   */
-  const AGREED = (minutes: number) => [{ id: 'r1', kind: 'OVERTIME', spaceId: null, startTime: null, endTime: null, minutes, startDate: new Date('2026-09-15T00:00:00Z'), endDate: new Date('2026-09-15T00:00:00Z') }];
+  const AGREED = (minutes: number) => [
+    {
+      id: 'r1',
+      kind: 'OVERTIME',
+      spaceId: null,
+      startTime: null,
+      endTime: null,
+      minutes,
+      startDate: new Date('2026-09-15T00:00:00Z'),
+      endDate: new Date('2026-09-15T00:00:00Z'),
+    },
+  ];
 
   it('agreed overtime lets a member at the limit clock in, for exactly that time', async () => {
     const { service, prisma } = await build({ worked: [{ ...MORNING[0], paidMinutes: 480 }] });
@@ -225,7 +334,9 @@ describe('clocking in with no shift', () => {
   it('refuses when the workspace only allows clocking in with a shift', async () => {
     // A workspace that schedules shifts: at workModel NONE, SHIFT_ONLY reads as ALLOW.
     const { service, prisma } = await build({ space: { noShiftPolicy: 'SHIFT_ONLY', workModel: 'SHIFT' } });
-    await expect(service.clockIn(clockIn())).rejects.toMatchObject({ response: expect.objectContaining({ code: 'NO_SHIFT_TODAY' }) });
+    await expect(service.clockIn(clockIn())).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'NO_SHIFT_TODAY' }),
+    });
     expect(prisma.timeEntry.findMany).not.toHaveBeenCalled();
   });
 
@@ -233,7 +344,13 @@ describe('clocking in with no shift', () => {
     const end = new Date(NOW.getTime() + 8 * 60 * MIN);
     const { service, prisma } = await build({
       space: { noShiftPolicy: 'SHIFT_ONLY' },
-      shift: { shiftId: 's1', expectedClockInAt: NOW, expectedClockOutAt: end, nextRemindAt: end, flagToleranceMin: 10 },
+      shift: {
+        shiftId: 's1',
+        expectedClockInAt: NOW,
+        expectedClockOutAt: end,
+        nextRemindAt: end,
+        flagToleranceMin: 10,
+      },
     });
     await service.clockIn(clockIn());
     const data = prisma.timeEntry.create.mock.calls[0][0].data;
@@ -252,13 +369,16 @@ describe('clocking in with no shift', () => {
     const TAP = new Date('2026-09-15T11:00:00.000Z');
     const anchorAt = new Date(TAP.getTime() - 8 * MIN);
     const { service, prisma } = await build({ worked: [{ ...MORNING[0], paidMinutes: 480 }] });
-    await service.clockIn(clockIn({
-      evidence: {
-        occurredAt: TAP.toISOString(), uptimeMs: 1_000_000 + 8 * MIN,
-        anchor: { serverTime: anchorAt.toISOString(), uptimeMs: 1_000_000 },
-        fix: { ...SITE, accuracy: 12, fixAt: TAP.toISOString() },
-      },
-    }));
+    await service.clockIn(
+      clockIn({
+        evidence: {
+          occurredAt: TAP.toISOString(),
+          uptimeMs: 1_000_000 + 8 * MIN,
+          anchor: { serverTime: anchorAt.toISOString(), uptimeMs: 1_000_000 },
+          fix: { ...SITE, accuracy: 12, fixAt: TAP.toISOString() },
+        },
+      }),
+    );
     const data = prisma.timeEntry.create.mock.calls[0][0].data;
     expect(data.flagReasons).toEqual(expect.arrayContaining(['RECORDED_OFFLINE', 'PAST_DAILY_LIMIT']));
     expect(data.expectedClockOutAt).toEqual(TAP);
@@ -273,9 +393,21 @@ describe('clocking out of a limited session', () => {
   afterAll(() => jest.useRealTimers());
 
   const open = (expectedClockOutAt: Date) => ({
-    id: 'e1', userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', status: TimeEntryStatus.CLOCKED_IN,
-    clockInAt: new Date('2026-09-15T08:00:00Z'), isRemote: false, flagReasons: ['UNSCHEDULED_DAY'], breakMinutes: 0, unpaidBreakMinutes: 0,
-    expectedClockOutAt, endIsDailyLimit: true, shiftId: null, location, breaks: [],
+    id: 'e1',
+    userId: 'u1',
+    organizationId: 'org-1',
+    locationId: 'loc-1',
+    status: TimeEntryStatus.CLOCKED_IN,
+    clockInAt: new Date('2026-09-15T08:00:00Z'),
+    isRemote: false,
+    flagReasons: ['UNSCHEDULED_DAY'],
+    breakMinutes: 0,
+    unpaidBreakMinutes: 0,
+    expectedClockOutAt,
+    endIsDailyLimit: true,
+    shiftId: null,
+    location,
+    breaks: [],
   });
 
   it('leaving before the limit is not an early departure', async () => {
@@ -304,7 +436,10 @@ describe('what the phone and web are told before the tap', () => {
 
   it('tags a limited workspace with today’s hours, and one that allows it with nothing', async () => {
     const { service, prisma } = await build({ worked: MORNING });
-    prisma.spaceAssignment.findMany.mockResolvedValue([{ spaceId: 'loc-1', allowRemote: null }, { spaceId: 'loc-2', allowRemote: null }]);
+    prisma.spaceAssignment.findMany.mockResolvedValue([
+      { spaceId: 'loc-1', allowRemote: null },
+      { spaceId: 'loc-2', allowRemote: null },
+    ]);
     prisma.companyLocation.findMany = jest.fn().mockResolvedValue([
       { ...location, enabledModules: ['time_tracking'] },
       { ...location, id: 'loc-2', name: 'Warehouse', noShiftPolicy: 'ALLOW', enabledModules: ['time_tracking'] },
@@ -312,7 +447,12 @@ describe('what the phone and web are told before the tap', () => {
     const res: any = await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
     const [main, warehouse] = res.data;
     expect(main.noShift).toEqual({
-      policy: 'LIMIT', dailyMinutes: 480, hasShiftNow: false, workedTodayMinutes: 300, extraMinutes: 0, dayEndsAt: '2026-09-15T22:00:00.000Z',
+      policy: 'LIMIT',
+      dailyMinutes: 480,
+      hasShiftNow: false,
+      workedTodayMinutes: 300,
+      extraMinutes: 0,
+      dayEndsAt: '2026-09-15T22:00:00.000Z',
     });
     expect(warehouse.noShift).toBeNull();
   });

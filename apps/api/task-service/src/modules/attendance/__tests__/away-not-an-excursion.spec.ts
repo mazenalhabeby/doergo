@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test } from '@nestjs/testing';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
@@ -28,12 +30,25 @@ describe('an away day is not a geofence excursion', () => {
   let prisma: any;
 
   // Gmunden, with the member reporting from Vienna — 200 km outside any ring.
-  const WAREHOUSE = { id: 'loc1', name: 'Warehouse', lat: 47.9186, lng: 13.7991, geofenceRadius: 80, timezone: 'Europe/Vienna' };
+  const WAREHOUSE = {
+    id: 'loc1',
+    name: 'Warehouse',
+    lat: 47.9186,
+    lng: 13.7991,
+    geofenceRadius: 80,
+    timezone: 'Europe/Vienna',
+  };
   const VIENNA = { lat: 48.2082, lng: 16.3738 };
 
   const entry = (isRemote: boolean) => ({
-    id: 'e1', userId: 'u1', organizationId: 'org1', locationId: 'loc1',
-    status: 'CLOCKED_IN', isRemote, clockInAt: new Date(), location: WAREHOUSE,
+    id: 'e1',
+    userId: 'u1',
+    organizationId: 'org1',
+    locationId: 'loc1',
+    status: 'CLOCKED_IN',
+    isRemote,
+    clockInAt: new Date(),
+    location: WAREHOUSE,
   });
 
   beforeEach(async () => {
@@ -50,9 +65,24 @@ describe('an away day is not a geofence excursion', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
-        AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, CountedTimeService, BreakRulesService,
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        AttendanceService,
+        ...ATTENDANCE_SERVICE_PARTS,
+        {
+          provide: PresenceService,
+          useValue: {
+            atClockIn: jest.fn().mockResolvedValue({}),
+            onPosition: jest.fn().mockResolvedValue(undefined),
+            onBatch: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        CountedTimeService,
+        BreakRulesService,
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) },
+        },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn() } },

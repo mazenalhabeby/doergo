@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test } from '@nestjs/testing';
 import { LeaveLedgerService } from '../leave-ledger.service';
 import { TimeOffRequestService } from '../time-off-request.service';
@@ -71,6 +73,7 @@ describe('who is told about a leave request', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         TimeOffRequestService,
         TimeOffDecisionService,
         { provide: NotificationRoutingService, useValue: routing },
@@ -98,8 +101,7 @@ describe('who is told about a leave request', () => {
       endDate: future(14),
     } as never);
 
-  const requested = () =>
-    emit.mock.calls.find((c) => c[0] === 'time_off_requested')?.[1];
+  const requested = () => emit.mock.calls.find((c) => c[0] === 'time_off_requested')?.[1];
 
   it('goes to whoever the member’s routing names', async () => {
     routing.resolveWatchers.mockResolvedValue({ ids: ['anna', 'boss'], emails: [] });

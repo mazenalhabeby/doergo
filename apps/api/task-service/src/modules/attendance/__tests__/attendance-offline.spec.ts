@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * Clocking in, out and resting while offline — the server's half.
  *
@@ -57,15 +59,13 @@ function evidence(at = TAP, fix: { lat: number; lng: number } | null = SITE) {
 function prismaDouble() {
   const p: any = {
     user: {
-      findFirst: jest
-        .fn()
-        .mockResolvedValue({
-          id: 'u1',
-          organizationId: 'org-1',
-          allowRemote: false,
-          role: 'EMPLOYEE',
-          organization: { timezone: 'Europe/Vienna' },
-        }),
+      findFirst: jest.fn().mockResolvedValue({
+        id: 'u1',
+        organizationId: 'org-1',
+        allowRemote: false,
+        role: 'EMPLOYEE',
+        organization: { timezone: 'Europe/Vienna' },
+      }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
@@ -116,6 +116,7 @@ async function build() {
   const prisma = prismaDouble();
   const moduleRef = await Test.createTestingModule({
     providers: [
+      { provide: ApprovalRulesService, useValue: noOfficeRules() },
       AttendanceService,
       ...ATTENDANCE_SERVICE_PARTS,
       {

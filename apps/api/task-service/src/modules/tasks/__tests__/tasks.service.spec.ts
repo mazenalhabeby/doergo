@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TaskAccessService } from '../access/task-access.service';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
@@ -158,6 +160,7 @@ describe('TasksService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         TasksService,
         ...TASK_SERVICE_PARTS,
         TaskAccessService,

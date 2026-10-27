@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test } from '@nestjs/testing';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
@@ -23,25 +25,69 @@ describe('clock-in list: where may this member work away', () => {
   let prisma: any;
 
   const SPACES = [
-    { id: 'strict', name: 'Service Center', lat: 47.9, lng: 13.7, geofenceRadius: 40, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna', address: null, isDefault: false },
-    { id: 'open', name: 'Warehouse', lat: 47.9, lng: 13.8, geofenceRadius: 80, geofencePolicy: 'AWAY_ALLOWED', timezone: 'Europe/Vienna', address: null, isDefault: false },
-    { id: 'nopin', name: 'Main Office', lat: null, lng: null, geofenceRadius: 15, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna', address: null, isDefault: true },
+    {
+      id: 'strict',
+      name: 'Service Center',
+      lat: 47.9,
+      lng: 13.7,
+      geofenceRadius: 40,
+      geofencePolicy: 'STRICT',
+      timezone: 'Europe/Vienna',
+      address: null,
+      isDefault: false,
+    },
+    {
+      id: 'open',
+      name: 'Warehouse',
+      lat: 47.9,
+      lng: 13.8,
+      geofenceRadius: 80,
+      geofencePolicy: 'AWAY_ALLOWED',
+      timezone: 'Europe/Vienna',
+      address: null,
+      isDefault: false,
+    },
+    {
+      id: 'nopin',
+      name: 'Main Office',
+      lat: null,
+      lng: null,
+      geofenceRadius: 15,
+      geofencePolicy: 'STRICT',
+      timezone: 'Europe/Vienna',
+      address: null,
+      isDefault: true,
+    },
   ];
 
   const build = async (member: { allowRemote?: boolean; role?: string }, overrides: Record<string, boolean | null>) => {
     prisma = {
       spaceAssignment: {
-        findMany: jest.fn().mockResolvedValue(
-          SPACES.map((s) => ({ spaceId: s.id, allowRemote: overrides[s.id] ?? null })),
-        ),
+        findMany: jest
+          .fn()
+          .mockResolvedValue(SPACES.map((s) => ({ spaceId: s.id, allowRemote: overrides[s.id] ?? null }))),
       },
       timeOff: { findMany: jest.fn().mockResolvedValue([]) },
-      companyLocation: { findMany: jest.fn().mockResolvedValue(SPACES.map((sp) => ({ ...sp, enabledModules: ['time_tracking'] }))) },
+      companyLocation: {
+        findMany: jest.fn().mockResolvedValue(SPACES.map((sp) => ({ ...sp, enabledModules: ['time_tracking'] }))),
+      },
       user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE', ...member }) },
     };
     const mod = await Test.createTestingModule({
       providers: [
-        AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, CountedTimeService, BreakRulesService,
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        AttendanceService,
+        ...ATTENDANCE_SERVICE_PARTS,
+        {
+          provide: PresenceService,
+          useValue: {
+            atClockIn: jest.fn().mockResolvedValue({}),
+            onPosition: jest.fn().mockResolvedValue(undefined),
+            onBatch: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        CountedTimeService,
+        BreakRulesService,
         { provide: ShiftResolverService, useValue: {} },
         { provide: NotificationRoutingService, useValue: {} },
         { provide: PrismaService, useValue: prisma },

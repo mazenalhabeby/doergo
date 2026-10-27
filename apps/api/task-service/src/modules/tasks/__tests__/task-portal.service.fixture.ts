@@ -1,3 +1,4 @@
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { combinedServices } from '../../../common/testing/combined-services';
 import { TaskPortalService } from '../records/task-portal.service';
 import { TaskTriageService } from '../records/task-triage.service';
@@ -12,6 +13,6 @@ export type TaskPortalServiceParts = Public<TaskPortalService> & Public<TaskTria
 export function taskPortalParts(...args: unknown[]): TaskPortalServiceParts {
   const [prisma, notificationClient, media, support, assignment] = args as any[];
   const taskPortalService = new TaskPortalService(prisma, media);
-  const taskTriageService = new TaskTriageService(prisma, notificationClient, support, assignment);
+  const taskTriageService = new TaskTriageService(prisma, notificationClient, support, assignment, noOfficeRules());
   return combinedServices<TaskPortalServiceParts>(taskPortalService, taskTriageService);
 }

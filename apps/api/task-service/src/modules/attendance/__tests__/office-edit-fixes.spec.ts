@@ -85,14 +85,21 @@ describe('office edit — schedule flags', () => {
 
   it('re-reads the daily limit: corrected back inside it, PAST_DAILY_LIMIT goes', async () => {
     const { svc, prisma } = build(
-      closedEntry({ endIsDailyLimit: true, expectedClockInAt: null, clockOutAt: t('18:00'), flagReasons: ['UNSCHEDULED_DAY', 'PAST_DAILY_LIMIT'] }),
+      closedEntry({
+        endIsDailyLimit: true,
+        expectedClockInAt: null,
+        clockOutAt: t('18:00'),
+        flagReasons: ['UNSCHEDULED_DAY', 'PAST_DAILY_LIMIT'],
+      }),
     );
     await edit(svc, { clockOutAt: t('15:00').toISOString() });
     expect(written(prisma).flagReasons).toEqual(['UNSCHEDULED_DAY']);
   });
 
   it('re-reads the daily limit: moved past it, PAST_DAILY_LIMIT — never OVERTIME', async () => {
-    const { svc, prisma } = build(closedEntry({ endIsDailyLimit: true, expectedClockInAt: null, flagReasons: ['UNSCHEDULED_DAY'] }));
+    const { svc, prisma } = build(
+      closedEntry({ endIsDailyLimit: true, expectedClockInAt: null, flagReasons: ['UNSCHEDULED_DAY'] }),
+    );
     await edit(svc, { clockOutAt: t('18:00').toISOString() });
     expect(written(prisma).flagReasons).toEqual(['UNSCHEDULED_DAY', 'PAST_DAILY_LIMIT']);
   });
@@ -157,7 +164,10 @@ describe('office edit — closing an open entry', () => {
     );
     await edit(svc, { clockOutAt: t('16:00').toISOString() });
     expect(prisma.$transaction).toHaveBeenCalled();
-    expect(prisma.break.update).toHaveBeenCalledWith({ where: { id: 'b1' }, data: { endedAt: t('16:00'), durationMinutes: 30 } });
+    expect(prisma.break.update).toHaveBeenCalledWith({
+      where: { id: 'b1' },
+      data: { endedAt: t('16:00'), durationMinutes: 30 },
+    });
     const data = written(prisma);
     expect(data.breakMinutes).toBe(30);
     expect(data.unpaidBreakMinutes).toBe(30);
@@ -166,10 +176,21 @@ describe('office edit — closing an open entry', () => {
   });
 
   it('flags a required rest that fell due and was never taken', async () => {
-    const plan = [{
-      ruleId: 'lunch', name: 'Lunch', dueAt: t('12:00').toISOString(), expiresAt: t('13:30').toISOString(),
-      durationMinutes: 30, isPaid: false, required: true, state: 'PENDING', snoozeCount: 0, snoozeMin: 10, maxSnoozes: null,
-    }];
+    const plan = [
+      {
+        ruleId: 'lunch',
+        name: 'Lunch',
+        dueAt: t('12:00').toISOString(),
+        expiresAt: t('13:30').toISOString(),
+        durationMinutes: 30,
+        isPaid: false,
+        required: true,
+        state: 'PENDING',
+        snoozeCount: 0,
+        snoozeMin: 10,
+        maxSnoozes: null,
+      },
+    ];
     const { svc, prisma } = build(open({ breakPlan: plan }));
     await edit(svc, { clockOutAt: t('16:00').toISOString() });
     expect(written(prisma).flagReasons).toContain('MISSED_BREAK');
@@ -213,13 +234,66 @@ describe('edit history', () => {
   it('checks a scoped caller against the ENTRY — the activity log has no space column', async () => {
     const { svc, prisma } = build(closedEntry());
     await svc.getEntryHistory({ entryId: 'e1', organizationId: ORG, scopeSpaceIds: ['loc-1'] });
-    expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toMatchObject({ id: 'e1', locationId: { in: ['loc-1'] } });
+    expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toMatchObject({
+      id: 'e1',
+      locationId: { in: ['loc-1'] },
+    });
     expect(prisma.activityLog.findMany.mock.calls[0][0].where).not.toHaveProperty('locationId');
   });
 
-  it('an entry outside the caller\'s spaces reads as not found', async () => {
+  it("an entry outside the caller's spaces reads as not found", async () => {
     const { svc, prisma } = build(closedEntry());
     prisma.timeEntry.findFirst.mockResolvedValue(null);
-    await expect(svc.getEntryHistory({ entryId: 'e1', organizationId: ORG, scopeSpaceIds: ['other'] })).rejects.toMatchObject({ status: 404 });
+    await expect(
+      svc.getEntryHistory({ entryId: 'e1', organizationId: ORG, scopeSpaceIds: ['other'] }),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+/*
+  ⚠️ An office rule on changed hours cannot be stepped round by editing after the approval: past a rule that
+  asks for more people, the edited entry goes back to waiting, so the approve path runs the rule's steps.
+*/
+describe('office edit — a rule on changed hours', () => {
+  function withRule(entry: Record<string, any>, secondStep: string | null) {
+    const { prisma } = build(entry);
+    const rules = { secondStepFor: jest.fn().mockResolvedValue(secondStep) };
+    const svc = entryServices(
+      prisma,
+      new CountedTimeService(prisma),
+      { emit: jest.fn() } as any,
+      undefined,
+      undefined,
+      undefined,
+      rules,
+    );
+    return { svc, prisma, rules };
+  }
+
+  it('sends an approved entry back to waiting when the whole change is past the rule', async () => {
+    const approved = closedEntry({ approvalStatus: 'APPROVED', approvedById: 'boss', approvedAt: t('17:00') });
+    const { svc, prisma, rules } = withRule(approved, 'HR');
+    await edit(svc, { clockOutAt: t('19:00').toISOString() });
+    expect(rules.secondStepFor).toHaveBeenCalledWith(ORG, 'hours', { spaceIds: ['loc-1'], minutes: 180 });
+    expect(written(prisma)).toEqual(expect.objectContaining({ approvalStatus: 'PENDING', approvedById: null }));
+  });
+
+  it('counts the change from what was CLOCKED, however many edits made it', async () => {
+    const edited = closedEntry({
+      isEdited: true,
+      originalClockIn: t('08:00'),
+      originalClockOut: t('16:00'),
+      clockOutAt: t('17:00'),
+    });
+    const { svc, rules } = withRule(edited, null);
+    await edit(svc, { clockOutAt: t('18:00').toISOString() });
+    expect(rules.secondStepFor).toHaveBeenCalledWith(ORG, 'hours', expect.objectContaining({ minutes: 120 }));
+  });
+
+  it('leaves the decision alone when no rule asks for more people', async () => {
+    const approved = closedEntry({ approvalStatus: 'APPROVED' });
+    const { svc, prisma } = withRule(approved, null);
+    await edit(svc, { clockOutAt: t('17:00').toISOString() });
+    expect(written(prisma).approvalStatus).toBeUndefined();
   });
 });

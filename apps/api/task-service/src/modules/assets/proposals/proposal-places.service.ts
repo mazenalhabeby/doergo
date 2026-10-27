@@ -71,7 +71,12 @@ export class ProposalPlacesService {
     if (!row) return null;
     const categoryId = chosenCategoryId ?? row.categoryId;
     const place = (await this.placesOf([{ ...row, categoryId }], organizationId)).get(row.id);
-    return { spaceIds: place ? proposalReviewSpaces(place) : [], categoryId, raisedById: row.raisedById };
+    return {
+      spaceIds: place ? proposalReviewSpaces(place) : [],
+      categoryId,
+      raisedById: row.raisedById,
+      holderUserId: row.holderUserId,
+    };
   }
 
   async reviewable(row: Placeable, organizationId: string, manageSpaceIds: string[] | null): Promise<boolean> {

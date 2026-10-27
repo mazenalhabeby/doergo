@@ -24,23 +24,40 @@ describe('ApprovalRulesService.gate', () => {
     approvalRule: { findMany: jest.fn() },
     approvalStep: {
       findFirst: jest.fn(
-        async ({ where }: any) => steps.find((s) => s.itemId === where.itemId && !s.consumedAt) ?? null,
+        async ({ where }: any) => steps.find((s) => where.itemId.in.includes(s.itemId) && !s.consumedAt) ?? null,
       ),
       create: jest.fn(async ({ data }: any) => {
-        steps.push({ id: `s${steps.length}`, ...data, consumedAt: null });
+        steps.push({
+          id: `s${steps.length}`,
+          doneRoleIds: [],
+          approverIds: [],
+          requiredRoleIds: [],
+          ...data,
+          consumedAt: null,
+        });
         return steps[steps.length - 1];
       }),
-      updateMany: jest.fn(async ({ where }: any) => {
+      updateMany: jest.fn(async ({ where, data }: any) => {
+        const same = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
         const hit = steps.filter(
-          (s) => (!where.id || s.id === where.id) && (!where.itemId || s.itemId === where.itemId) && !s.consumedAt,
+          (s) =>
+            (!where.id || s.id === where.id) &&
+            (!where.itemId || s.itemId === where.itemId) &&
+            (!('consumedAt' in where) || !s.consumedAt) &&
+            (!where.doneRoleIds || same(s.doneRoleIds, where.doneRoleIds.equals)),
         );
-        hit.forEach((s) => (s.consumedAt = new Date()));
+        hit.forEach((s) => Object.assign(s, data));
         return { count: hit.length };
       }),
     },
     user: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([{ id: 'mgr' }]) },
     spaceAssignment: { findFirst: jest.fn() },
-    accessRole: { findUnique: jest.fn().mockResolvedValue({ name: 'Space Manager' }) },
+    accessRole: {
+      findUnique: jest.fn().mockResolvedValue({ name: 'Space Manager' }),
+      findMany: jest.fn(async ({ where }: any) =>
+        where.id.in.map((id: string) => ({ id, name: id === 'role-fin' ? 'Finance' : 'Space Manager' })),
+      ),
+    },
   };
   const notifications: any = { emit: jest.fn() };
   const svc = new ApprovalRulesService(prisma, notifications);
@@ -91,7 +108,7 @@ describe('ApprovalRulesService.gate', () => {
   it('the role holder finishes it — never above what the first person agreed', async () => {
     await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 150 }, deciderId: 'leader' });
     const v = await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 240 }, deciderId: 'mgr' });
-    expect(v).toEqual({ finalize: true, minutes: 150 });
+    expect(v).toEqual({ finalize: true, minutes: 150, stepId: 's0' });
     expect(steps[0].consumedAt).not.toBeNull();
   });
 
@@ -103,6 +120,7 @@ describe('ApprovalRulesService.gate', () => {
     expect(await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'siteMgr' })).toEqual({
       finalize: true,
       minutes: 180,
+      stepId: 's0',
     });
   });
 
@@ -116,6 +134,46 @@ describe('ApprovalRulesService.gate', () => {
     await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
     await svc.clear('o', 'overtime', 'entry1');
     expect(steps[0].consumedAt).not.toBeNull();
+  });
+
+  it("EVERY rule that applies counts: a workspace rule adds an approver, it never takes the company's away", async () => {
+    // Company: over 2 h → Finance. The Depot's own: over 2 h → Space Manager. Both are needed, by two people.
+    prisma.approvalRule.findMany.mockResolvedValue([
+      { ...rule, id: 'company', secondRoleId: 'role-fin' },
+      { ...rule, id: 'depot', spaceId: 's1', secondRoleId: 'role-mgr' },
+    ]);
+    prisma.user.findFirst.mockImplementation(async ({ where }: any) => {
+      if (where.memberRoleId === 'role-mgr') return where.id === 'mgr' ? { id: 'mgr' } : null;
+      if (where.memberRoleId === 'role-fin') return where.id === 'fin' ? { id: 'fin' } : null;
+      return { role: 'EMPLOYEE', firstName: where.id, lastName: '' };
+    });
+    const facts = { spaceIds: ['s1'], minutes: 180 };
+    expect(await svc.gate({ ...base, facts, deciderId: 'leader' })).toEqual({
+      finalize: false,
+      roleName: 'Space Manager + Finance',
+    });
+    expect(await svc.gate({ ...base, facts, deciderId: 'mgr' })).toEqual({ finalize: false, roleName: 'Finance' });
+    await expect(svc.gate({ ...base, facts, deciderId: 'mgr' })).rejects.toMatchObject({
+      response: { code: 'SECOND_STEP_SAME_PERSON' },
+    });
+    expect(await svc.gate({ ...base, facts, deciderId: 'fin' })).toEqual({
+      finalize: true,
+      minutes: 180,
+      stepId: 's0',
+    });
+  });
+
+  it('a step opened under an earlier id of the item (a run that grew) is found and follows the item', async () => {
+    await svc.gate({ ...base, itemId: 'day1', facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
+    const v = await svc.gate({
+      ...base,
+      itemId: 'day2',
+      itemAliases: ['day1'],
+      facts: { spaceIds: ['s1'], minutes: 180 },
+      deciderId: 'mgr',
+    });
+    expect(v).toMatchObject({ finalize: true });
+    expect(steps).toHaveLength(1);
   });
 
   it('a rule for one workspace leaves the others alone', async () => {

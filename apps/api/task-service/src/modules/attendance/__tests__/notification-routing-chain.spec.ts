@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test } from '@nestjs/testing';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
@@ -67,6 +69,7 @@ describe('who is told about a member’s shift', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         AttendanceService,
         ...ATTENDANCE_SERVICE_PARTS,
         {

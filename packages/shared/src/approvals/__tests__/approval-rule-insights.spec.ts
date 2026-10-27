@@ -1,5 +1,5 @@
 import { ruleInsights } from '../approval-rule-insights';
-import { pickRule, ruleInputProblem, ruleMatches } from '../approval-rules';
+import { pickRule, requiredRoleIds, ruleInputProblem, ruleMatches, rulesThatApply } from '../approval-rules';
 import type { ApprovalRuleView, RuleFacts } from '../approval-rules';
 
 const rule = (id: string, spaceId: string | null, minMinutes: number | null): ApprovalRuleView => ({
@@ -23,10 +23,10 @@ const item = (minutes: number, space = 'a'): { facts: RuleFacts } => ({ facts: {
 describe('ruleInsights', () => {
   const items = [60, 60, 90, 120, 120, 150, 180, 240, 300, 600, 720].map((m, i) => item(m, i > 8 ? 'b' : 'a'));
 
-  it('counts what each rule would have taken, the way the server picks', () => {
+  it('counts every rule that applies to an item — they all apply (decision A, 2026-10-27)', () => {
     const got = ruleInsights('overtime', [rule('all', null, null), rule('big', 'b', 300)], items);
     expect(got.total).toBe(11);
-    expect(got.perRule).toEqual({ all: 9, big: 2 });
+    expect(got.perRule).toEqual({ all: 11, big: 2 });
     expect(got.uncovered).toBe(0);
   });
 
@@ -61,5 +61,39 @@ describe('the new rule kinds', () => {
   it('a limit is checked against its own kind only', () => {
     expect(ruleInputProblem({ kind: 'noShow', minDays: 400, secondRoleId: 'r' })).toBe('RULE_THRESHOLD_INVALID');
     expect(ruleInputProblem({ kind: 'clientRequest', urgentOnly: true, secondRoleId: 'r' })).toBeNull();
+  });
+});
+
+/*
+  ⚠️ Decision A (2026-10-27): every rule that fits an item applies. A workspace's own rule can no longer
+  weaken the organization's — the item needs every approver the rules name, each a different person.
+*/
+describe('every rule that fits applies', () => {
+  const r = (id: string, spaceId: string | null, minMinutes: number | null, secondRoleId: string | null) => ({
+    ...rule(id, spaceId, minMinutes),
+    secondRoleId,
+  });
+  const org = r('org', null, 120, 'admin');
+  const site = r('site', 'a', 60, 'leader');
+
+  it('names every role a fitting rule asks for, once', () => {
+    expect(requiredRoleIds([org, site], { spaceIds: ['a'], minutes: 180 }).sort()).toEqual(['admin', 'leader']);
+    expect(
+      requiredRoleIds([org, site, r('again', 'a', 30, 'leader')], { spaceIds: ['a'], minutes: 180 }).sort(),
+    ).toEqual(['admin', 'leader']);
+  });
+
+  it('a 3 h item in another workspace meets only the organization rule; 1 h 30 in "a" only the site rule', () => {
+    expect(requiredRoleIds([org, site], { spaceIds: ['b'], minutes: 180 })).toEqual(['admin']);
+    expect(requiredRoleIds([org, site], { spaceIds: ['a'], minutes: 90 })).toEqual(['leader']);
+  });
+
+  it('orders them: the workspace own, then the particular, then the higher limit — pickRule is the first', () => {
+    expect(rulesThatApply([org, site], { spaceIds: ['a'], minutes: 180 }).map((x) => x.id)).toEqual(['site', 'org']);
+    expect(pickRule([org, site], { spaceIds: ['a'], minutes: 180 })?.id).toBe('site');
+  });
+
+  it('a rule without a second role asks nobody more', () => {
+    expect(requiredRoleIds([r('remind', null, null, null)], { spaceIds: [], minutes: 600 })).toEqual([]);
   });
 });

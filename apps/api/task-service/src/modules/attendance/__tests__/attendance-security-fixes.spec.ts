@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { ApprovalService } from '../entries/approval.service';
 import { entryServices } from './approval.service.fixture';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -274,6 +276,7 @@ describe('GET /attendance/entries/:id/breaks', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
@@ -446,6 +449,7 @@ describe('a back-filled shift on a DST change day', () => {
     created.length = 0;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,

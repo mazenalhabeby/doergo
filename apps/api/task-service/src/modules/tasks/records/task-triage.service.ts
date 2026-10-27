@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  ForbiddenException,
-  Optional,
-} from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { resolveSpaceDefaultWorkflowId } from '../../workflows/space-workflow.util';
 import {
   PrismaService,
@@ -37,7 +30,7 @@ export class TaskTriageService {
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     private readonly support: TaskSupportService,
     private readonly assignment: TaskAssignmentService,
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /**
@@ -89,17 +82,6 @@ export class TaskTriageService {
       select: { id: true, lat: true, lng: true, address: true, workflowId: true },
     });
     if (!space) throw new NotFoundException('Space not found');
-
-    // Office rules: an (urgent) request in this workspace may need a second person before it becomes a job.
-    const step = await this.rules?.firstStep({
-      organizationId: data.organizationId,
-      kind: 'clientRequest',
-      itemId: task.id,
-      facts: { spaceIds: [space.id], urgent: isUrgentPriority(data.priority ?? task.priority) },
-      deciderId: data.userId,
-      subjectId: null,
-    });
-    if (step) return success({ id: task.id, triaged: false, ...step }, `Approved — waiting for ${step.waitingFor}`);
 
     // Flow: explicit choice wins; otherwise inherit the space's default flow.
     // null is a valid explicit choice (canonical NEW/ASSIGNED, no workflow).
@@ -160,6 +142,19 @@ export class TaskTriageService {
     // are address-only today) to give the map a rough pin at the property.
     const unit = task.unitId ? await unitAddress(this.prisma, task.unitId, data.organizationId) : null;
     const routedAddress = unit?.address || task.locationAddress || space.address || null;
+
+    // Office rules — asked LAST, after every check that can still refuse, so an approval is never spent on a
+    // routing that then fails. An (urgent) request in this workspace may need more people before it becomes a job.
+    const step = await this.rules.firstStep({
+      organizationId: data.organizationId,
+      kind: 'clientRequest',
+      itemId: task.id,
+      // Urgent if the CLIENT said so, whatever priority the person routing it picks (a lower one is no way out).
+      facts: { spaceIds: [space.id], urgent: isUrgentPriority(task.priority) || isUrgentPriority(data.priority) },
+      deciderId: data.userId,
+      subjectId: null,
+    });
+    if (step) return success({ id: task.id, triaged: false, ...step }, `Approved — waiting for ${step.waitingFor}`);
 
     const updated = await this.prisma.task.update({
       where: { id: data.id },

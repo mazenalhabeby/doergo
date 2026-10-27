@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TaskAccessService } from '../access/task-access.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -84,12 +86,29 @@ describe('TasksService — per-task authorization', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        TasksService,
+        ...TASK_SERVICE_PARTS,
+        TaskAccessService,
+        { provide: JobTimeService, useValue: {} },
+        ClockGateService,
+        { provide: CrewService, useValue: crewStub() },
+        {
+          provide: RolePoolService,
+          useValue: {
+            holdsOpenRole: jest.fn().mockResolvedValue(false),
+            syncSpots: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: notifications },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
         { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
         // Storage unconfigured: attachments come back with url null, as on a dev machine.
         MediaSigner,
         { provide: OBJECT_STORE, useValue: null },
@@ -101,9 +120,9 @@ describe('TasksService — per-task authorization', () => {
   describe('the organization boundary comes first', () => {
     it('refuses a task in another organization, even to its assignee', async () => {
       // A stale assignment: the member moved orgs, the TaskAssignee row remains.
-      await expect(
-        attempt(task({ organizationId: OTHER_ORG, assignedToId: 'caller-1' }), {}),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(attempt(task({ organizationId: OTHER_ORG, assignedToId: 'caller-1' }), {})).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('refuses a task in another organization to a co-assignee', async () => {
@@ -120,15 +139,15 @@ describe('TasksService — per-task authorization', () => {
     });
 
     it('refuses an ADMIN of another org a task in this one', async () => {
-      await expect(
-        attempt(task({ organizationId: OTHER_ORG }), { userRole: Role.ADMIN }),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(attempt(task({ organizationId: OTHER_ORG }), { userRole: Role.ADMIN })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('refuses a view-all grant across the boundary', async () => {
-      await expect(
-        attempt(task({ organizationId: OTHER_ORG }), { canViewAllTasks: true }),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(attempt(task({ organizationId: OTHER_ORG }), { canViewAllTasks: true })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 

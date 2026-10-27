@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * Moving a job into a step that ASKS something (a step form).
  *
@@ -49,18 +51,61 @@ const WORKFLOW = {
   id: 'wf1',
   name: 'Custom',
   statuses: [
-    { key: 'WORKING', name: 'Working', isFinal: false, isCanceled: false, transitions: ['VISITED', 'COMPLETED', 'PAUSED'], capabilities: [], form: null },
-    { key: 'VISITED', name: 'Visited', isFinal: false, isCanceled: false, transitions: [], capabilities: [], form: VISIT_FORM },
-    { key: 'PAUSED', name: 'Paused', isFinal: false, isCanceled: false, transitions: ['WORKING'], capabilities: ['timer'], form: null },
-    { key: 'COMPLETED', name: 'Completed', isFinal: true, isCanceled: false, transitions: [], capabilities: ['report', 'photos', 'signature'], form: null },
+    {
+      key: 'WORKING',
+      name: 'Working',
+      isFinal: false,
+      isCanceled: false,
+      transitions: ['VISITED', 'COMPLETED', 'PAUSED'],
+      capabilities: [],
+      form: null,
+    },
+    {
+      key: 'VISITED',
+      name: 'Visited',
+      isFinal: false,
+      isCanceled: false,
+      transitions: [],
+      capabilities: [],
+      form: VISIT_FORM,
+    },
+    {
+      key: 'PAUSED',
+      name: 'Paused',
+      isFinal: false,
+      isCanceled: false,
+      transitions: ['WORKING'],
+      capabilities: ['timer'],
+      form: null,
+    },
+    {
+      key: 'COMPLETED',
+      name: 'Completed',
+      isFinal: true,
+      isCanceled: false,
+      transitions: [],
+      capabilities: ['report', 'photos', 'signature'],
+      form: null,
+    },
   ],
 };
 
 function base(over: Record<string, unknown> = {}) {
   return {
-    id: 't1', title: 'Visit Siemens', status: 'WORKING', organizationId: 'o1', assignedToId: 'tech',
-    createdById: 'boss', spaceId: 's1', workflowId: 'wf1', dueDate: null, customerId: null,
-    locationLat: null, locationLng: null, updatedAt: new Date(), space: { timezone: 'Europe/Vienna' },
+    id: 't1',
+    title: 'Visit Siemens',
+    status: 'WORKING',
+    organizationId: 'o1',
+    assignedToId: 'tech',
+    createdById: 'boss',
+    spaceId: 's1',
+    workflowId: 'wf1',
+    dueDate: null,
+    customerId: null,
+    locationLat: null,
+    locationLng: null,
+    updatedAt: new Date(),
+    space: { timezone: 'Europe/Vienna' },
     ...over,
   };
 }
@@ -99,18 +144,37 @@ describe('status change into a step with a form', () => {
     tx.taskStepSubmission.create.mockResolvedValue({ id: 'sub_0000000000000001' });
     prisma.task.findUniqueOrThrow.mockImplementation(async () => base({ status: 'VISITED' }));
     prisma.attachment.findMany.mockResolvedValue([]);
-    prisma.companyLocation.findFirst.mockResolvedValue({ enabledModules: ['crm'], organization: { enabledModules: [] } });
+    prisma.companyLocation.findFirst.mockResolvedValue({
+      enabledModules: ['crm'],
+      organization: { enabledModules: [] },
+    });
     auth = { send: jest.fn(() => of({ data: { id: 'act' } })) };
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService,
-        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        TasksService,
+        ...TASK_SERVICE_PARTS,
+        TaskAccessService,
+        { provide: JobTimeService, useValue: {} },
+        ClockGateService,
+        { provide: CrewService, useValue: crewStub() },
+        {
+          provide: RolePoolService,
+          useValue: {
+            holdsOpenRole: jest.fn().mockResolvedValue(false),
+            syncSpots: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: 'AUTH_SERVICE', useValue: auth },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
         { provide: WorkflowConfigCache, useValue: workflowCache },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
         MediaSigner,
         { provide: OBJECT_STORE, useValue: null },
       ],
@@ -133,15 +197,24 @@ describe('status change into a step with a form', () => {
       { id: 's1', mimeType: 'image/png', fileType: 'IMAGE' },
     ]);
     const res: any = await service.updateStatus({
-      ...tech, status: 'VISITED', answers: { outcome: ' Won ', notes: ' went well ', pics: ['p1'], sig: 's1' },
+      ...tech,
+      status: 'VISITED',
+      answers: { outcome: ' Won ', notes: ' went well ', pics: ['p1'], sig: 's1' },
     });
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.task.updateMany).not.toHaveBeenCalled(); // the write went through the transaction
-    expect(tx.task.updateMany).toHaveBeenCalledWith({ where: { id: 't1', status: 'WORKING' }, data: { status: 'VISITED' } });
+    expect(tx.task.updateMany).toHaveBeenCalledWith({
+      where: { id: 't1', status: 'WORKING' },
+      data: { status: 'VISITED' },
+    });
     const sub = tx.taskStepSubmission.create.mock.calls[0][0].data;
     expect(sub).toMatchObject({
-      organizationId: 'o1', taskId: 't1', statusKey: 'VISITED', formVersion: 3, submittedById: 'tech',
+      organizationId: 'o1',
+      taskId: 't1',
+      statusKey: 'VISITED',
+      formVersion: 3,
+      submittedById: 'tech',
       answers: { outcome: 'Won', notes: 'went well', pics: ['p1'], sig: 's1' },
     });
     expect(sub.form).toEqual(VISIT_FORM);
@@ -154,13 +227,16 @@ describe('status change into a step with a form', () => {
   it('refuses a missing required answer with STEP_FORM_INVALID and moves nothing', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
     const body = await refusal(service.updateStatus({ ...tech, status: 'VISITED', answers: { notes: 'x' } }));
-    expect(body).toMatchObject({ code: 'STEP_FORM_INVALID', params: { statusKey: 'VISITED', errors: [{ fieldId: 'outcome', code: 'required' }] } });
+    expect(body).toMatchObject({
+      code: 'STEP_FORM_INVALID',
+      params: { statusKey: 'VISITED', errors: [{ fieldId: 'outcome', code: 'required' }] },
+    });
     expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(prisma.task.updateMany).not.toHaveBeenCalled();
     expect(prisma.taskEvent.create).not.toHaveBeenCalled();
   });
 
-  it('refuses when no answers are sent at all — the office too, for a step\'s own form', async () => {
+  it("refuses when no answers are sent at all — the office too, for a step's own form", async () => {
     prisma.task.findUnique.mockResolvedValue(base());
     expect((await refusal(service.updateStatus({ ...boss, status: 'VISITED' }))).code).toBe('STEP_FORM_INVALID');
     expect(prisma.task.updateMany).not.toHaveBeenCalled();
@@ -168,18 +244,31 @@ describe('status change into a step with a form', () => {
 
   it('refuses unknown keys and wrong types', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
-    const body = await refusal(service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Maybe', hack: 1 } }));
-    expect(body.params.errors).toEqual(expect.arrayContaining([
-      { fieldId: 'hack', code: 'unknown_field' },
-      { fieldId: 'outcome', code: 'not_an_option' },
-    ]));
+    const body = await refusal(
+      service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Maybe', hack: 1 } }),
+    );
+    expect(body.params.errors).toEqual(
+      expect.arrayContaining([
+        { fieldId: 'hack', code: 'unknown_field' },
+        { fieldId: 'outcome', code: 'not_an_option' },
+      ]),
+    );
   });
 
   it('refuses a photo that is not an attachment of this job with STEP_FORM_FOREIGN_FILE', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
     prisma.attachment.findMany.mockResolvedValue([{ id: 'p1', mimeType: 'image/jpeg', fileType: 'IMAGE' }]);
-    const body = await refusal(service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Won', pics: ['p1', 'other-task-photo'] } }));
-    expect(body).toMatchObject({ code: 'STEP_FORM_FOREIGN_FILE', params: { statusKey: 'VISITED', fileIds: ['other-task-photo'] } });
+    const body = await refusal(
+      service.updateStatus({
+        ...tech,
+        status: 'VISITED',
+        answers: { outcome: 'Won', pics: ['p1', 'other-task-photo'] },
+      }),
+    );
+    expect(body).toMatchObject({
+      code: 'STEP_FORM_FOREIGN_FILE',
+      params: { statusKey: 'VISITED', fileIds: ['other-task-photo'] },
+    });
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
@@ -189,8 +278,13 @@ describe('status change into a step with a form', () => {
       { id: 'doc', mimeType: 'application/pdf', fileType: 'DOCUMENT' },
       { id: 'jpg', mimeType: 'image/jpeg', fileType: 'IMAGE' },
     ]);
-    const body = await refusal(service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Won', pics: ['doc'], sig: 'jpg' } }));
-    expect(body.params.errors).toEqual([{ fieldId: 'pics', code: 'invalid_file' }, { fieldId: 'sig', code: 'invalid_file' }]);
+    const body = await refusal(
+      service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Won', pics: ['doc'], sig: 'jpg' } }),
+    );
+    expect(body.params.errors).toEqual([
+      { fieldId: 'pics', code: 'invalid_file' },
+      { fieldId: 'sig', code: 'invalid_file' },
+    ]);
   });
 
   it('leaves a step without a form exactly as it was — no transaction, no submission', async () => {
@@ -198,22 +292,34 @@ describe('status change into a step with a form', () => {
     const res: any = await service.updateStatus({ ...tech, status: 'PAUSED' });
     expect(res.success).toBe(true);
     expect(prisma.$transaction).not.toHaveBeenCalled();
-    expect(prisma.task.updateMany).toHaveBeenCalledWith({ where: { id: 't1', status: 'WORKING' }, data: { status: 'PAUSED' } });
+    expect(prisma.task.updateMany).toHaveBeenCalledWith({
+      where: { id: 't1', status: 'WORKING' },
+      data: { status: 'PAUSED' },
+    });
     expect(res.data.stepSubmissionId).toBeUndefined();
   });
 
   it('refuses answers sent to a step that asks nothing, rather than dropping them', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
     const body = await refusal(service.updateStatus({ ...tech, status: 'PAUSED', answers: { notes: 'x' } }));
-    expect(body).toMatchObject({ code: 'STEP_FORM_INVALID', params: { errors: [{ fieldId: 'notes', code: 'unknown_field' }] } });
+    expect(body).toMatchObject({
+      code: 'STEP_FORM_INVALID',
+      params: { errors: [{ fieldId: 'notes', code: 'unknown_field' }] },
+    });
     // An empty object is no answer at all.
-    await expect(service.updateStatus({ ...tech, status: 'PAUSED', answers: {} })).resolves.toMatchObject({ success: true });
+    await expect(service.updateStatus({ ...tech, status: 'PAUSED', answers: {} })).resolves.toMatchObject({
+      success: true,
+    });
   });
 
   describe('the legacy report step (final + report capability, no form)', () => {
     const report = {
-      work_done: 'Replaced the valve', photos_before: ['b1'], photos_after: ['a1'],
-      tech_signature: 'ts', customer_name: 'Ann Berger', customer_signature: 'cs',
+      work_done: 'Replaced the valve',
+      photos_before: ['b1'],
+      photos_after: ['a1'],
+      tech_signature: 'ts',
+      customer_name: 'Ann Berger',
+      customer_signature: 'cs',
     };
     const files = [
       { id: 'b1', mimeType: 'image/jpeg', fileType: 'IMAGE' },
@@ -226,9 +332,14 @@ describe('status change into a step with a form', () => {
       prisma.task.findUnique.mockResolvedValue(base());
       const body = await refusal(service.updateStatus({ ...tech, status: 'COMPLETED' }));
       expect(body.code).toBe('STEP_FORM_INVALID');
-      expect(body.params.errors.map((e: any) => e.fieldId)).toEqual(
-        ['work_done', 'photos_before', 'photos_after', 'tech_signature', 'customer_name', 'customer_signature'],
-      );
+      expect(body.params.errors.map((e: any) => e.fieldId)).toEqual([
+        'work_done',
+        'photos_before',
+        'photos_after',
+        'tech_signature',
+        'customer_name',
+        'customer_signature',
+      ]);
       expect(prisma.task.updateMany).not.toHaveBeenCalled();
     });
 
@@ -260,17 +371,30 @@ describe('status change into a step with a form', () => {
 
     it('writes the outcome as a note and the follow-up as a reminder, as the mover', async () => {
       prisma.task.findUnique.mockResolvedValue(base({ customerId: 'c1' }));
-      await service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Won', notes: 'Signed today', next: '2026-10-05' } });
+      await service.updateStatus({
+        ...tech,
+        status: 'VISITED',
+        answers: { outcome: 'Won', notes: 'Signed today', next: '2026-10-05' },
+      });
       const calls = crmCalls();
       expect(calls).toHaveLength(2);
       expect(calls[0]).toMatchObject({
-        cmd: 'add_customer_activity', customerId: 'c1', organizationId: 'o1', authorId: 'tech',
-        type: 'NOTE', clientId: 'sub_0000000000000001-outcome', caller: { userId: 'tech', role: Role.EMPLOYEE },
+        cmd: 'add_customer_activity',
+        customerId: 'c1',
+        organizationId: 'o1',
+        authorId: 'tech',
+        type: 'NOTE',
+        clientId: 'sub_0000000000000001-outcome',
+        caller: { userId: 'tech', role: Role.EMPLOYEE },
       });
       expect(calls[0].body).toContain('Outcome: Won');
       expect(calls[0].body).toContain('Signed today');
       // 09:00 in Vienna on that day (UTC+2 in October).
-      expect(calls[1]).toMatchObject({ type: 'REMINDER', dueAt: '2026-10-05T07:00:00.000Z', reminderAssigneeId: 'tech' });
+      expect(calls[1]).toMatchObject({
+        type: 'REMINDER',
+        dueAt: '2026-10-05T07:00:00.000Z',
+        reminderAssigneeId: 'tech',
+      });
     });
 
     it('writes nothing when the job has no client, or the workspace does not run CRM', async () => {
@@ -279,7 +403,10 @@ describe('status change into a step with a form', () => {
       expect(auth.send).not.toHaveBeenCalled();
 
       prisma.task.findUnique.mockResolvedValue(base({ customerId: 'c1' }));
-      prisma.companyLocation.findFirst.mockResolvedValue({ enabledModules: ['tracking'], organization: { enabledModules: ['crm'] } });
+      prisma.companyLocation.findFirst.mockResolvedValue({
+        enabledModules: ['tracking'],
+        organization: { enabledModules: ['crm'] },
+      });
       await service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Won' } });
       expect(auth.send).not.toHaveBeenCalled();
     });
@@ -287,7 +414,11 @@ describe('status change into a step with a form', () => {
     it('a CRM failure never undoes the move', async () => {
       prisma.task.findUnique.mockResolvedValue(base({ customerId: 'c1' }));
       auth.send.mockReturnValue(throwError(() => new Error('Customer not found')));
-      const res: any = await service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Won', next: '2026-10-05' } });
+      const res: any = await service.updateStatus({
+        ...tech,
+        status: 'VISITED',
+        answers: { outcome: 'Won', next: '2026-10-05' },
+      });
       expect(res.success).toBe(true);
       expect(tx.taskStepSubmission.create).toHaveBeenCalled();
     });
@@ -296,21 +427,39 @@ describe('status change into a step with a form', () => {
   it('refuses a stale move without writing its answers (lost race)', async () => {
     prisma.task.findUnique.mockResolvedValueOnce(base()).mockResolvedValueOnce({ id: 't1', status: 'PAUSED' });
     tx.task.updateMany.mockResolvedValue({ count: 0 });
-    const err: any = await service.updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Won' } }).catch((e) => e);
+    const err: any = await service
+      .updateStatus({ ...tech, status: 'VISITED', answers: { outcome: 'Won' } })
+      .catch((e) => e);
     expect(err.getResponse()).toMatchObject({ code: 'TASK_STATE_CONFLICT' });
     expect(tx.taskStepSubmission.create).not.toHaveBeenCalled();
   });
 });
 
-describe('reading a job\'s submissions', () => {
+describe("reading a job's submissions", () => {
   it('is gated like reading the task, and signs every photo in one query', async () => {
     const prisma: any = {
       task: { findUnique: jest.fn().mockResolvedValue(base()) },
       taskAssignee: { findFirst: jest.fn().mockResolvedValue(null) },
       taskStepSubmission: {
         findMany: jest.fn().mockResolvedValue([
-          { id: 'sub1', statusKey: 'VISITED', formVersion: 3, form: VISIT_FORM, answers: { outcome: 'Won', pics: ['p1'], sig: 's1' }, submittedById: 'tech', submittedAt: new Date() },
-          { id: 'sub2', statusKey: 'VISITED', formVersion: 3, form: VISIT_FORM, answers: { outcome: 'Lost', pics: ['p2'] }, submittedById: 'gone', submittedAt: new Date() },
+          {
+            id: 'sub1',
+            statusKey: 'VISITED',
+            formVersion: 3,
+            form: VISIT_FORM,
+            answers: { outcome: 'Won', pics: ['p1'], sig: 's1' },
+            submittedById: 'tech',
+            submittedAt: new Date(),
+          },
+          {
+            id: 'sub2',
+            statusKey: 'VISITED',
+            formVersion: 3,
+            form: VISIT_FORM,
+            answers: { outcome: 'Lost', pics: ['p2'] },
+            submittedById: 'gone',
+            submittedAt: new Date(),
+          },
         ]),
       },
       attachment: {
@@ -320,13 +469,28 @@ describe('reading a job\'s submissions', () => {
           { id: 's1', fileName: 's.png', fileKey: 'k/s1', mimeType: 'image/png' },
         ]),
       },
-      user: { findMany: jest.fn().mockResolvedValue([{ id: 'tech', firstName: 'Mike', lastName: 'W', avatarUrl: null }]) },
+      user: {
+        findMany: jest.fn().mockResolvedValue([{ id: 'tech', firstName: 'Mike', lastName: 'W', avatarUrl: null }]),
+      },
     };
     const store = { mediaUrl: jest.fn(async (key: string) => `https://signed/${key}`), keyFromUrl: () => null };
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService,
-        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: {} },
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        TasksService,
+        ...TASK_SERVICE_PARTS,
+        TaskAccessService,
+        { provide: JobTimeService, useValue: {} },
+        ClockGateService,
+        { provide: CrewService, useValue: crewStub() },
+        {
+          provide: RolePoolService,
+          useValue: {
+            holdsOpenRole: jest.fn().mockResolvedValue(false),
+            syncSpots: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        { provide: PresenceService, useValue: {} },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
@@ -338,7 +502,12 @@ describe('reading a job\'s submissions', () => {
     }).compile();
     const service = module.get(TasksService);
 
-    const res: any = await service.getSubmissions({ id: 't1', userId: 'tech', userRole: Role.EMPLOYEE, organizationId: 'o1' });
+    const res: any = await service.getSubmissions({
+      id: 't1',
+      userId: 'tech',
+      userRole: Role.EMPLOYEE,
+      organizationId: 'o1',
+    });
     expect(res.data).toHaveLength(2);
     expect(res.data[0].files.p1.url).toBe('https://signed/k/p1');
     expect(res.data[0].files.s1.url).toBe('https://signed/k/s1');
@@ -349,6 +518,8 @@ describe('reading a job\'s submissions', () => {
 
     // Somebody who may not read the task may not read its reports.
     prisma.task.findUnique.mockResolvedValue(base({ assignedToId: 'someone-else' }));
-    await expect(service.getSubmissions({ id: 't1', userId: 'tech', userRole: Role.EMPLOYEE, organizationId: 'o1' })).rejects.toThrow('Access denied');
+    await expect(
+      service.getSubmissions({ id: 't1', userId: 'tech', userRole: Role.EMPLOYEE, organizationId: 'o1' }),
+    ).rejects.toThrow('Access denied');
   });
 });

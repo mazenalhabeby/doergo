@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test } from '@nestjs/testing';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
@@ -36,7 +38,11 @@ describe('overtime rounds', () => {
 
   beforeEach(async () => {
     prisma = {
-      timeEntry: { findFirst: jest.fn().mockResolvedValue(ENTRY), update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      timeEntry: {
+        findFirst: jest.fn().mockResolvedValue(ENTRY),
+        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
       overtimeRequest: {
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'ot1' }),
@@ -57,7 +63,17 @@ describe('overtime rounds', () => {
     notify = { emit: jest.fn() };
     const mod = await Test.createTestingModule({
       providers: [
-        AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        AttendanceService,
+        ...ATTENDANCE_SERVICE_PARTS,
+        {
+          provide: PresenceService,
+          useValue: {
+            atClockIn: jest.fn().mockResolvedValue({}),
+            onPosition: jest.fn().mockResolvedValue(undefined),
+            onBatch: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         CountedTimeService,
         BreakRulesService,
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },
@@ -109,7 +125,10 @@ describe('overtime rounds', () => {
 
     it('records the minutes, the approver and the signature against that round', async () => {
       await service.approveExtraTime({
-        approverId: 'leader', entryId: 'e1', minutes: 90, organizationId: 'org1',
+        approverId: 'leader',
+        entryId: 'e1',
+        minutes: 90,
+        organizationId: 'org1',
         signature: 'data:image/png;base64,AAAA',
       });
       expect(prisma.overtimeRequest.update).toHaveBeenCalledWith(
@@ -187,7 +206,10 @@ describe('overtime rounds', () => {
     it('records the refusal — a request that vanishes when the answer is no is not a record', async () => {
       prisma.overtimeRequest.findFirst.mockResolvedValue({ id: 'ot9' });
       await service.rejectExtraTime({
-        approverId: 'leader', entryId: 'e1', organizationId: 'org1', reason: 'Site closes at six',
+        approverId: 'leader',
+        entryId: 'e1',
+        organizationId: 'org1',
+        reason: 'Site closes at six',
       });
       expect(prisma.overtimeRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({

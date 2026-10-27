@@ -1,7 +1,7 @@
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { standInGrant } from '../../approvals/stand-in';
 import { grantHolds, managesPeopleOrIsAdmin } from '@hbcfield/shared';
-import { Injectable, Inject, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '@hbcfield/shared';
 import { success, TimeEntryStatus, SHIFT_REMINDER_DEFAULTS, SERVICE_NAMES } from '@hbcfield/shared';
@@ -25,7 +25,7 @@ export class ExtraTimeApprovalService {
     private readonly notificationClient: ClientProxy,
     private readonly countedTime: CountedTimeService,
     // Office rules (a threshold → a second approval). Global in the app; absent only in narrow unit tests.
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /** Leader approves N more minutes of work → extends the expected end + re-arms reminders. */
@@ -83,23 +83,21 @@ export class ExtraTimeApprovalService {
     });
 
     // Office rules: past a threshold this approval is step 1 of 2, and the shift waits for the second person.
-    if (this.rules) {
-      const verdict = await this.rules.gate({
-        organizationId: data.organizationId,
-        kind: 'overtime',
-        itemId: entry.id,
-        facts: { spaceIds: entry.locationId ? [entry.locationId] : [], minutes },
-        deciderId: data.approverId,
-        subjectId: entry.userId,
-      });
-      if (!verdict.finalize) {
-        return success(
-          { entryId: entry.id, stage: 'FIRST_STEP', waitingFor: verdict.roleName },
-          `Approved — waiting for ${verdict.roleName}`,
-        );
-      }
-      if (verdict.minutes != null) minutes = verdict.minutes;
+    const verdict = await this.rules.gate({
+      organizationId: data.organizationId,
+      kind: 'overtime',
+      itemId: entry.id,
+      facts: { spaceIds: entry.locationId ? [entry.locationId] : [], minutes },
+      deciderId: data.approverId,
+      subjectId: entry.userId,
+    });
+    if (!verdict.finalize) {
+      return success(
+        { entryId: entry.id, stage: 'FIRST_STEP', waitingFor: verdict.roleName },
+        `Approved — waiting for ${verdict.roleName}`,
+      );
     }
+    if (verdict.minutes != null) minutes = verdict.minutes;
 
     /*
       ⚠️ APPROVED OVERTIME IS A NUMBER OF MINUTES AFTER THE END, NOT AFTER THE CLICK.

@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TaskAccessService } from '../access/task-access.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -45,17 +47,30 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
   };
 
   const ORG = 'org-1';
-  const parent = { id: 'p-1', title: 'Parent', organizationId: ORG, spaceId: 'space-A', workflowId: 'wf-1', depth: 0, parentId: null };
+  const parent = {
+    id: 'p-1',
+    title: 'Parent',
+    organizationId: ORG,
+    spaceId: 'space-A',
+    workflowId: 'wf-1',
+    depth: 0,
+    parentId: null,
+  };
   /** May create tasks at site A only — no assign right anywhere. */
-  const siteACreator = { userId: 'u-1', userRole: Role.EMPLOYEE, organizationId: ORG, canCreateTasks: false, createSpaceIds: ['space-A'] };
-  const sub = (over: Record<string, unknown> = {}) => service.createSubtask({ parentId: 'p-1', title: 'Step', ...siteACreator, ...over });
+  const siteACreator = {
+    userId: 'u-1',
+    userRole: Role.EMPLOYEE,
+    organizationId: ORG,
+    canCreateTasks: false,
+    createSpaceIds: ['space-A'],
+  };
+  const sub = (over: Record<string, unknown> = {}) =>
+    service.createSubtask({ parentId: 'p-1', title: 'Step', ...siteACreator, ...over });
   const written = () => prisma.task.create.mock.calls[0][0].data;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    prisma.task.findUnique.mockImplementation(({ where }: any) =>
-      Promise.resolve(where.id === 'p-1' ? parent : null),
-    );
+    prisma.task.findUnique.mockImplementation(({ where }: any) => Promise.resolve(where.id === 'p-1' ? parent : null));
     prisma.task.findFirst.mockResolvedValue(null);
     prisma.task.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 'new', ...data }));
     prisma.taskEvent.create.mockResolvedValue({});
@@ -64,7 +79,10 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService,
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        TasksService,
+        ...TASK_SERVICE_PARTS,
+        TaskAccessService,
         { provide: JobTimeService, useValue: {} },
         ClockGateService,
         { provide: CrewService, useValue: {} },
@@ -74,7 +92,10 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
         { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
         MediaSigner,
         { provide: OBJECT_STORE, useValue: null },
       ],

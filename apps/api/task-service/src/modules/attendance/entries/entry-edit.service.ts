@@ -8,6 +8,7 @@ import {
   flagsWithMissedRest,
   breakTotals,
   endRunningBreaks,
+  handChangedMinutes,
 } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
@@ -22,6 +23,7 @@ import { shiftExpectation } from './shift-expectation';
 import { closeByOffice } from './office-close';
 import { ShiftCloser } from '../clock-out/shift-closer.service';
 import type { Prisma } from '@prisma/client';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 
 /** The office correcting one entry: times, rests, the reason — audited. */
 @Injectable()
@@ -33,6 +35,8 @@ export class EntryEditService {
     // An admin editing hours moves the paid figure like any other close path.
     private readonly countedTime: CountedTimeService,
     private readonly changes: EntryChangeLog,
+    // Office rules on changed hours: an edit past one sends the entry back for approval.
+    private readonly rules: ApprovalRulesService,
     // An edited entry that still holds no shift gets another look at the rota.
     @Optional() private readonly rematch?: ShiftRematchService,
     // A manager closing an open shift ends it like any clock-out: jobs left in work pause.
@@ -253,6 +257,28 @@ export class EntryEditService {
             updateData.approvalStatus = 'PENDING';
           }
         }
+      }
+    }
+
+    /*
+      ⚠️ An office rule on changed hours cannot be stepped round by editing AFTER the approval, or by an edit that
+      leaves the entry automatic: when the whole change from what was clocked is past a rule that asks for more
+      people, the entry waits for approval again — through the approve path, which runs the rule's steps.
+    */
+    if (timesChanged && newClockOut && entry.approvalStatus !== 'REJECTED') {
+      const minutes = handChangedMinutes({
+        isEdited: true,
+        originalClockIn: entry.isEdited ? entry.originalClockIn : entry.clockInAt,
+        originalClockOut: entry.isEdited ? entry.originalClockOut : entry.clockOutAt,
+        clockInAt: newClockIn,
+        clockOutAt: newClockOut,
+      });
+      const facts = { spaceIds: entry.locationId ? [entry.locationId] : [], minutes };
+      if (minutes > 0 && (await this.rules.secondStepFor(data.organizationId, 'hours', facts))) {
+        updateData.approvalStatus = 'PENDING';
+        updateData.approvedById = null;
+        updateData.approvedAt = null;
+        updateData.approvalNotes = null;
       }
     }
 

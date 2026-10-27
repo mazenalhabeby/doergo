@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * A status change that arrives late from a phone that was offline.
  *
@@ -37,9 +39,19 @@ const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000);
 
 function base(over: Record<string, unknown> = {}) {
   return {
-    id: 't1', title: 'Boiler', status: TaskStatus.EN_ROUTE, organizationId: 'o1', assignedToId: 'tech',
-    createdById: 'boss', spaceId: null, workflowId: null, dueDate: null,
-    locationLat: 47.9186, locationLng: 13.7991, updatedAt: minutesAgo(1), space: { timezone: 'Europe/Vienna' },
+    id: 't1',
+    title: 'Boiler',
+    status: TaskStatus.EN_ROUTE,
+    organizationId: 'o1',
+    assignedToId: 'tech',
+    createdById: 'boss',
+    spaceId: null,
+    workflowId: null,
+    dueDate: null,
+    locationLat: 47.9186,
+    locationLng: 13.7991,
+    updatedAt: minutesAgo(1),
+    space: { timezone: 'Europe/Vienna' },
     ...over,
   };
 }
@@ -69,12 +81,29 @@ describe('status change recorded offline', () => {
     prisma.task.findUniqueOrThrow.mockImplementation(async () => ({ ...base(), status: TaskStatus.ARRIVED }));
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        TasksService,
+        ...TASK_SERVICE_PARTS,
+        TaskAccessService,
+        { provide: JobTimeService, useValue: {} },
+        ClockGateService,
+        { provide: CrewService, useValue: crewStub() },
+        {
+          provide: RolePoolService,
+          useValue: {
+            holdsOpenRole: jest.fn().mockResolvedValue(false),
+            syncSpots: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
         { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
         MediaSigner,
         { provide: OBJECT_STORE, useValue: null },
       ],
@@ -88,7 +117,12 @@ describe('status change recorded offline', () => {
 
   it('records the tap time as the arrival, not the sync time', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
-    await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, expectedFrom: TaskStatus.EN_ROUTE, evidence: { occurredAt: tapAt.toISOString(), fix } });
+    await service.updateStatus({
+      ...tech,
+      status: TaskStatus.ARRIVED,
+      expectedFrom: TaskStatus.EN_ROUTE,
+      evidence: { occurredAt: tapAt.toISOString(), fix },
+    });
     const update = prisma.task.updateMany.mock.calls[0][0];
     expect(update.where).toEqual({ id: 't1', status: TaskStatus.EN_ROUTE });
     expect(update.data.routeEndedAt.toISOString()).toBe(tapAt.toISOString());
@@ -101,14 +135,23 @@ describe('status change recorded offline', () => {
     prisma.task.findUnique.mockResolvedValue(base());
     // The phone is now 30 km away (driving home), but the tap was at the door.
     await expect(
-      service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, lat: 48.2, lng: 16.37, accuracy: 5, evidence: { occurredAt: tapAt.toISOString(), fix } }),
+      service.updateStatus({
+        ...tech,
+        status: TaskStatus.ARRIVED,
+        lat: 48.2,
+        lng: 16.37,
+        accuracy: 5,
+        evidence: { occurredAt: tapAt.toISOString(), fix },
+      }),
     ).resolves.toMatchObject({ success: true });
   });
 
   it('refuses a fix that was not taken at the tap', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
     const stale = { ...fix, fixAt: minutesAgo(200).toISOString() };
-    const err = await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix: stale } }).catch((e) => e);
+    const err = await service
+      .updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix: stale } })
+      .catch((e) => e);
     expect(err).toBeInstanceOf(BadRequestException);
     expect(err.getResponse()).toMatchObject({ code: 'FIX_NOT_AT_TAP' });
   });
@@ -121,32 +164,58 @@ describe('status change recorded offline', () => {
   it('refuses an arrival far from the job with a code, the figures, and a readable sentence', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
     const vienna = { lat: 48.2082, lng: 16.3738, accuracy: 5, fixAt: tapAt.toISOString() };
-    const err = await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix: vienna } }).catch((e) => e);
+    const err = await service
+      .updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix: vienna } })
+      .catch((e) => e);
     expect(err).toBeInstanceOf(BadRequestException);
     const body = err.getResponse();
-    expect(body).toMatchObject({ code: 'TOO_FAR_TO_ARRIVE', params: { distanceMetres: expect.any(Number), radiusMetres: expect.any(Number) } });
+    expect(body).toMatchObject({
+      code: 'TOO_FAR_TO_ARRIVE',
+      params: { distanceMetres: expect.any(Number), radiusMetres: expect.any(Number) },
+    });
     expect(body.params.distanceMetres).toBeGreaterThan(150_000);
-    expect(body.message).toMatch(/^You are \d{3}\u00A0km from the job site\. You need to be within \d+\u00A0m to mark it as arrived\./);
+    expect(body.message).toMatch(
+      /^You are \d{3}\u00A0km from the job site\. You need to be within \d+\u00A0m to mark it as arrived\./,
+    );
     expect(body.message).not.toMatch(/\d{4,}m/);
   });
 
   it('accepts but flags a mocked location', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
-    await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix: { ...fix, mocked: true } } });
+    await service.updateStatus({
+      ...tech,
+      status: TaskStatus.ARRIVED,
+      evidence: { occurredAt: tapAt.toISOString(), fix: { ...fix, mocked: true } },
+    });
     expect(prisma.taskEvent.create.mock.calls[0][0].data.metadata.occurrenceFlags).toContain('FIX_MOCKED');
   });
 
   it('409s with the current task when it moved on while the phone was offline', async () => {
     prisma.task.findUnique.mockResolvedValue(base({ status: TaskStatus.CANCELED }));
-    const err = await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, expectedFrom: TaskStatus.EN_ROUTE, evidence: { occurredAt: tapAt.toISOString(), fix } }).catch((e) => e);
+    const err = await service
+      .updateStatus({
+        ...tech,
+        status: TaskStatus.ARRIVED,
+        expectedFrom: TaskStatus.EN_ROUTE,
+        evidence: { occurredAt: tapAt.toISOString(), fix },
+      })
+      .catch((e) => e);
     expect(err).toBeInstanceOf(ConflictException);
-    expect(err.getResponse()).toMatchObject({ code: 'TASK_STATE_CONFLICT', params: { current: { status: TaskStatus.CANCELED } } });
+    expect(err.getResponse()).toMatchObject({
+      code: 'TASK_STATE_CONFLICT',
+      params: { current: { status: TaskStatus.CANCELED } },
+    });
     expect(prisma.task.updateMany).not.toHaveBeenCalled();
   });
 
   it('treats "already there" as done without a second event', async () => {
     prisma.task.findUnique.mockResolvedValue(base({ status: TaskStatus.ARRIVED }));
-    const res: any = await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, expectedFrom: TaskStatus.EN_ROUTE, evidence: { occurredAt: tapAt.toISOString(), fix } });
+    const res: any = await service.updateStatus({
+      ...tech,
+      status: TaskStatus.ARRIVED,
+      expectedFrom: TaskStatus.EN_ROUTE,
+      evidence: { occurredAt: tapAt.toISOString(), fix },
+    });
     expect(res.success).toBe(true);
     expect(prisma.task.updateMany).not.toHaveBeenCalled();
     expect(prisma.taskEvent.create).not.toHaveBeenCalled();
@@ -157,27 +226,39 @@ describe('status change recorded offline', () => {
       .mockResolvedValueOnce(base())
       .mockResolvedValueOnce({ id: 't1', status: TaskStatus.BLOCKED, assignedToId: 'tech', updatedAt: NOW });
     prisma.task.updateMany.mockResolvedValue({ count: 0 });
-    const err = await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix } }).catch((e) => e);
+    const err = await service
+      .updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix } })
+      .catch((e) => e);
     expect(err).toBeInstanceOf(ConflictException);
     expect(err.getResponse()).toMatchObject({ code: 'TASK_STATE_CONFLICT' });
   });
 
-  it('orders against the previous change\'s own time, not when it was written', async () => {
+  it("orders against the previous change's own time, not when it was written", async () => {
     prisma.task.findUnique.mockResolvedValue(base());
     // EN_ROUTE happened at 09:00 offline but was written seconds ago.
-    prisma.taskEvent.findFirst.mockResolvedValue({ createdAt: NOW, metadata: { occurredAt: minutesAgo(95).toISOString() } });
+    prisma.taskEvent.findFirst.mockResolvedValue({
+      createdAt: NOW,
+      metadata: { occurredAt: minutesAgo(95).toISOString() },
+    });
     await expect(
       service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix } }),
     ).resolves.toMatchObject({ success: true });
     // …and a change claiming to precede it is refused.
-    prisma.taskEvent.findFirst.mockResolvedValue({ createdAt: NOW, metadata: { occurredAt: minutesAgo(80).toISOString() } });
-    const err = await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix } }).catch((e) => e);
+    prisma.taskEvent.findFirst.mockResolvedValue({
+      createdAt: NOW,
+      metadata: { occurredAt: minutesAgo(80).toISOString() },
+    });
+    const err = await service
+      .updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix } })
+      .catch((e) => e);
     expect(err.getResponse()).toMatchObject({ code: 'OUT_OF_ORDER' });
   });
 
   it('tells a member the job is no longer theirs in a way the phone can translate', async () => {
     prisma.task.findUnique.mockResolvedValue(base({ assignedToId: 'karim' }));
-    const err = await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix } }).catch((e) => e);
+    const err = await service
+      .updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix } })
+      .catch((e) => e);
     expect(err).toBeInstanceOf(ForbiddenException);
     expect(err.getResponse()).toMatchObject({ code: 'TASK_REASSIGNED' });
   });

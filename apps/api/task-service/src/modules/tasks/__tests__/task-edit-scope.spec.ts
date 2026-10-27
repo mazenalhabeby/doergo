@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TaskAccessService } from '../access/task-access.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -78,17 +80,26 @@ describe('TasksService — edit / move / assign scope', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService,
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
+        TasksService,
+        ...TASK_SERVICE_PARTS,
+        TaskAccessService,
         { provide: JobTimeService, useValue: {} },
         ClockGateService,
         { provide: CrewService, useValue: {} },
-        { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn() } },
+        {
+          provide: RolePoolService,
+          useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn() },
+        },
         { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
         { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
         MediaSigner,
         { provide: OBJECT_STORE, useValue: null },
       ],
@@ -101,15 +112,17 @@ describe('TasksService — edit / move / assign scope', () => {
   describe('update (PUT /tasks/:id)', () => {
     it('refuses a site-A creator editing a task at site B', async () => {
       prisma.task.findUnique.mockResolvedValue(taskRow({ spaceId: 'space-B' }));
-      await expect(service.update({ id: 't-1', title: 'x', ...siteACreator })).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.update({ id: 't-1', title: 'x', ...siteACreator })).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(prisma.task.update).not.toHaveBeenCalled();
     });
 
     it('refuses moving their own site-A task into site B', async () => {
       prisma.task.findUnique.mockResolvedValue(taskRow());
-      await expect(
-        service.update({ id: 't-1', spaceId: 'space-B', ...siteACreator }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.update({ id: 't-1', spaceId: 'space-B', ...siteACreator })).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(prisma.task.update).not.toHaveBeenCalled();
     });
 
@@ -146,18 +159,32 @@ describe('TasksService — edit / move / assign scope', () => {
 
     it('never writes the caller’s grants into the change log', async () => {
       prisma.task.findUnique.mockResolvedValue(taskRow());
-      await service.update({ id: 't-1', title: 'renamed', ...siteACreator, canViewAllTasks: true, viewAllSpaceIds: ['x'] });
+      await service.update({
+        id: 't-1',
+        title: 'renamed',
+        ...siteACreator,
+        canViewAllTasks: true,
+        viewAllSpaceIds: ['x'],
+      });
       const changes = prisma.taskEvent.create.mock.calls[0][0].data.metadata.changes;
       expect(changes).toEqual({ title: 'renamed' });
     });
   });
 
   describe('assign (PATCH /tasks/:id/assign)', () => {
-    const siteAAssigner = { userId: 'u-1', userRole: Role.EMPLOYEE, organizationId: ORG, canAssignTasks: false, assignSpaceIds: ['space-A'] };
+    const siteAAssigner = {
+      userId: 'u-1',
+      userRole: Role.EMPLOYEE,
+      organizationId: ORG,
+      canAssignTasks: false,
+      assignSpaceIds: ['space-A'],
+    };
 
     it('refuses a site-A assigner on a task at site B', async () => {
       prisma.task.findUnique.mockResolvedValue(taskRow({ spaceId: 'space-B' }));
-      await expect(service.assign({ id: 't-1', workerId: 'w-1', ...siteAAssigner })).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.assign({ id: 't-1', workerId: 'w-1', ...siteAAssigner })).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(prisma.task.update).not.toHaveBeenCalled();
     });
 

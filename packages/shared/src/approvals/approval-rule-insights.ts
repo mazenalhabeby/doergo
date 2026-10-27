@@ -1,4 +1,4 @@
-import { RULE_LIMITS, pickRule, type ApprovalRuleView, type RuleFacts, type RuleKind } from './approval-rules';
+import { RULE_LIMITS, rulesThatApply, type ApprovalRuleView, type RuleFacts, type RuleKind } from './approval-rules';
 
 /** How far back the rules page looks. */
 export const RULE_INSIGHT_DAYS = 90;
@@ -20,7 +20,7 @@ export interface RuleInsights {
   days: number;
   /** Items raised in the window. */
   total: number;
-  /** Items each rule would have taken (the server's own choice, `pickRule`). */
+  /** Items each rule applies to — every rule that fits counts (the server's own reading, `rulesThatApply`). */
   perRule: Record<string, number>;
   /** Items no rule took: decided by one person. */
   uncovered: number;
@@ -60,8 +60,9 @@ export function ruleInsights(
 ): RuleInsights {
   const live = rules.filter((r) => r.kind === kind && r.isActive);
   const perRule: Record<string, number> = {};
-  const caughtBy = items.map((i) => pickRule(live, i.facts));
-  caughtBy.forEach((r) => r && (perRule[r.id] = (perRule[r.id] ?? 0) + 1));
+  const applying = items.map((i) => rulesThatApply(live, i.facts));
+  for (const rs of applying) for (const r of rs) perRule[r.id] = (perRule[r.id] ?? 0) + 1;
+  const caught = applying.map((rs) => rs.length > 0);
 
   const values = items
     .map((i) => ruleFactValue(kind, i.facts))
@@ -72,7 +73,7 @@ export function ruleInsights(
 
   const suggestions: RuleSuggestion[] = [];
   if (suggestedLimit != null) {
-    const bigAlone = items.filter((i, n) => !caughtBy[n] && (ruleFactValue(kind, i.facts) ?? 0) > suggestedLimit);
+    const bigAlone = items.filter((i, n) => !caught[n] && (ruleFactValue(kind, i.facts) ?? 0) > suggestedLimit);
     if (bigAlone.length >= MIN_SUGGEST) {
       suggestions.push({ kind, spaceId: null, limit: suggestedLimit, count: bigAlone.length });
       const bySpace = new Map<string, number>();
@@ -87,7 +88,7 @@ export function ruleInsights(
     days,
     total: items.length,
     perRule,
-    uncovered: caughtBy.filter((r) => !r).length,
+    uncovered: caught.filter((c) => !c).length,
     suggestedLimit,
     suggestions,
   };

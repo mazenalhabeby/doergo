@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * An APPROVED request applies to that day's clock-in on its own (requests/request-kinds.ts):
  *
@@ -70,15 +72,13 @@ const request = (over: Record<string, unknown>) => ({
 async function build(opts: { requests?: any[]; shift?: any } = {}) {
   const prisma: any = {
     user: {
-      findFirst: jest
-        .fn()
-        .mockResolvedValue({
-          id: 'u1',
-          organizationId: 'org-1',
-          allowRemote: false,
-          role: 'EMPLOYEE',
-          organization: { timezone: 'Europe/Vienna' },
-        }),
+      findFirst: jest.fn().mockResolvedValue({
+        id: 'u1',
+        organizationId: 'org-1',
+        allowRemote: false,
+        role: 'EMPLOYEE',
+        organization: { timezone: 'Europe/Vienna' },
+      }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
@@ -109,6 +109,7 @@ async function build(opts: { requests?: any[]; shift?: any } = {}) {
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
+      { provide: ApprovalRulesService, useValue: noOfficeRules() },
       AttendanceService,
       ...ATTENDANCE_SERVICE_PARTS,
       {

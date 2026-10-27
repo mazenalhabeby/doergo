@@ -1,3 +1,4 @@
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * Overtime when the phone had no signal.
  *
@@ -15,6 +16,7 @@ const at = (hhmm: string) => new Date(`2026-09-14T${hhmm}:00.000Z`);
 function service(entry: any, round: any = { id: 'round-1' }) {
   const svc = Object.create(ExtraTimeApprovalService.prototype) as any;
   svc.logger = { log: jest.fn(), debug: jest.fn(), warn: jest.fn() };
+  svc.rules = noOfficeRules();
   svc.prisma = {
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(entry),
@@ -37,6 +39,7 @@ function service(entry: any, round: any = { id: 'round-1' }) {
   // Refusing lives in ExtraTimeDecisionService; it asks the same approval service who may decide.
   svc.rejectExtraTime = (data: any) => {
     const decisions = Object.assign(Object.create(ExtraTimeDecisionService.prototype), {
+      rules: noOfficeRules(),
       prisma: svc.prisma,
       countedTime: svc.countedTime,
       notificationClient: svc.notificationClient,

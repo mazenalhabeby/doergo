@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { autoClockParts, type AutoClockServiceParts } from './auto-clock.service.fixture';
 /**
  * The automatic clock's server half (attendance/auto-clock/auto-clock.service.ts + the
@@ -105,6 +107,7 @@ async function buildClockIn(opts: { consent?: boolean; chosen?: boolean; undone?
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
+      { provide: ApprovalRulesService, useValue: noOfficeRules() },
       AttendanceService,
       ...ATTENDANCE_SERVICE_PARTS,
       {
@@ -448,17 +451,15 @@ function buildClose(entry: any, opts: { auto?: boolean } = {}) {
       })),
     },
     spaceAssignment: {
-      findFirst: jest
-        .fn()
-        .mockResolvedValue(
-          opts.auto === false
-            ? null
-            : {
-                autoClock: true,
-                space: { autoClock: ON, isRemote: false },
-                user: { autoClockConsentAt: new Date('2026-09-01'), isExternal: false },
-              },
-        ),
+      findFirst: jest.fn().mockResolvedValue(
+        opts.auto === false
+          ? null
+          : {
+              autoClock: true,
+              space: { autoClock: ON, isRemote: false },
+              user: { autoClockConsentAt: new Date('2026-09-01'), isExternal: false },
+            },
+      ),
     },
     break: { update: jest.fn(), create: jest.fn() },
     geofenceExcursion: { updateMany: jest.fn() },
@@ -609,19 +610,17 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
       },
       spaceAssignment: {
         findFirst: jest.fn().mockResolvedValue(null), // no own rules there (D1)
-        findMany: jest
-          .fn()
-          .mockResolvedValue([
-            {
-              userId: 'u1',
-              spaceId: 'loc-1',
-              autoClock: true,
-              effectiveFrom: new Date('2026-01-01'),
-              effectiveTo: null,
-              space: { autoClock: ON },
-              user: { autoClockConsentAt: new Date('2026-09-01'), isExternal: false },
-            },
-          ]),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            userId: 'u1',
+            spaceId: 'loc-1',
+            autoClock: true,
+            effectiveFrom: new Date('2026-01-01'),
+            effectiveTo: null,
+            space: { autoClock: ON },
+            user: { autoClockConsentAt: new Date('2026-09-01'), isExternal: false },
+          },
+        ]),
       },
       break: { update: jest.fn(), create: jest.fn() },
       geofenceExcursion: { updateMany: jest.fn() },

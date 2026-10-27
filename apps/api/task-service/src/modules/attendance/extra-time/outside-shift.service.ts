@@ -1,12 +1,4 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-  Optional,
-} from '@nestjs/common';
+import { ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   PrismaService,
@@ -72,7 +64,7 @@ export class OutsideShiftService {
     private readonly approval: ExtraTimeApprovalService,
     private readonly decisions: ExtraTimeDecisionService,
     private readonly routing: AttendanceRoutingService,
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /** The tolerance of every shift in a batch, in ONE query. */
@@ -210,7 +202,7 @@ export class OutsideShiftService {
     }
 
     // Not counted: a step half-way under an office rule is dropped, like every refusal.
-    if (plan.counted === 0) await this.rules?.clear(data.organizationId, 'overtime', entry.id);
+    if (plan.counted === 0) await this.rules.clear(data.organizationId, 'overtime', entry.id);
 
     // Claimed first: two leaders deciding at once cannot both count it.
     const claimed = await this.prisma.timeEntry.updateMany({

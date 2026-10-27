@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
@@ -169,6 +171,7 @@ describe('AttendanceService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,

@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * Two clock-in findings from the 2026-10 attendance audit.
  *
@@ -107,6 +109,7 @@ async function build(
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
+      { provide: ApprovalRulesService, useValue: noOfficeRules() },
       AttendanceService,
       ...ATTENDANCE_SERVICE_PARTS,
       {

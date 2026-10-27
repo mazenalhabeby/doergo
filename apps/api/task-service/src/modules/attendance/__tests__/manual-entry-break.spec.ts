@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test, TestingModule } from '@nestjs/testing';
 import { entryServicesOf, type ApprovalServiceParts } from './approval.service.fixture';
 import { ENTRY_SERVICES } from '../entries/entry-services';
@@ -31,16 +33,26 @@ describe('a rest entered with a manual attendance', () => {
         created.push(data);
         return { id: `te-${created.length}`, clockInAt: data.clockInAt, clockOutAt: data.clockOutAt };
       }),
-      createMany: jest.fn(async ({ data }: any) => { created.push(...data); return { count: data.length }; }),
+      createMany: jest.fn(async ({ data }: any) => {
+        created.push(...data);
+        return { count: data.length };
+      }),
       findMany: jest.fn().mockResolvedValue([]),
     },
-    break: { create: jest.fn(async ({ data }: any) => { breaks.push(data); return data; }) },
+    break: {
+      create: jest.fn(async ({ data }: any) => {
+        breaks.push(data);
+        return data;
+      }),
+    },
   };
 
   const prisma: Record<string, any> = {
     ...tx,
     user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1', organizationId: 'org-1' }) },
-    companyLocation: { findFirst: jest.fn().mockResolvedValue({ id: 'sp-1', lat: 1, lng: 2, timezone: 'Europe/Vienna' }) },
+    companyLocation: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'sp-1', lat: 1, lng: 2, timezone: 'Europe/Vienna' }),
+    },
     $transaction: jest.fn(async (cb: (t: unknown) => unknown) => cb(tx)),
   };
 
@@ -50,6 +62,7 @@ describe('a rest entered with a manual attendance', () => {
     breaks.length = 0;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
@@ -65,7 +78,8 @@ describe('a rest entered with a manual attendance', () => {
 
   const add = (over: Record<string, unknown> = {}) =>
     (service as unknown as { addManualEntries: (d: unknown) => Promise<unknown> }).addManualEntries({
-      userId: 'u1', organizationId: 'org-1',
+      userId: 'u1',
+      organizationId: 'org-1',
       editorId: 'admin-1',
       locationId: 'sp-1',
       startDate: '2026-09-01',
@@ -147,9 +161,13 @@ describe('a rest entered with a manual attendance', () => {
       every day of it.
     */
     const noTimes = { breakStart: undefined, breakEnd: undefined };
-    await expect(add({ ...noTimes, startTime: '08:00', endTime: '09:00', breakMinutes: 90 })).rejects.toThrow(/does not fit/);
+    await expect(add({ ...noTimes, startTime: '08:00', endTime: '09:00', breakMinutes: 90 })).rejects.toThrow(
+      /does not fit/,
+    );
     // Equal is refused too — a shift that is entirely rest is not a shift.
-    await expect(add({ ...noTimes, startTime: '08:00', endTime: '09:00', breakMinutes: 60 })).rejects.toThrow(/does not fit/);
+    await expect(add({ ...noTimes, startTime: '08:00', endTime: '09:00', breakMinutes: 60 })).rejects.toThrow(
+      /does not fit/,
+    );
     // One minute short of the shift is allowed.
     await expect(add({ ...noTimes, startTime: '08:00', endTime: '09:00', breakMinutes: 59 })).resolves.toBeDefined();
   });
@@ -158,7 +176,9 @@ describe('a rest entered with a manual attendance', () => {
     // 22:00 → 06:00 is eight hours, not minus sixteen — the same correction the
     // entry itself makes when the clock-out lands before the clock-in.
     // 22:00 → 06:00 with a break at 01:00 is three hours into the shift.
-    await expect(add({ startTime: '22:00', endTime: '06:00', breakStart: '01:00', breakEnd: '01:45' })).resolves.toBeDefined();
+    await expect(
+      add({ startTime: '22:00', endTime: '06:00', breakStart: '01:00', breakEnd: '01:45' }),
+    ).resolves.toBeDefined();
   });
 
   it('gives every day of a back-fill its own rest', async () => {

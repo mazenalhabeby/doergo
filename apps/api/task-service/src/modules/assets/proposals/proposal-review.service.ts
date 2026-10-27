@@ -1,8 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+// size-exempt: one review of sent-in papers read top to bottom — rules, claim, create, put back on failure
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { OBJECT_STORE, ObjectStore, requireObjectStore } from '@hbcfield/shared/storage';
 import { Prisma } from '@prisma/client';
 import { PrismaService, success, mayReviewProposal, proposalInSpace, peopleFaces } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { assertNotSelfDecision } from '../../attendance/core/self-decision';
 import { AssetContractService, type ContractActor, type ContractFields } from './asset-contract.service';
 import { assetScope } from '../core/asset-access.service';
 import { ALLOWED, PENDING_SCAN, PROPOSAL_STATUS, cleanProposalFields } from './asset-proposal-helpers';
@@ -21,7 +23,7 @@ export class ProposalReviewService {
     private readonly places: ProposalPlacesService,
     private readonly notices: ProposalNoticesService,
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /**
@@ -148,16 +150,28 @@ export class ProposalReviewService {
     // claim, so a refused reviewer never takes it out of somebody else's queue.
     await this.places.assertReviewable(data.id, data);
     // Office rules: papers for some kinds of thing, somewhere, may need a second person — decided before the claim.
-    const step = await this.firstStepOf(data);
-    if (step) return success({ id: data.id, status: PROPOSAL_STATUS.PENDING, ...step });
+    const verdict = await this.firstStepOf(data);
+    if (verdict && !verdict.finalize)
+      return success({
+        id: data.id,
+        status: PROPOSAL_STATUS.PENDING,
+        stage: 'FIRST_STEP',
+        waitingFor: verdict.roleName,
+      });
+    // The rules' step was used up by this decision; if nothing gets written it is open again.
+    const stepId = verdict?.finalize ? verdict.stepId : undefined;
 
-    const proposal = await this.claim(data.id, data.organizationId);
+    const proposal = await this.claim(data.id, data.organizationId).catch(async (e) => {
+      await this.rules.reopen(stepId);
+      throw e;
+    });
 
     const categoryId = data.categoryId ?? proposal.categoryId;
-    if (!categoryId) throw new BadRequestException('Choose what kind of thing this is');
     const holderUserId = proposal.holderUserId ?? proposal.raisedById;
 
     try {
+      // Inside the try: a refusal after the claim must put the papers back in the queue too.
+      if (!categoryId) throw new BadRequestException('Choose what kind of thing this is');
       // The reviewer's corrections win over what was sent in; they are looking
       // at the page too, on a bigger screen.
       const fields = { ...(proposal.fields as ContractFields), ...cleanProposalFields(data.fields) };
@@ -216,6 +230,7 @@ export class ProposalReviewService {
       );
       return success({ id: proposal.id, assetId, status: PROPOSAL_STATUS.ACCEPTED });
     } catch (e) {
+      await this.rules.reopen(stepId);
       /*
         ⚠️ Put it back in the queue.
 
@@ -232,12 +247,23 @@ export class ProposalReviewService {
     }
   }
 
-  /** Office rules on accepting: the kind (the reviewer's choice wins) and where it belongs, as the queue reads it. */
+  /**
+   * Before accepting: never about yourself — whoever sent the papers in, or is the one who will hold the thing,
+   * does not decide them (the expense review's rule) — then the office rules: the kind (the reviewer's choice
+   * wins) and where it belongs, as the queue reads it.
+   */
   private async firstStepOf(data: { id: string; categoryId?: string } & ContractActor) {
-    const facts = this.rules && (await this.places.ruleFacts(data.id, data.organizationId, data.categoryId));
-    if (!this.rules || !facts) return null;
-    const { raisedById, ...ruleFacts } = facts;
-    return this.rules.firstStep({
+    const facts = await this.places.ruleFacts(data.id, data.organizationId, data.categoryId);
+    if (!facts) return null;
+    const { raisedById, holderUserId, ...ruleFacts } = facts;
+    for (const subjectId of new Set([raisedById, holderUserId]))
+      await assertNotSelfDecision(this.prisma as never, {
+        deciderId: data.userId,
+        subjectId,
+        organizationId: data.organizationId,
+        message: 'You cannot accept papers you sent in or that are for you. Ask a colleague.',
+      });
+    return this.rules.gate({
       organizationId: data.organizationId,
       kind: 'assetProposal',
       itemId: data.id,
@@ -251,7 +277,7 @@ export class ProposalReviewService {
   async reject(data: { id: string; note?: string } & ContractActor) {
     this.contracts.assertMay(data, 'update assets');
     await this.places.assertReviewable(data.id, data);
-    await this.rules?.clear(data.organizationId, 'assetProposal', data.id);
+    await this.rules.clear(data.organizationId, 'assetProposal', data.id);
     const { count } = await this.prisma.assetProposal.updateMany({
       where: { id: data.id, organizationId: data.organizationId, status: PROPOSAL_STATUS.PENDING },
       data: {

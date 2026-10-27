@@ -2703,12 +2703,19 @@ model ApprovalStep {
   kind           String
   /// The id the kind's route takes (a time entry, a time-off request, an expense).
   itemId         String
+  /// The first rule that applied (its reminders and escalation; switching it off or deleting it closes the step).
   ruleId         String
   firstById      String
   firstAt        DateTime  @default(now())
   /// overtime: the minutes the first approver agreed to
   minutes        Int?
   consumedAt     DateTime?
+  /// Every rule that applies counts: the second approvers it needs (one per role, in order) …
+  requiredRoleIds String[] @default([])
+  /// … the roles already given …
+  doneRoleIds    String[]  @default([])
+  /// … and everybody who approved it so far (nobody approves twice). The first is `firstById`.
+  approverIds    String[]  @default([])
 
   @@index([organizationId, kind, itemId])
   @@map("approval_steps")

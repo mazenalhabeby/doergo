@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * "Late" on an afternoon that started on time — the SECOND clock-in of a shift.
  *
@@ -92,6 +94,7 @@ async function build(opts: { requests?: any[]; shift?: any } = {}) {
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
+      { provide: ApprovalRulesService, useValue: noOfficeRules() },
       AttendanceService,
       ...ATTENDANCE_SERVICE_PARTS,
       {

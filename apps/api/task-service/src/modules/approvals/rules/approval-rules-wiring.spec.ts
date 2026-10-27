@@ -24,7 +24,7 @@ describe('office rules are asked on every approve path of their kinds', () => {
     it(`${file} gates and clears '${kind}'`, () => {
       const src = file.split(' + ').map(read).join('\n');
       expect(src).toMatch(new RegExp(`rules\\.gate\\(\\{[\\s\\S]{0,200}kind: '${kind}'`));
-      expect(src).toMatch(new RegExp(`rules\\?\\.clear\\([^)]*'${kind}'`));
+      expect(src).toMatch(new RegExp(`rules\\??\\.clear\\([^)]*'${kind}'`));
       // A step-1 answer returns BEFORE anything is written.
       expect(src).toMatch(/if \(!verdict\.finalize\)[\s\S]{0,80}return success\(/);
     });
@@ -43,9 +43,18 @@ describe('the newer kinds ask through firstStep, before they write', () => {
   for (const [file, kind, clears] of paths) {
     it(`${file} asks firstStep for '${kind}' and answers step 1 before writing`, () => {
       const src = read(file);
-      expect(src).toMatch(new RegExp(`firstStep\\(\\{[\\s\\S]{0,200}kind: '${kind}'`));
-      expect(src).toMatch(/if \(step\) return success\(/);
-      if (clears) expect(src).toMatch(new RegExp(`rules\\?\\.clear\\([^)]*'${kind}'`));
+      // firstStep, or gate itself where the path must open the step again when its write fails.
+      expect(src).toMatch(new RegExp(`(firstStep|gate)\\(\\{[\\s\\S]{0,200}kind: '${kind}'`));
+      expect(src).toMatch(/if \(step\) return success\(|stage: 'FIRST_STEP'/);
+      if (clears) expect(src).toMatch(new RegExp(`rules\\.clear\\([^)]*'${kind}'`));
     });
   }
+});
+
+describe('a client request cannot be routed round an "urgent only" rule', () => {
+  it('reads urgency from what the CLIENT asked as well as the priority chosen while routing it', () => {
+    expect(read('tasks/records/task-triage.service.ts')).toMatch(
+      /urgent: isUrgentPriority\(task\.priority\) \|\| isUrgentPriority\(data\.priority\)/,
+    );
+  });
 });

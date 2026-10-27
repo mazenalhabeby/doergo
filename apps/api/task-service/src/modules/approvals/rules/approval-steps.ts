@@ -4,8 +4,17 @@ import type { PrismaService, RuleKind } from '@hbcfield/shared';
  * The open second step of one item, and closing steps. One OPEN step per item
  * is a partial unique index (see approval-rules.service.ts).
  */
-export function openStep(prisma: PrismaService, organizationId: string, kind: RuleKind, itemId: string) {
-  return prisma.approvalStep.findFirst({ where: { organizationId, kind, itemId, consumedAt: null } });
+export function openStep(
+  prisma: PrismaService,
+  organizationId: string,
+  kind: RuleKind,
+  itemId: string,
+  aliases: string[] = [],
+) {
+  return prisma.approvalStep.findFirst({
+    where: { organizationId, kind, itemId: { in: [itemId, ...aliases] }, consumedAt: null },
+    orderBy: { firstAt: 'desc' },
+  });
 }
 
 /** Close every step a rule left open (the rule was deleted or switched off). */

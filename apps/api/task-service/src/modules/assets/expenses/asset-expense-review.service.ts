@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService, success, clampListLimit, peopleFaces } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
@@ -17,7 +17,7 @@ export class AssetExpenseReviewService {
     private readonly access: AssetAccessService,
     private readonly notifier: AssetNotifier,
     // Office rules (a threshold → a second approval). Global in the app; absent only in narrow unit tests.
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /** What the caller has sent in, newest first — the phone's "my expenses". */
@@ -146,7 +146,7 @@ export class AssetExpenseReviewService {
     });
 
     // Office rules: past a threshold accepting is step 1 of 2; the slip stays submitted. A refusal ends it.
-    if (data.decision === 'reject') await this.rules?.clear(data.organizationId, 'expense', data.entryId);
+    if (data.decision === 'reject') await this.rules.clear(data.organizationId, 'expense', data.entryId);
     if (data.decision === 'accept' && this.rules) {
       const spaceId = filed.asset?.category?.spaceId ?? null;
       const verdict = await this.rules.gate({

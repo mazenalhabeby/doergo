@@ -1,3 +1,4 @@
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { combinedServices } from '../../../common/testing/combined-services';
 import { ApprovalService } from '../entries/approval.service';
 import { EntryEditService } from '../entries/entry-edit.service';
@@ -27,11 +28,13 @@ export function entryServices(
   rematch?: unknown,
   jobPause?: unknown,
   noShowSettle?: unknown,
+  officeRules?: unknown,
 ): ApprovalServiceParts {
   const changes = new EntryChangeLog(prisma as never, notificationClient as never);
+  const rules = officeRules ?? noOfficeRules();
   return combinedServices<ApprovalServiceParts>(
-    new (ApprovalService as unknown as Ctor)(prisma, changes, notificationClient),
-    new (EntryEditService as unknown as Ctor)(prisma, countedTime, changes, rematch, jobPause),
+    new (ApprovalService as unknown as Ctor)(prisma, changes, notificationClient, rules),
+    new (EntryEditService as unknown as Ctor)(prisma, countedTime, changes, rules, rematch, jobPause),
     new (EntryRecordService as unknown as Ctor)(prisma, changes),
     new (ManualEntriesService as unknown as Ctor)(prisma, changes, noShowSettle),
   );

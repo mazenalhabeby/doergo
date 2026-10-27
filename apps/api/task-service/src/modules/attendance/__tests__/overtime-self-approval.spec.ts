@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { ForbiddenException } from '@nestjs/common';
@@ -44,9 +46,7 @@ describe('overtime self-approval (AT-B1)', () => {
       update: jest.fn().mockResolvedValue({ id: 'ot1' }),
     },
     // Array form (the batched writes) and callback form (interactive) both.
-    $transaction: jest.fn((ops: any) =>
-      Array.isArray(ops) ? Promise.all(ops) : ops(prisma),
-    ),
+    $transaction: jest.fn((ops: any) => (Array.isArray(ops) ? Promise.all(ops) : ops(prisma))),
     timeEntry: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     spaceAssignment: { findFirst: jest.fn(), findMany: jest.fn() },
     user: { findFirst: jest.fn() },
@@ -55,8 +55,12 @@ describe('overtime self-approval (AT-B1)', () => {
 
   /** An open shift belonging to `userId`. */
   const openShift = (userId: string) => ({
-    id: 'entry-1', userId, locationId: SPACE, organizationId: ORG,
-    status: TimeEntryStatus.CLOCKED_IN, expectedClockOutAt: new Date(Date.now() + 60_000),
+    id: 'entry-1',
+    userId,
+    locationId: SPACE,
+    organizationId: ORG,
+    status: TimeEntryStatus.CLOCKED_IN,
+    expectedClockOutAt: new Date(Date.now() + 60_000),
     shift: { graceMin: 10 },
   });
 
@@ -71,17 +75,30 @@ describe('overtime self-approval (AT-B1)', () => {
     prisma.timeEntry.update.mockResolvedValue({});
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
-        AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
+        AttendanceService,
+        ...ATTENDANCE_SERVICE_PARTS,
+        {
+          provide: PresenceService,
+          useValue: {
+            atClockIn: jest.fn().mockResolvedValue({}),
+            onPosition: jest.fn().mockResolvedValue(undefined),
+            onBatch: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         ...BREAK_SERVICES,
         ...ENTRY_SERVICES,
         AttendanceReportService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn() } },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },
       ],
     }).compile();

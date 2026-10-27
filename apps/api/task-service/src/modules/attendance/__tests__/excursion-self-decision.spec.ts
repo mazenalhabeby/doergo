@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { ForbiddenException } from '@nestjs/common';
@@ -35,7 +37,13 @@ describe('out-of-ring requests: nobody decides their own', () => {
   };
 
   const pending = (userId: string) => ({
-    id: 'ex-1', userId, organizationId: ORG, spaceId: 'space-1', status: 'PENDING', requestedMinutes: 15, timeEntryId: 'e-1',
+    id: 'ex-1',
+    userId,
+    organizationId: ORG,
+    spaceId: 'space-1',
+    status: 'PENDING',
+    requestedMinutes: 15,
+    timeEntryId: 'e-1',
   });
 
   beforeEach(async () => {
@@ -43,10 +51,12 @@ describe('out-of-ring requests: nobody decides their own', () => {
     prisma.geofenceExcursion.updateMany.mockResolvedValue({ count: 1 });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ApprovalRulesService, useValue: noOfficeRules() },
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
-        AttendanceService, ...ATTENDANCE_SERVICE_PARTS,
+        AttendanceService,
+        ...ATTENDANCE_SERVICE_PARTS,
         { provide: PresenceService, useValue: {} },
         ...BREAK_SERVICES,
         ...ENTRY_SERVICES,
@@ -54,7 +64,10 @@ describe('out-of-ring requests: nobody decides their own', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn() } },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
         { provide: ShiftResolverService, useValue: {} },
       ],
     }).compile();
@@ -63,14 +76,17 @@ describe('out-of-ring requests: nobody decides their own', () => {
     (module.get(ClockOutService) as any).clockOut = jest.fn().mockResolvedValue({});
   });
 
-  it.each(['approveExcursion', 'rejectExcursion'] as const)('%s refuses a delegated approver on their own request', async (fn) => {
-    prisma.geofenceExcursion.findUnique.mockResolvedValue(pending(LEADER));
-    prisma.user.findFirst.mockResolvedValue(null); // not an org ADMIN
-    await expect(
-      (service as any)[fn]({ excursionId: 'ex-1', approverId: LEADER, organizationId: ORG }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(prisma.geofenceExcursion.updateMany).not.toHaveBeenCalled();
-  });
+  it.each(['approveExcursion', 'rejectExcursion'] as const)(
+    '%s refuses a delegated approver on their own request',
+    async (fn) => {
+      prisma.geofenceExcursion.findUnique.mockResolvedValue(pending(LEADER));
+      prisma.user.findFirst.mockResolvedValue(null); // not an org ADMIN
+      await expect(
+        (service as any)[fn]({ excursionId: 'ex-1', approverId: LEADER, organizationId: ORG }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.geofenceExcursion.updateMany).not.toHaveBeenCalled();
+    },
+  );
 
   it.each(['approveExcursion', 'rejectExcursion'] as const)('%s still decides somebody else’s', async (fn) => {
     prisma.geofenceExcursion.findUnique.mockResolvedValue(pending('worker-9'));

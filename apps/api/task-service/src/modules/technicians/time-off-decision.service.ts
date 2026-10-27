@@ -1,11 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ForbiddenException,
-  Optional,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { notEndedWhere, isAbsence, toISODateString, PrismaService, SERVICE_NAMES, success } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
@@ -25,7 +18,7 @@ export class TimeOffDecisionService {
     private readonly cover: CoverService,
     private readonly calendarRules: CalendarRulesService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
-    @Optional() private readonly rules?: ApprovalRulesService, // office rules; absent only in narrow unit tests
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   private recountedWorkingDays(organizationId: string, userId: string, start: Date, end: Date) {
@@ -99,7 +92,7 @@ export class TimeOffDecisionService {
         : undefined;
 
     // Office rules: past a threshold this approval is step 1 of 2 and the request stays pending.
-    if (!approved) await this.rules?.clear(organizationId, 'request', timeOffId);
+    if (!approved) await this.rules.clear(organizationId, 'request', timeOffId);
     if (approved && this.rules) {
       const days =
         workingDays ??

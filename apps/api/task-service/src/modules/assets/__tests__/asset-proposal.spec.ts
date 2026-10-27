@@ -9,6 +9,7 @@ import { AssetAccessService } from '../core/asset-access.service';
 import { AssetContractService } from '../proposals/asset-contract.service';
 import { AssetProposalService } from '../proposals/asset-proposal.service';
 import { ProposalReviewService } from '../proposals/proposal-review.service';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { assetProposalServicesOf, type AssetProposalServiceParts } from './asset-proposal.service.fixture';
 import { AssetNotifier } from '../core/asset-notifier.service';
 import { AssetAudienceService } from '../core/asset-audience.service';
@@ -37,6 +38,12 @@ describe('AssetProposalService', () => {
   };
   const routing = { resolveWatchers: jest.fn() };
   const notifications = { emit: jest.fn() };
+  // Office rules: by default none applies; a test sets a verdict when it is about them.
+  const rules = {
+    gate: jest.fn(),
+    clear: jest.fn(),
+    reopen: jest.fn(),
+  };
   // Every uploaded page exists and is small, unless a test says otherwise.
   const store = {
     head: jest.fn(async () => ({ exists: true, sizeBytes: 1000 })),
@@ -45,9 +52,14 @@ describe('AssetProposalService', () => {
 
   const prisma: any = {
     assetProposal: {
-      create: jest.fn(), count: jest.fn(), findMany: jest.fn(),
-      findFirst: jest.fn(), findUnique: jest.fn(), findUniqueOrThrow: jest.fn(),
-      update: jest.fn(), updateMany: jest.fn(),
+      create: jest.fn(),
+      count: jest.fn(),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
     },
     assetCategory: { findMany: jest.fn() },
     spaceAssignment: { findMany: jest.fn() },
@@ -65,6 +77,8 @@ describe('AssetProposalService', () => {
     prisma.spaceAssignment.findMany.mockResolvedValue([]);
     prisma.user.findUnique.mockResolvedValue({ firstName: 'Ahmed', lastName: 'Dessouky' });
     routing.resolveWatchers.mockResolvedValue({ ids: ['u-boss'], emails: [] });
+    rules.gate.mockResolvedValue({ finalize: true });
+    prisma.user.findFirst.mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -81,6 +95,7 @@ describe('AssetProposalService', () => {
         AssetAccessService,
         { provide: AssetContractService, useValue: contracts },
         { provide: NotificationRoutingService, useValue: routing },
+        { provide: ApprovalRulesService, useValue: rules },
         { provide: 'NOTIFICATION_SERVICE', useValue: notifications },
         { provide: OBJECT_STORE, useValue: store },
       ],
@@ -90,7 +105,11 @@ describe('AssetProposalService', () => {
 
   const raise = (over: any = {}) =>
     service.raise({
-      fields: FIELDS, userId: 'u-ahmed', userRole: 'EMPLOYEE', organizationId: 'org1', ...over,
+      fields: FIELDS,
+      userId: 'u-ahmed',
+      userRole: 'EMPLOYEE',
+      organizationId: 'org1',
+      ...over,
     } as any);
 
   describe('raising one', () => {
@@ -129,8 +148,7 @@ describe('AssetProposalService', () => {
     });
 
     it('refuses a document key from somewhere else', async () => {
-      await expect(raise({ fileKey: 'other-org/asset-proposals/x.jpg' }))
-        .rejects.toBeInstanceOf(BadRequestException);
+      await expect(raise({ fileKey: 'other-org/asset-proposals/x.jpg' })).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('accepts one under this member’s own prefix', async () => {
@@ -141,14 +159,16 @@ describe('AssetProposalService', () => {
 
     it('refuses a colleague’s page in the same organization', async () => {
       // ⚠️ The prefix used to be the organization's, so any member's upload was accepted.
-      await expect(raise({ fileKey: 'org1/asset-proposals/u-colleague/abc.jpg' }))
-        .rejects.toBeInstanceOf(BadRequestException);
+      await expect(raise({ fileKey: 'org1/asset-proposals/u-colleague/abc.jpg' })).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
 
     it('refuses a page that never finished uploading', async () => {
       store.head.mockResolvedValueOnce({ exists: false, sizeBytes: 0 });
-      await expect(raise({ fileKey: 'org1/asset-proposals/u-ahmed/abc.jpg' }))
-        .rejects.toBeInstanceOf(BadRequestException);
+      await expect(raise({ fileKey: 'org1/asset-proposals/u-ahmed/abc.jpg' })).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
 
     it('stops one person filling the queue', async () => {
@@ -172,7 +192,10 @@ describe('AssetProposalService', () => {
       jest.clearAllMocks();
       prisma.assetProposal.count.mockResolvedValue(0);
       prisma.assetProposal.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 'p2', ...data }));
-      prisma.assetCategory.findMany.mockResolvedValue([{ id: 'k1', config: held }, { id: 'k2', config: held }]);
+      prisma.assetCategory.findMany.mockResolvedValue([
+        { id: 'k1', config: held },
+        { id: 'k2', config: held },
+      ]);
       await raise();
       expect(prisma.assetProposal.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ categoryId: null }) }),
@@ -229,8 +252,12 @@ describe('AssetProposalService', () => {
 
   describe('accepting one', () => {
     const PENDING = {
-      id: 'p1', raisedById: 'u-ahmed', holderUserId: 'u-ahmed',
-      categoryId: 'k1', fields: FIELDS, status: 'PENDING',
+      id: 'p1',
+      raisedById: 'u-ahmed',
+      holderUserId: 'u-ahmed',
+      categoryId: 'k1',
+      fields: FIELDS,
+      status: 'PENDING',
     };
 
     beforeEach(() => {
@@ -306,6 +333,46 @@ describe('AssetProposalService', () => {
       );
     });
 
+    /*
+      ⚠️ Nobody decides their own papers: not the member who sent them in, not the one the thing is for.
+      An admin is the owner and is exempt (the shared second-party rule).
+    */
+    it('refuses the member who sent them in, and the one who will hold the thing', async () => {
+      await expect(accept({ userId: 'u-ahmed', userRole: 'MANAGER' })).rejects.toBeInstanceOf(ForbiddenException);
+      prisma.assetProposal.findFirst.mockResolvedValue({ ...PENDING, raisedById: 'u-anna' });
+      prisma.assetProposal.findUniqueOrThrow.mockResolvedValue({ ...PENDING, raisedById: 'u-anna' });
+      await expect(accept({ userId: 'u-ahmed', userRole: 'MANAGER' })).rejects.toBeInstanceOf(ForbiddenException);
+      expect(contracts.apply).not.toHaveBeenCalled();
+      expect(rules.gate).not.toHaveBeenCalled();
+    });
+
+    it('answers step 1 of 2 under an office rule, and writes nothing', async () => {
+      rules.gate.mockResolvedValue({ finalize: false, roleName: 'Fleet' });
+      const res: any = await accept();
+      expect(res.data).toEqual(
+        expect.objectContaining({ status: 'PENDING', stage: 'FIRST_STEP', waitingFor: 'Fleet' }),
+      );
+      expect(contracts.apply).not.toHaveBeenCalled();
+    });
+
+    /*
+      ⚠️ The second approval used up the rule's step. If nothing gets written, the step must be open again,
+      or the next attempt would finish with ONE person.
+    */
+    it('opens the rule’s step again when the create fails', async () => {
+      rules.gate.mockResolvedValue({ finalize: true, stepId: 's1' });
+      contracts.apply.mockRejectedValue(new BadRequestException('this type is held by clients'));
+      await expect(accept()).rejects.toBeInstanceOf(BadRequestException);
+      expect(rules.reopen).toHaveBeenCalledWith('s1');
+    });
+
+    it('opens it again when somebody else took the papers first', async () => {
+      rules.gate.mockResolvedValue({ finalize: true, stepId: 's1' });
+      prisma.assetProposal.updateMany.mockResolvedValue({ count: 0 });
+      await expect(accept()).rejects.toBeInstanceOf(NotFoundException);
+      expect(rules.reopen).toHaveBeenCalledWith('s1');
+    });
+
     it('tells the member it was added', async () => {
       await accept();
       expect(notifications.emit).toHaveBeenCalledWith(
@@ -320,7 +387,11 @@ describe('AssetProposalService', () => {
       prisma.assetProposal.updateMany.mockResolvedValue({ count: 1 });
       prisma.assetProposal.findUnique.mockResolvedValue({ raisedById: 'u-ahmed' });
       await service.reject({
-        id: 'p1', note: 'That is the old contract', userId: 'u-boss', userRole: 'ADMIN', organizationId: 'org1',
+        id: 'p1',
+        note: 'That is the old contract',
+        userId: 'u-boss',
+        userRole: 'ADMIN',
+        organizationId: 'org1',
       } as any);
       // A refusal with no reason teaches nothing and gets re-sent unchanged.
       expect(notifications.emit).toHaveBeenCalledWith(
@@ -331,8 +402,9 @@ describe('AssetProposalService', () => {
 
     it('refuses one that has already been decided', async () => {
       prisma.assetProposal.updateMany.mockResolvedValue({ count: 0 });
-      await expect(service.reject({ id: 'p1', userId: 'u', userRole: 'ADMIN', organizationId: 'org1' } as any))
-        .rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.reject({ id: 'p1', userId: 'u', userRole: 'ADMIN', organizationId: 'org1' } as any),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
@@ -349,19 +421,27 @@ describe('AssetProposalService', () => {
 
     it('cannot take back somebody else’s', async () => {
       prisma.assetProposal.updateMany.mockResolvedValue({ count: 0 });
-      await expect(service.withdraw({ id: 'p1', userId: 'u-mira', organizationId: 'org1' } as any))
-        .rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.withdraw({ id: 'p1', userId: 'u-mira', organizationId: 'org1' } as any),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
   describe('the page itself', () => {
     it('is never handed to somebody who neither sent it nor manages the register', async () => {
       prisma.assetProposal.findFirst.mockResolvedValue({
-        fileKey: 'org1/asset-proposals/a.jpg', fileMime: 'image/jpeg', raisedById: 'u-ahmed',
+        fileKey: 'org1/asset-proposals/a.jpg',
+        fileMime: 'image/jpeg',
+        raisedById: 'u-ahmed',
       });
-      await expect(service.documentUrl({
-        id: 'p1', userId: 'u-nosy', userRole: 'EMPLOYEE', organizationId: 'org1',
-      } as any)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.documentUrl({
+          id: 'p1',
+          userId: 'u-nosy',
+          userRole: 'EMPLOYEE',
+          organizationId: 'org1',
+        } as any),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('never leaves a key in a list', async () => {
@@ -386,16 +466,22 @@ describe('AssetProposalService', () => {
     const KINDS: Record<string, string | null> = { 'k-linz': 'linz', 'k-graz': 'graz', 'k-nowhere': null };
     const ASSIGNED: Record<string, string[]> = { 'u-linz-driver': ['linz'], 'u-graz-driver': ['graz'] };
     const row = (id: string, categoryId: string | null, holder: string) => ({
-      id, categoryId, holderUserId: holder, raisedById: holder, fields: FIELDS, status: 'PENDING',
-      createdAt: new Date(), fileKey: null,
+      id,
+      categoryId,
+      holderUserId: holder,
+      raisedById: holder,
+      fields: FIELDS,
+      status: 'PENDING',
+      createdAt: new Date(),
+      fileKey: null,
     });
     const QUEUE = [
-      row('p-linz-kind', 'k-linz', 'u-graz-driver'),   // the kind is Linz's → Linz decides
-      row('p-graz-kind', 'k-graz', 'u-linz-driver'),   // the kind is Graz's → not Linz, whoever the driver is
-      row('p-nokind-linz', null, 'u-linz-driver'),     // no kind, a Linz driver → Linz
-      row('p-nokind-graz', null, 'u-graz-driver'),     // no kind, a Graz driver → not Linz
+      row('p-linz-kind', 'k-linz', 'u-graz-driver'), // the kind is Linz's → Linz decides
+      row('p-graz-kind', 'k-graz', 'u-linz-driver'), // the kind is Graz's → not Linz, whoever the driver is
+      row('p-nokind-linz', null, 'u-linz-driver'), // no kind, a Linz driver → Linz
+      row('p-nokind-graz', null, 'u-graz-driver'), // no kind, a Graz driver → not Linz
       row('p-nowhere-kind', 'k-nowhere', 'u-linz-driver'), // a kind in no workspace → org-wide only
-      row('p-deleted-kind', 'k-gone', 'u-linz-driver'),    // a kind since deleted → read as not chosen
+      row('p-deleted-kind', 'k-gone', 'u-linz-driver'), // a kind since deleted → read as not chosen
     ];
     const byId = (id: string) => QUEUE.find((r) => r.id === id)!;
     const linz = { userId: 'u-lena', userRole: 'EMPLOYEE', organizationId: 'org1', manageSpaceIds: ['linz'] };
@@ -408,7 +494,9 @@ describe('AssetProposalService', () => {
       );
       prisma.spaceAssignment.findMany.mockImplementation(({ where }: any) =>
         Promise.resolve(
-          (where.userId?.in ?? []).flatMap((u: string) => (ASSIGNED[u] ?? []).map((spaceId) => ({ userId: u, spaceId }))),
+          (where.userId?.in ?? []).flatMap((u: string) =>
+            (ASSIGNED[u] ?? []).map((spaceId) => ({ userId: u, spaceId })),
+          ),
         ),
       );
       prisma.assetProposal.findMany.mockResolvedValue(QUEUE);
@@ -439,7 +527,10 @@ describe('AssetProposalService', () => {
 
       it('names the same workspaces for routing', () => {
         expect(proposalReviewSpaces({ kindSpaceId: 'graz', holderSpaceIds: ['linz'] })).toEqual(['graz']);
-        expect(proposalReviewSpaces({ kindSpaceId: undefined, holderSpaceIds: ['linz', 'linz', 'wels'] })).toEqual(['linz', 'wels']);
+        expect(proposalReviewSpaces({ kindSpaceId: undefined, holderSpaceIds: ['linz', 'linz', 'wels'] })).toEqual([
+          'linz',
+          'wels',
+        ]);
         expect(proposalReviewSpaces({ kindSpaceId: null, holderSpaceIds: ['linz'] })).toEqual([]);
       });
     });
@@ -457,7 +548,9 @@ describe('AssetProposalService', () => {
       });
 
       it('is refused to somebody who manages assets nowhere, before anything is read', async () => {
-        await expect(service.pending({ ...linz, manageSpaceIds: [] } as any)).rejects.toBeInstanceOf(ForbiddenException);
+        await expect(service.pending({ ...linz, manageSpaceIds: [] } as any)).rejects.toBeInstanceOf(
+          ForbiddenException,
+        );
         expect(prisma.assetProposal.findMany).not.toHaveBeenCalled();
       });
     });
@@ -481,21 +574,34 @@ describe('AssetProposalService', () => {
       });
 
       it('narrows a manager of two workspaces to the tab they are on', async () => {
-        expect(ids(await service.pending({ ...both, spaceId: 'linz' } as any)))
-          .toEqual(['p-linz-kind', 'p-nokind-linz', 'p-deleted-kind']);
-        expect(ids(await service.pending({ ...both, spaceId: 'graz' } as any)))
-          .toEqual(['p-graz-kind', 'p-nokind-graz']);
+        expect(ids(await service.pending({ ...both, spaceId: 'linz' } as any))).toEqual([
+          'p-linz-kind',
+          'p-nokind-linz',
+          'p-deleted-kind',
+        ]);
+        expect(ids(await service.pending({ ...both, spaceId: 'graz' } as any))).toEqual([
+          'p-graz-kind',
+          'p-nokind-graz',
+        ]);
       });
 
       it('without a workspace, keeps the whole in-scope queue', async () => {
-        expect(ids(await service.pending(both as any)))
-          .toEqual(['p-linz-kind', 'p-graz-kind', 'p-nokind-linz', 'p-nokind-graz', 'p-deleted-kind']);
+        expect(ids(await service.pending(both as any))).toEqual([
+          'p-linz-kind',
+          'p-graz-kind',
+          'p-nokind-linz',
+          'p-nokind-graz',
+          'p-deleted-kind',
+        ]);
       });
 
       it('narrows an org-wide manager too — and their unfiled ones stay on the org-wide queue', async () => {
         const boss = { userId: 'u-boss', userRole: 'ADMIN', organizationId: 'org1' };
-        expect(ids(await service.pending({ ...boss, spaceId: 'linz' } as any)))
-          .toEqual(['p-linz-kind', 'p-nokind-linz', 'p-deleted-kind']);
+        expect(ids(await service.pending({ ...boss, spaceId: 'linz' } as any))).toEqual([
+          'p-linz-kind',
+          'p-nokind-linz',
+          'p-deleted-kind',
+        ]);
         expect(ids(await service.pending(boss as any))).toContain('p-nowhere-kind');
       });
 
@@ -510,7 +616,8 @@ describe('AssetProposalService', () => {
     });
 
     describe('deciding', () => {
-      const accept = (id: string, over: any = {}) => service.accept({ id, categoryId: 'k-linz', ...linz, ...over } as any);
+      const accept = (id: string, over: any = {}) =>
+        service.accept({ id, categoryId: 'k-linz', ...linz, ...over } as any);
 
       it('accepts one in scope, and carries their workspaces into apply', async () => {
         await accept('p-nokind-linz');
@@ -537,7 +644,8 @@ describe('AssetProposalService', () => {
         contracts.apply.mockRejectedValue(new NotFoundException('That type is not in this organization'));
         await expect(accept('p-nokind-linz', { categoryId: 'k-graz' })).rejects.toBeInstanceOf(NotFoundException);
         expect(contracts.apply).toHaveBeenCalledWith(
-          expect.objectContaining({ categoryId: 'k-graz', manageSpaceIds: ['linz'] }), expect.anything(),
+          expect.objectContaining({ categoryId: 'k-graz', manageSpaceIds: ['linz'] }),
+          expect.anything(),
         );
         expect(prisma.assetProposal.updateMany).toHaveBeenLastCalledWith(
           expect.objectContaining({ data: expect.objectContaining({ status: 'PENDING' }) }),
@@ -552,9 +660,11 @@ describe('AssetProposalService', () => {
 
       it('an org-wide manager is not narrowed at all', async () => {
         await service.accept({ id: 'p-graz-kind', userId: 'u-boss', userRole: 'ADMIN', organizationId: 'org1' } as any);
-        expect(prisma.assetProposal.findFirst).not.toHaveBeenCalled();
+        // One read only: the office rules' facts. The scope check costs nothing for an org-wide manager.
+        expect(prisma.assetProposal.findFirst).toHaveBeenCalledTimes(1);
         expect(contracts.apply).toHaveBeenCalledWith(
-          expect.not.objectContaining({ manageSpaceIds: expect.anything() }), expect.anything(),
+          expect.not.objectContaining({ manageSpaceIds: expect.anything() }),
+          expect.anything(),
         );
       });
 
@@ -570,14 +680,20 @@ describe('AssetProposalService', () => {
     });
 
     describe('the page', () => {
-      const withPage = (id: string) => ({ ...byId(id), fileKey: 'org1/asset-proposals/x/a.jpg', fileMime: 'image/jpeg' });
+      const withPage = (id: string) => ({
+        ...byId(id),
+        fileKey: 'org1/asset-proposals/x/a.jpg',
+        fileMime: 'image/jpeg',
+      });
 
       it('opens for the reviewer of that workspace, and for nobody else’s', async () => {
         prisma.assetProposal.findFirst.mockResolvedValueOnce(withPage('p-nokind-linz'));
         await expect(service.documentUrl({ id: 'p-nokind-linz', ...linz } as any)).resolves.toBeDefined();
 
         prisma.assetProposal.findFirst.mockResolvedValueOnce(withPage('p-graz-kind'));
-        await expect(service.documentUrl({ id: 'p-graz-kind', ...linz } as any)).rejects.toBeInstanceOf(NotFoundException);
+        await expect(service.documentUrl({ id: 'p-graz-kind', ...linz } as any)).rejects.toBeInstanceOf(
+          NotFoundException,
+        );
       });
     });
 
@@ -590,7 +706,10 @@ describe('AssetProposalService', () => {
       it('tells the workspace’s managers before falling back to the organization’s', async () => {
         routing.resolveWatchers.mockResolvedValue({ ids: [], emails: [] });
         prisma.assetProposal.findUnique.mockResolvedValue({
-          id: 'p1', categoryId: null, holderUserId: 'u-linz-driver', raisedById: 'u-linz-driver',
+          id: 'p1',
+          categoryId: null,
+          holderUserId: 'u-linz-driver',
+          raisedById: 'u-linz-driver',
         });
         prisma.spaceAssignment.findMany.mockImplementation(({ where }: any) =>
           Promise.resolve(
@@ -601,7 +720,8 @@ describe('AssetProposalService', () => {
         );
         await raise({ userId: 'u-linz-driver' });
         expect(notifications.emit).toHaveBeenCalledWith(
-          'asset_proposal_raised', expect.objectContaining({ recipientIds: ['u-lena'] }),
+          'asset_proposal_raised',
+          expect.objectContaining({ recipientIds: ['u-lena'] }),
         );
         expect(prisma.accessRole.findMany).not.toHaveBeenCalled();
       });

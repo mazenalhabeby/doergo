@@ -18,7 +18,15 @@ import type { ApprovalKind } from './approval-kinds';
  * hours (task-service `ApprovalEscalationService`, each said once). A rule can
  * be only that — no second step at all.
  */
-export const RULE_KINDS = ['overtime', 'request', 'expense', 'hours', 'noShow', 'assetProposal', 'clientRequest'] as const;
+export const RULE_KINDS = [
+  'overtime',
+  'request',
+  'expense',
+  'hours',
+  'noShow',
+  'assetProposal',
+  'clientRequest',
+] as const;
 export type RuleKind = (typeof RULE_KINDS)[number];
 
 export function isRuleKind(v: unknown): v is RuleKind {
@@ -139,20 +147,41 @@ export function ruleMatches(rule: RuleShape, facts: RuleFacts): boolean {
 }
 
 /**
- * Of several rules that apply, the one to follow: a workspace's own before every-workspace, then the more
- * particular (one asset kind, urgent only), then the highest threshold.
+ * EVERY rule that applies, most particular first: a workspace's own before every-workspace, then one asset kind
+ * / urgent only, then the higher threshold, then the older rule (a stable order on both ends).
+ *
+ * ⚠️ ALL of them apply (decided 2026-10-27): an item needs every second approver they name. A workspace's own
+ * rule ADDS to the organization's, it never replaces it — otherwise anybody allowed to write rules for one
+ * workspace could quietly take the organization's approver out of it ("any expense here → my lead").
  */
-export function pickRule<R extends RuleShape>(rules: R[], facts: RuleFacts): R | null {
+export function rulesThatApply<R extends RuleShape & { id?: string }>(rules: readonly R[], facts: RuleFacts): R[] {
   const threshold = (r: R) => ruleLimitOf(r) ?? -1;
   const particular = (r: R) => Number(!!r.categoryId) + Number(!!r.urgentOnly);
-  return (
-    rules
-      .filter((r) => ruleMatches(r, facts))
-      .sort(
-        (a, b) =>
-          Number(!!b.spaceId) - Number(!!a.spaceId) || particular(b) - particular(a) || threshold(b) - threshold(a),
-      )[0] ?? null
-  );
+  return rules
+    .filter((r) => ruleMatches(r, facts))
+    .sort(
+      (a, b) =>
+        Number(!!b.spaceId) - Number(!!a.spaceId) ||
+        particular(b) - particular(a) ||
+        threshold(b) - threshold(a) ||
+        String(a.id ?? '').localeCompare(String(b.id ?? '')),
+    );
+}
+
+/**
+ * The FIRST of `rulesThatApply` — the rule whose reminders and escalation an item follows when nobody answers,
+ * and the one the rules page counts an item under. Who must approve is ALL of them (`requiredRoleIds`).
+ */
+export function pickRule<R extends RuleShape & { id?: string }>(rules: R[], facts: RuleFacts): R | null {
+  return rulesThatApply(rules, facts)[0] ?? null;
+}
+
+/** The second approvers an item needs: one per role, from every rule that applies, in that order. */
+export function requiredRoleIds(
+  rules: readonly (RuleShape & { id?: string; secondRoleId: string | null })[],
+  facts: RuleFacts,
+): string[] {
+  return [...new Set(rulesThatApply(rules, facts).flatMap((r) => (r.secondRoleId ? [r.secondRoleId] : [])))];
 }
 
 /** A rule as entered, checked the same on both ends. Null = fine, else the refusal code. */

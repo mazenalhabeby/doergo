@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  ForbiddenException,
-  Optional,
-} from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, refusalSettlesOutside, success, TimeEntryStatus } from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
@@ -30,7 +23,7 @@ export class ExtraTimeDecisionService {
     // Who may decide, nobody their own, and the ONE approval path.
     private readonly approval: ExtraTimeApprovalService,
     // Office rules: a refusal ends any two-step. Global in the app; absent only in narrow unit tests.
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /**
@@ -214,7 +207,7 @@ export class ExtraTimeDecisionService {
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
     await this.approval.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
     // A rejection ends any two-step under an office rule.
-    await this.rules?.clear(data.organizationId, 'overtime', entry.id);
+    await this.rules.clear(data.organizationId, 'overtime', entry.id);
 
     const round = await this.prisma.overtimeRequest.findFirst({
       where: { timeEntryId: entry.id, status: 'PENDING_APPROVAL' },

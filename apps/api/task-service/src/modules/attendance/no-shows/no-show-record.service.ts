@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   personName,
   NO_SHOW_OPEN_STATES,
@@ -30,7 +30,7 @@ import { ApprovalRulesService } from '../../approvals/rules/approval-rules.servi
 export class NoShowRecordService {
   constructor(
     private readonly prisma: PrismaService,
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   async list(data: {
@@ -158,9 +158,9 @@ export class NoShowRecordService {
     const now = new Date();
     const excuse = data.action === 'excuse';
     // Office rules: excusing a long run of missed days may need a second person; marking absent ends it.
-    if (!excuse) await this.rules?.clear(data.organizationId, 'noShow', inst.id);
+    if (!excuse) await this.rules.clear(data.organizationId, 'noShow', inst.id);
     const step = excuse
-      ? await this.rules?.firstStep({
+      ? await this.rules.firstStep({
           organizationId: data.organizationId,
           kind: 'noShow',
           itemId: inst.id,

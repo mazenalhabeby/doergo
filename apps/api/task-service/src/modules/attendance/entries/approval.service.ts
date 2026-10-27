@@ -1,5 +1,5 @@
 // size-exempt: deciding time entries — the pending list, approve, reject and bulk approve share one set of checks
-import { Injectable, NotFoundException, BadRequestException, Inject, Logger, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { success, paginated, ApprovalStatus, handChangedMinutes } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
@@ -20,7 +20,7 @@ export class ApprovalService {
     private readonly prisma: PrismaService,
     private readonly changes: EntryChangeLog,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
-    @Optional() private readonly rules?: ApprovalRulesService,
+    private readonly rules: ApprovalRulesService,
   ) {}
   /**
    * Get entries pending approval
@@ -128,7 +128,7 @@ export class ApprovalService {
     assertClosedForDecision(entry);
 
     // Office rules: hours changed by hand past a limit need a second person — step 1 writes nothing here.
-    const step = await this.rules?.firstStep({
+    const step = await this.rules.firstStep({
       organizationId: data.organizationId,
       kind: 'hours',
       itemId: entry.id,
@@ -212,7 +212,7 @@ export class ApprovalService {
     }
     assertClosedForDecision(entry);
     // A refusal by anybody who may decide ends a half-approved entry too.
-    await this.rules?.clear(data.organizationId, 'hours', entry.id);
+    await this.rules.clear(data.organizationId, 'hours', entry.id);
 
     const updated = await this.prisma.timeEntry.update({
       where: { id: data.entryId },
