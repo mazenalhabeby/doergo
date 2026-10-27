@@ -26,8 +26,8 @@ export function InboxNotices({
   count: number | null
 }) {
   const { t } = useTranslation()
-  // "The list as it was 5 minutes ago" keeps counting, as "Updated …" does.
-  useTick()
+  // "The list as it was 5 minutes ago" keeps counting, as "Updated …" does — only while it is shown.
+  useTick(undefined, staleSince != null)
   return (
     <>
       <InboxAnnouncer count={count} />

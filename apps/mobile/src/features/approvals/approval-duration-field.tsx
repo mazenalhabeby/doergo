@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
 import { AText, GlassInput, SectionLabel } from '@/components/amazen';
 import { durationInRange, durationMinutes, type DurationFields } from '@hbcfield/shared/client';
-import { minutesText } from './approval-duration';
+import { minutesText } from './approval-minutes-text';
 
 /**
  * The time a decision counts, typed as hours and minutes (the web's DurationField): hours on a decimal pad

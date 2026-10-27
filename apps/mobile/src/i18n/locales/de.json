@@ -3331,7 +3331,9 @@
       "OUTSIDE_NOTHING": "Es gibt keine Zeit außerhalb der Schicht zu entscheiden.",
       "CHANGED_MEANWHILE": "Das hat sich geändert, während Sie entschieden haben. Bitte noch einmal ansehen und entscheiden.",
       "CLOCK_OUT_IN_FUTURE": "Ein Ausstempeln kann nicht in der Zukunft liegen.",
-      "OVERTIME_ALREADY_DECIDED": "Über diese Überstunden hat bereits jemand entschieden."
+      "OVERTIME_ALREADY_DECIDED": "Über diese Überstunden hat bereits jemand entschieden.",
+      "NO_SHOW_ALREADY_DECIDED": "Diese verpasste Schicht wurde bereits beantwortet.",
+      "REQUEST_ALREADY_ROUTED": "Diese Kundenanfrage wurde bereits bearbeitet."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

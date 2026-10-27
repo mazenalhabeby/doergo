@@ -3331,7 +3331,9 @@
       "OUTSIDE_NOTHING": "There is no time outside the shift to decide.",
       "CHANGED_MEANWHILE": "This changed while you were deciding. Look again and decide.",
       "CLOCK_OUT_IN_FUTURE": "A clock-out cannot be in the future.",
-      "OVERTIME_ALREADY_DECIDED": "Somebody already decided this overtime."
+      "OVERTIME_ALREADY_DECIDED": "Somebody already decided this overtime.",
+      "NO_SHOW_ALREADY_DECIDED": "Somebody already answered this missed shift.",
+      "REQUEST_ALREADY_ROUTED": "This client request was already handled."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

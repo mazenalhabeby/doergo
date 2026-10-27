@@ -3331,7 +3331,9 @@
       "OUTSIDE_NOTHING": "Il n'y a pas de temps hors du poste à décider.",
       "CHANGED_MEANWHILE": "Ceci a changé pendant votre décision. Regardez à nouveau et décidez.",
       "CLOCK_OUT_IN_FUTURE": "Un pointage de sortie ne peut pas être dans le futur.",
-      "OVERTIME_ALREADY_DECIDED": "Quelqu’un a déjà décidé de ces heures sup."
+      "OVERTIME_ALREADY_DECIDED": "Quelqu’un a déjà décidé de ces heures sup.",
+      "NO_SHOW_ALREADY_DECIDED": "Quelqu’un a déjà répondu pour ce poste manqué.",
+      "REQUEST_ALREADY_ROUTED": "Cette demande client a déjà été traitée."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

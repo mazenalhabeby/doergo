@@ -8331,6 +8331,8 @@
     "STAND_IN_NOT_A_COLLEAGUE": "Scelga qualcuno che lavora in uno dei suoi spazi.",
     "STAND_IN_NOT_YOURS": "Solo chi gestisce le persone può organizzare un sostituto per altri.",
     "SECOND_STEP_SAME_PERSON": "Ha dato la prima approvazione — la seconda deve venire da {{role}}.",
+    "NO_SHOW_ALREADY_DECIDED": "Qualcuno ha già risposto per questo turno saltato.",
+    "REQUEST_ALREADY_ROUTED": "Questa richiesta del cliente è già stata gestita.",
     "SECOND_STEP_REQUIRED": "La seconda approvazione spetta a {{role}}.",
     "SECOND_STEP_TAKEN": "Qualcun altro l’ha appena deciso.",
     "RULE_ROLE_REQUIRED": "Scelga uno dei ruoli dell’organizzazione.",
@@ -9834,7 +9836,7 @@
       "maxDays": "Al massimo {{count}} giorni di fila.",
       "tooLong": "Troppo lungo: al massimo {{count}} giorni di fila.",
       "confirmEnd": "Terminare?",
-      "confirmEndLabel": "Terminare questa sostituzione? Premi di nuovo per confermare",
+      "confirmEndLabel": "Terminare questa sostituzione? Prema di nuovo per confermare",
       "refreshFailed": "Impossibile aggiornare le sostituzioni — ecco com'erano {{time}}."
     },
     "step": {
@@ -9883,7 +9885,7 @@
       },
       "reasonLabel": "Motivo",
       "wasHere": "Era presente",
-      "wasHereHelp": "Aggiungi le ore di questo turno. L’assenza si chiude al salvataggio.",
+      "wasHereHelp": "Aggiunga le ore di questo turno. L’assenza si chiude al salvataggio.",
       "wholeRun": "Decidi tutti i {{count}} giorni insieme",
       "save": "Salva",
       "fixRota": "Correggi la pianificazione"
@@ -9895,7 +9897,7 @@
       "approve": "Approva la giornata",
       "review": "Esamina",
       "needsMinutes": "Per tempo extra e straordinari, indichi quanto tempo contare: li apra uno per uno.",
-      "nothingToApprove": "Qui niente si approva in un colpo solo: apri ogni elemento.",
+      "nothingToApprove": "Qui niente si approva in un colpo solo: apra ogni elemento.",
       "partly": "Approvato — {{what}} richiede ancora {{role}}.",
       "approved": "Giornata approvata per {{name}}",
       "stopped": "Interrotto a {{what}}: {{reason}}",
@@ -9907,7 +9909,7 @@
         "rules": "Chi approva",
         "stand": "Sostituti"
       },
-      "intro": "Scegli cosa va approvato. Aggiungi una regola quando deve passare anche a qualcun altro, o essere sollecitato se nessuno risponde.",
+      "intro": "Scelga cosa va approvato. Aggiunga una regola quando deve passare anche a qualcun altro, o essere sollecitato se nessuno risponde.",
       "newRule": "Nuova regola",
       "what": "Cosa va approvato?",
       "first": "Prima approvazione",
@@ -9952,7 +9954,7 @@
       "doneTwo": "Fatto · 2 approvazioni",
       "footnote": "Vale ogni regola che corrisponde: il caso richiede tutte le approvazioni che indicano, ognuna da una persona diversa. L’approvazione di un amministratore lo chiude sempre.",
       "removed": "Regola eliminata",
-      "noRoles": "Crea prima un ruolo che possa approvare.",
+      "noRoles": "Crei prima un ruolo che possa approvare.",
       "range": {
         "all": "tutti",
         "over": "più di {{from}}",
@@ -9983,9 +9985,9 @@
         "none_other": "{{count}} spazi non hanno regole",
         "below_one": "{{count}} spazio è coperto solo sopra un limite",
         "below_other": "{{count}} spazi sono coperti solo sopra un limite",
-        "alsoBelow_one": "e {{count}} solo sopra un limite · clicca per vedere",
-        "alsoBelow_other": "e {{count}} solo sopra un limite · clicca per vedere",
-        "see": "Hanno solo la prima approvazione · clicca per vedere",
+        "alsoBelow_one": "e {{count}} solo sopra un limite · clicchi per vedere",
+        "alsoBelow_other": "e {{count}} solo sopra un limite · clicchi per vedere",
+        "see": "Hanno solo la prima approvazione · clicchi per vedere",
         "everyWorkspace": "Una regola per tutti gli spazi",
         "noRule": "Nessuna regola — un'approvazione",
         "upTo": "Un'approvazione fino a {{to}}",
@@ -10021,7 +10023,7 @@
       "cannotApprove": "{{role}} — non può approvare questo",
       "readOnly": "Per tutti gli spazi — solo l’azienda può cambiarla",
       "confirmRemove": "Eliminare?",
-      "confirmRemoveLabel": "Eliminare {{rule}}? Premi di nuovo per confermare",
+      "confirmRemoveLabel": "Eliminare {{rule}}? Prema di nuovo per confermare",
       "ruleOff": "Disattivata",
       "daysInARow_one": "{{count}} giorno di fila",
       "daysInARow_other": "{{count}} giorni di fila",
@@ -10029,7 +10031,7 @@
       "capped": "Portato al limite massimo: {{max}}",
       "unreadable": "Numero non leggibile — il limite resta com'era."
     },
-    "pressAgain": "Premi di nuovo per confermare"
+    "pressAgain": "Prema di nuovo per confermare"
   },
   "overtimePage": {
     "title": "Straordinari",

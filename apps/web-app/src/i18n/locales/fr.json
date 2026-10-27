@@ -8331,6 +8331,8 @@
     "STAND_IN_NOT_A_COLLEAGUE": "Choisissez quelqu’un qui travaille dans l’un de vos espaces.",
     "STAND_IN_NOT_YOURS": "Seule une personne qui gère les personnes peut organiser un remplacement pour autrui.",
     "SECOND_STEP_SAME_PERSON": "Vous avez donné la première validation — la seconde doit venir de {{role}}.",
+    "NO_SHOW_ALREADY_DECIDED": "Quelqu’un a déjà répondu pour ce poste manqué.",
+    "REQUEST_ALREADY_ROUTED": "Cette demande client a déjà été traitée.",
     "SECOND_STEP_REQUIRED": "La seconde validation revient à {{role}}.",
     "SECOND_STEP_TAKEN": "Quelqu’un d’autre vient de décider.",
     "RULE_ROLE_REQUIRED": "Choisissez l’un des rôles de l’organisation.",

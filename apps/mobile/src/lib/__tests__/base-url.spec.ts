@@ -1,7 +1,7 @@
 /**
  * ⚠️ A release build never talks plain HTTP — one resolver for the API and the socket.
  */
-import { RELEASE_API_URL, RELEASE_ORIGIN, resolveApiUrl, resolveSocketUrl } from '../api/base-url';
+import { RELEASE_API_URL, RELEASE_ORIGIN, resolveApiUrl, resolveSocketUrl, resolveWebOrigin } from '../api/base-url';
 import * as fs from 'fs';
 import * as path from 'path';
 import { readSource } from '@/test-utils/read-source';
@@ -47,5 +47,15 @@ describe('the socket address', () => {
     );
     // client.ts reads with the parts moved out of it (test-utils/read-source.ts).
     expect(readSource(path.join(ROOT, 'src/lib/api/client.ts'), 'utf8')).toMatch(/resolveApiUrl\(urlEnvironment\(\)\)/);
+  });
+});
+
+describe('resolveWebOrigin', () => {
+  it('is the https API origin', () => {
+    expect(resolveWebOrigin({ apiUrl: 'https://hbcfield.com/api/v1', dev: false })).toBe(RELEASE_ORIGIN);
+    expect(resolveWebOrigin({ dev: false })).toBe(RELEASE_ORIGIN);
+  });
+  it('is nothing for a local http API', () => {
+    expect(resolveWebOrigin({ apiUrl: 'http://192.168.1.20:4000/api/v1', dev: true })).toBeNull();
   });
 });

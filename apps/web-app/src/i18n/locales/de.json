@@ -8331,6 +8331,8 @@
     "STAND_IN_NOT_A_COLLEAGUE": "Wählen Sie jemanden aus einem Ihrer Arbeitsbereiche.",
     "STAND_IN_NOT_YOURS": "Nur wer Personen verwaltet, kann eine Vertretung für andere einrichten.",
     "SECOND_STEP_SAME_PERSON": "Sie haben die erste Freigabe gegeben — die zweite muss von {{role}} kommen.",
+    "NO_SHOW_ALREADY_DECIDED": "Diese verpasste Schicht wurde bereits beantwortet.",
+    "REQUEST_ALREADY_ROUTED": "Diese Kundenanfrage wurde bereits bearbeitet.",
     "SECOND_STEP_REQUIRED": "Die zweite Freigabe gibt {{role}}.",
     "SECOND_STEP_TAKEN": "Jemand anderes hat das gerade entschieden.",
     "RULE_ROLE_REQUIRED": "Wählen Sie eine Rolle der Organisation.",

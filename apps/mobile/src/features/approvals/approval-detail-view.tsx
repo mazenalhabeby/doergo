@@ -11,7 +11,7 @@ import {
 import { formatDay } from '@/lib/money';
 import { ISO_DAY } from './approval-detail-helpers';
 import type { useApprovalDetail } from './use-approval-detail';
-import { minutesText } from './approval-duration';
+import { minutesText } from './approval-minutes-text';
 
 /** What ApprovalDetail works out after its early returns, moved here unchanged; called from the same place. */
 export function ApprovalDetailView({

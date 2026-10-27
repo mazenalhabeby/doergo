@@ -57,6 +57,16 @@ export function resolveApiUrl(env: UrlEnvironment): string {
   return env.dev ? 'http://localhost:4000/api/v1' : RELEASE_API_URL;
 }
 
+/**
+ * Where the web app lives, for a link out of the phone ("Open the full page"): the API's own origin when it is
+ * https (production serves both from one host). A local http API has no web app beside it on that port → null,
+ * and the screen shows its words without a button.
+ */
+export function resolveWebOrigin(env: UrlEnvironment): string | null {
+  const api = resolveApiUrl(env);
+  return isAllowedUrl(api, false) ? originOf(api) : null;
+}
+
 export function resolveSocketUrl(env: UrlEnvironment): string {
   const explicit = env.socketUrl?.trim();
   if (explicit && isAllowedUrl(explicit, env.dev)) return explicit;

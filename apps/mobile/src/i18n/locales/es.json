@@ -3331,7 +3331,9 @@
       "OUTSIDE_NOTHING": "No hay tiempo fuera del turno que decidir.",
       "CHANGED_MEANWHILE": "Esto cambió mientras decidías. Vuelve a mirarlo y decide.",
       "CLOCK_OUT_IN_FUTURE": "Una salida no puede estar en el futuro.",
-      "OVERTIME_ALREADY_DECIDED": "Alguien ya decidió estas horas extra."
+      "OVERTIME_ALREADY_DECIDED": "Alguien ya decidió estas horas extra.",
+      "NO_SHOW_ALREADY_DECIDED": "Alguien ya respondió a este turno perdido.",
+      "REQUEST_ALREADY_ROUTED": "Esta solicitud del cliente ya se ha gestionado."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",

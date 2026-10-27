@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, SectionList, View } from 'react-native';
 import { router, useFocusEffect, type Href, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +33,7 @@ import { approvalKey, loadApprovals } from './approvals-store';
 import { StandInSheet } from './stand-in-sheet';
 import { refreshControl } from '@/components/pull-refresh';
 import { ApprovalDayRow } from './approval-day-row';
-import { minutesText } from './approval-duration';
+import { minutesText } from './approval-minutes-text';
 
 /** A list row: one item, or a person's working day that groups several. */
 type Row = { day: ApprovalDay; item?: undefined } | { item: ApprovalItem; day?: undefined };
@@ -68,6 +68,9 @@ export function ApprovalsScreen() {
   const { user } = useAuth();
   const external = isExternalMember(user as never);
 
+  // The list as it stands now — the focus reload reads it, not the first render's null.
+  const itemsRef = useRef<ApprovalItem[] | null>(null);
+  itemsRef.current = items;
   const load = useCallback(async (mode: 'first' | 'refresh') => {
     if (mode === 'refresh') setRefreshing(true);
     try {
@@ -87,12 +90,13 @@ export function ApprovalsScreen() {
     setFailed(false);
     void load('first');
   };
-  // Back from a decision — the item is gone, the counts moved.
+  // Back from a decision — the item is gone, the counts moved. Over a list: quietly. Never loaded: the spinner.
   useFocusEffect(
     useCallback(() => {
-      void load(items ? 'refresh' : 'first');
-    }, [load]),
-  ); // eslint-disable-line react-hooks/exhaustive-deps
+      if (itemsRef.current) void load('refresh');
+      else retry();
+    }, [load]), // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const counts = useMemo(() => {
     const n = new Map<ApprovalKind, number>();

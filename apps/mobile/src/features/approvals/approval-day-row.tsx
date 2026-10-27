@@ -18,7 +18,7 @@ import { refusalText } from '@/lib/distance';
 import { AText, Chip, PrimaryButton } from '@/components/amazen';
 import { WellRow } from '../register/well-row';
 import { approvalKey } from './approvals-store';
-import { minutesText } from './approval-duration';
+import { minutesText } from './approval-minutes-text';
 
 /**
  * One person's working day in the inbox: who, which day, why it waits (shared

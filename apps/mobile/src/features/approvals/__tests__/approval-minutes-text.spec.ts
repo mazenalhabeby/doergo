@@ -1,5 +1,5 @@
 import { durationFieldsOf, durationInRange, durationMinutes, readDurationPart } from '@hbcfield/shared/client';
-import { minutesText } from '../approval-duration';
+import { minutesText } from '../approval-minutes-text';
 
 describe('approval duration — hours + minutes (shared reading)', () => {
   it('reads decimal hours with a comma or a dot', () => {

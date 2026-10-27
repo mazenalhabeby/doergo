@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { NO_SHOW_EXCUSE_REASONS } from '@hbcfield/shared/client';
@@ -60,16 +60,29 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
     decide,
     runCount,
     press,
+    webUrl,
+    openWeb,
   } = useApprovalDetail({ itemKey });
+  // The earliest day an expiry may take: today — or an earlier day the item already carries, so it stays valid.
+  const minExpiry = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const pre =
+      typeof item?.data.expiresOn === 'string' ? new Date(`${item.data.expiresOn.slice(0, 10)}T00:00:00`) : null;
+    return pre && !Number.isNaN(pre.getTime()) && pre < today ? pre : today;
+  }, [item]);
 
   if (missing || !item) {
     return (
       <Ground style={{ flex: 1 }}>
         <ScreenHeader title={t('approvals.title')} leading={<HeaderBack onPress={back} />} />
         {missing ? (
-          <AText variant="body" tone="onGlass" style={{ textAlign: 'center', padding: amazen.space(8) }}>
-            {t('approvals.gone')}
-          </AText>
+          <View style={{ padding: amazen.space(8), gap: amazen.space(4) }}>
+            <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>
+              {t('approvals.gone')}
+            </AText>
+            <PrimaryButton label={t('approvals.back')} onPress={back} />
+          </View>
         ) : (
           <ActivityIndicator style={{ marginTop: amazen.space(10) }} color={c.accent} />
         )}
@@ -121,9 +134,12 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
         ) : null}
         <WhoElse item={item} />
         {pageOnly ? (
-          <AText variant="caption" tone="onGlass">
-            {t(`approvals.needsPage.${item.kind}`)}
-          </AText>
+          <View style={{ gap: amazen.space(2) }}>
+            <AText variant="caption" tone="onGlass">
+              {t(`approvals.needsPage.${item.kind}`)}
+            </AText>
+            {webUrl ? <GhostButton label={t('approvals.openPage')} onPress={openWeb} /> : null}
+          </View>
         ) : null}
         {!item.canDecide ? (
           <AText variant="caption" tone="onGlass">
@@ -191,7 +207,7 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
             <DateField
               value={expiresOn}
               onChange={setExpiresOn}
-              minDate={new Date()}
+              minDate={minExpiry}
               clearable
               title={t('approvals.expiresOn')}
             />

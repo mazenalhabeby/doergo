@@ -4,6 +4,7 @@ import {
   durationFieldsOf,
   durationMinutes,
   formatMoney,
+  readDurationPart,
   ruleLimitOf,
   type ApprovalRuleInput,
   type ApprovalRuleView,
@@ -62,15 +63,12 @@ export function durationFields(minutes: string): { h: string; m: string } {
  * thousands separator, so a separator followed by exactly three digits is REFUSED there rather than guessed.
  */
 export function readLimitNumber(v: string, money = false): number | "" | null {
+  // Hours, minutes and days read as a decision's duration field does (the shared reading).
+  if (!money) return readDurationPart(v)
   const s = v.trim()
   if (s === "") return ""
   if (!/^[\d.,]+$/.test(s) || !/\d/.test(s)) return null
-  const seps = s.match(/[.,]/g) ?? []
-  if (seps.length === 0) return Number(s)
-  if (!money) {
-    if (seps.length > 1 || /^\d+[.,]\d{3}$/.test(s)) return null
-    return Number(s.replace(",", "."))
-  }
+  if (!/[.,]/.test(s)) return Number(s)
   return readMoney(s)
 }
 

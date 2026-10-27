@@ -1,12 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { memberKey, type ApprovalDay, type ApprovalInbox, type ApprovalItem } from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
+import { serverErrorMessage } from "@/lib/server-error"
 import { KIND_KEYS, type Filter } from "../_lib/approval-keys"
 
 /** A day is shown under a filter when any of its items is of that kind. */
@@ -24,10 +25,13 @@ export function useApprovalDays(data: ApprovalInbox | undefined, filter: Filter,
   const grouped = useMemo(() => new Set(days.flatMap((d) => d.members.map(memberKey))), [days])
   const visibleDays = useMemo(() => days.filter((d) => dayMatches(d, filter)), [days, filter])
   /** The items a day holds, read from the list (the day only names them). */
-  const membersOf = (day: ApprovalDay): ApprovalItem[] => {
-    const set = new Set(day.members.map(memberKey))
-    return (data?.items ?? []).filter((i) => set.has(memberKey(i)))
-  }
+  const membersOf = useCallback(
+    (day: ApprovalDay): ApprovalItem[] => {
+      const set = new Set(day.members.map(memberKey))
+      return (data?.items ?? []).filter((i) => set.has(memberKey(i)))
+    },
+    [data],
+  )
 
   const approveDay = useMutation({
     mutationFn: (day: ApprovalDay) => approvalsApi.decideDay(day.approvable),
@@ -42,7 +46,8 @@ export function useApprovalDays(data: ApprovalInbox | undefined, filter: Filter,
         notify.error(
           t("approvals.day.stopped", {
             what: t(`approvals.kinds.${failed.kind}`),
-            reason: failed.message ?? failed.code ?? "",
+            // The server's words are English: a coded refusal is said in the reader's language.
+            reason: serverErrorMessage({ code: failed.code, message: failed.message ?? failed.code ?? "" }, t),
           }),
         )
       } else {

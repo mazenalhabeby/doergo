@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Linking } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
+  approvalWebPath,
   durationFieldsOf,
   durationMinutes,
   type ApprovalActionSpec,
@@ -16,8 +18,17 @@ import { useResponsive } from '@/lib/responsive';
 import { centeredContent } from '@/components/screen-container';
 import { forgetApproval, knownApproval, loadApprovals } from './approvals-store';
 import { refusalText } from '@/lib/distance';
+import { resolveWebOrigin } from '@/lib/api/base-url';
+import { urlEnvironment } from '@/lib/api/url-environment';
 
-/** ApprovalDetail's state and handlers — everything before its markup, moved here unchanged. */
+/** A refusal that means the item moved on (decided, routed, changed) — the screen reads it again, never retries. */
+const STALE_CODES = new Set(['CHANGED_MEANWHILE', 'TIME_OFF_DECIDED', 'REQUEST_ALREADY_ROUTED']);
+export function isStaleRefusal(e: { status?: number; code?: string } | null | undefined): boolean {
+  const code = e?.code ?? '';
+  return e?.status === 404 || e?.status === 409 || STALE_CODES.has(code) || code.endsWith('_ALREADY_DECIDED');
+}
+
+/** ApprovalDetail's state and handlers: the item, the decision form, the one decision in flight. */
 export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKey'>) {
   const { amazen } = useTheme();
   const c = amazen.color;
@@ -37,6 +48,8 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
   const [reasonCode, setReasonCode] = useState<NoShowExcuseReason>('SICK');
   const [wholeRun, setWholeRun] = useState(true);
   const [busy, setBusy] = useState(false);
+  // One decision at a time: a second tap before the first answer never sends again.
+  const sending = useRef(false);
 
   // Opened from a link, or after the list moved on: read it again.
   useEffect(() => {
@@ -62,7 +75,8 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
 
   const decide = useCallback(
     async (a: ApprovalActionSpec) => {
-      if (!item) return;
+      if (!item || sending.current) return;
+      sending.current = true;
       setBusy(true);
       try {
         const res = await approvalsApi.decide({
@@ -90,13 +104,35 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
         back();
       } catch (e: unknown) {
         // A coded refusal (CHANGED_MEANWHILE, OVERTIME_ALREADY_DECIDED, …) in the reader's words.
-        toast.error(refusalText(t, (e ?? {}) as { code?: string; message?: string }, t('approvals.loadFailed')));
+        const err = (e ?? {}) as { status?: number; code?: string; message?: string };
+        toast.error(refusalText(t, err, t('approvals.loadFailed')));
+        if (isStaleRefusal(err)) {
+          // The item moved on: read the inbox again — fresh facts and buttons, or "already decided".
+          setArmed(null);
+          await loadApprovals()
+            .then(() => {
+              const fresh = knownApproval(itemKey);
+              if (fresh) setItem(fresh);
+              else setMissing(true);
+            })
+            .catch(() => setMissing(true));
+        }
       } finally {
+        sending.current = false;
         setBusy(false);
       }
     },
     [item, itemKey, reason, duration, expiresOn, reasonCode, wholeRun, toast, t],
   ); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The full page on the web, for a decision the phone has no form for (null: no web app configured).
+  const webUrl = useMemo(() => {
+    const origin = resolveWebOrigin(urlEnvironment());
+    return origin && item ? origin + approvalWebPath(item) : null;
+  }, [item]);
+  const openWeb = () => {
+    if (webUrl) void Linking.openURL(webUrl).catch(() => undefined);
+  };
 
   const runCount = typeof item?.data.runCount === 'number' ? item.data.runCount : 0;
   const press = (a: ApprovalActionSpec) => {
@@ -135,5 +171,7 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
     decide,
     runCount,
     press,
+    webUrl,
+    openWeb,
   };
 }

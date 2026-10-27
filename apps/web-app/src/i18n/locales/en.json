@@ -8331,6 +8331,8 @@
     "STAND_IN_NOT_A_COLLEAGUE": "Choose somebody who works in one of your workspaces.",
     "STAND_IN_NOT_YOURS": "Only somebody who manages people can arrange a stand-in for someone else.",
     "SECOND_STEP_SAME_PERSON": "You gave the first approval — the second must come from {{role}}.",
+    "NO_SHOW_ALREADY_DECIDED": "Somebody already answered this missed shift.",
+    "REQUEST_ALREADY_ROUTED": "This client request was already handled.",
     "SECOND_STEP_REQUIRED": "The second approval is for {{role}}.",
     "SECOND_STEP_TAKEN": "Somebody else decided this a moment ago.",
     "RULE_ROLE_REQUIRED": "Choose one of the organization’s roles.",

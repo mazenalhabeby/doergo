@@ -14,12 +14,10 @@ export { itemKey } from "../_lib/approval-keys"
 import { KIND_KEYS, itemKey, type Filter } from "../_lib/approval-keys"
 import { useApprovalDays } from "./use-approval-days"
 import { listOrder } from "../_lib/list-order"
+import { useArrowWalk, type ReturnTo } from "./use-arrow-walk"
+import { useNarrowFocus } from "./use-narrow-focus"
 
 export type ApprovalsTab = "decide" | "rules" | "stand"
-
-/** What keeps ↑ / ↓ for itself, so the inbox does not walk while the focus is in it. */
-const USES_ARROWS =
-  '[role="combobox"],[role="listbox"],[role="menu"],[role="tablist"],[role="slider"],[role="radio"],[role="radiogroup"]'
 
 /** The inbox's state: the list, the chosen kind and item, keyboard walking, and deciding. */
 export function useApprovalsPage() {
@@ -98,15 +96,19 @@ export function useApprovalsPage() {
   )
   const currentDay = dayState.visibleDays.find((d) => d.key === selected) ?? null
   // An item opened from a day ("Review"): Back returns to that day, not to the list.
-  const [returnTo, setReturnTo] = useState<{ day: string; item: string } | null>(null)
+  const [returnTo, setReturnTo] = useState<ReturnTo | null>(null)
   const review = useCallback((day: string, item: string) => {
     setReturnTo({ day, item })
     setFilter("all")
     setSelected(item)
   }, [])
+  // Back to a day only while it is still there: one item left, the server no longer groups it.
   const back = useCallback(
-    () => setSelected((s) => (returnTo && s === returnTo.item ? returnTo.day : null)),
-    [returnTo],
+    () =>
+      setSelected((s) =>
+        returnTo && s === returnTo.item && dayState.days.some((d) => d.key === returnTo.day) ? returnTo.day : null,
+      ),
+    [returnTo, dayState.days],
   )
   // Bumped per ITEM when the reader gives the first of two approvals: that item's form closes (its panel is keyed
   // on it). Per item, so an answer arriving after the reader moved on never resets the panel now open.
@@ -117,67 +119,52 @@ export function useApprovalsPage() {
   // A grouped item is opened from its day ("Review"), so it is found in the whole list.
   const current = visible.find((i) => itemKey(i) === selected) ?? items.find((i) => itemKey(i) === selected) ?? null
   useEffect(() => {
-    if (current || selected?.startsWith("day:") || visible.length === 0) return
+    if (current || currentDay || !data) return
+    if (selected?.startsWith("day:")) {
+      // The day is gone (decided down to one item, which the server no longer groups): that item, else the list.
+      const left = returnTo?.day === selected && items.some((i) => itemKey(i) === returnTo.item) ? returnTo.item : null
+      setSelected(left)
+      return
+    }
+    if (visible.length === 0) return
     if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches)
       setSelected(itemKey(visible[0]!))
-  }, [current, visible, selected])
+  }, [current, currentDay, data, items, visible, selected, returnTo])
 
-  /*
-    ↑ / ↓ walk the list — a queue is worked through, not clicked through. Only on "To decide", and never while
-    the focus is in something that uses the arrows itself (a field, a select, a list box, a menu, the tabs, a
-    radio group such as a no-show's answers).
-  */
-  useEffect(() => {
-    if (shown !== "decide") return
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null
-      if (
-        el &&
-        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)
-      )
-        return
-      if (el?.closest(USES_ARROWS)) return
-      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return
-      // The list as drawn — each group's days, then its items — so a day is walked through, never skipped.
-      const order = listOrder(dayState.visibleDays, visible)
-      const at = order.indexOf(selected ?? "")
-      const next = order[Math.min(order.length - 1, Math.max(0, at + (e.key === "ArrowDown" ? 1 : -1)))]
-      if (!next) return
-      e.preventDefault()
-      setSelected(next)
-      // Roving focus: a keyboard on the list stays on it, on the row now chosen (drawn on the next frame).
-      if (el?.closest("[data-approval-key]"))
-        requestAnimationFrame(() =>
-          document.querySelector<HTMLElement>(`[data-approval-key="${CSS.escape(next)}"]`)?.focus(),
-        )
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [visible, dayState.visibleDays, selected, shown])
+  useNarrowFocus(selected)
+  const select = useCallback((key: string) => setSelected(key), [])
+  useArrowWalk({
+    enabled: shown === "decide",
+    days: dayState.visibleDays,
+    allDays: dayState.days,
+    visible,
+    selected,
+    returnTo,
+    membersOf: dayState.membersOf,
+    select,
+    setReturnTo,
+  })
 
   /**
    * Where the panel goes once an item is decided — chosen BEFORE the list drops it, so it moves on instead of
-   * emptying. An item opened from a day stays in that day: its next item (Back returns to the day); the day's
-   * last item closes the panel. Anything else goes to the next in line.
+   * emptying — and, for an item opened from a day, the day Back returns to. Such an item stays in its day: the
+   * day's next item; the day's last item closes the panel. Anything else goes to the next in the list as drawn
+   * (the order ↑ / ↓ walk).
    */
-  const nextAfter = (d: ApprovalDecision): string | null => {
+  const nextAndReturn = (d: ApprovalDecision): { next: string | null; returnTo: ReturnTo | null } => {
     const key = itemKey(d)
     const day = returnTo?.item === key ? dayState.days.find((x) => x.key === returnTo.day) : undefined
-    if (day && returnTo) {
+    if (day) {
       const members = dayState.membersOf(day)
       const at = members.findIndex((i) => itemKey(i) === key)
       const rest = members.filter((i) => itemKey(i) !== key)
       const next = rest[Math.max(0, Math.min(at, rest.length - 1))]
-      if (next) {
-        // Back from the next one still returns to the day.
-        setReturnTo({ day: returnTo.day, item: itemKey(next) })
-        return itemKey(next)
-      }
-      return null
+      // Back from the next one still returns to the day.
+      return next ? { next: itemKey(next), returnTo: { day: day.key, item: itemKey(next) } } : { next: null, returnTo }
     }
-    const at = visible.findIndex((i) => itemKey(i) === key)
-    const next = at < 0 ? undefined : (visible[at + 1] ?? visible[at - 1])
-    return next ? itemKey(next) : null
+    const order = listOrder(dayState.visibleDays, visible)
+    const at = order.indexOf(key)
+    return { next: at < 0 ? null : (order[at + 1] ?? order[at - 1] ?? null), returnTo }
   }
 
   const decide = useMutation({
@@ -192,7 +179,9 @@ export function useApprovalsPage() {
         qc.invalidateQueries({ queryKey: keys.approvals.all() })
         return
       }
-      setSelected(nextAfter(d))
+      const after = nextAndReturn(d)
+      setReturnTo(after.returnTo)
+      setSelected(after.next)
       qc.setQueryData<ApprovalInbox>(keys.approvals.list(), (old) =>
         old ? { ...old, items: old.items.filter((i) => !(i.kind === d.kind && i.id === d.id)) } : old,
       )

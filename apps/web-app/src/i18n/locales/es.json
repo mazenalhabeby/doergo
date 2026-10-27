@@ -8331,6 +8331,8 @@
     "STAND_IN_NOT_A_COLLEAGUE": "Elija a alguien que trabaje en uno de sus espacios.",
     "STAND_IN_NOT_YOURS": "Solo quien gestiona personas puede organizar un sustituto para otra persona.",
     "SECOND_STEP_SAME_PERSON": "Usted dio la primera aprobación — la segunda debe venir de {{role}}.",
+    "NO_SHOW_ALREADY_DECIDED": "Alguien ya respondió sobre este turno no fichado.",
+    "REQUEST_ALREADY_ROUTED": "Esta solicitud del cliente ya se gestionó.",
     "SECOND_STEP_REQUIRED": "La segunda aprobación corresponde a {{role}}.",
     "SECOND_STEP_TAKEN": "Otra persona lo decidió hace un momento.",
     "RULE_ROLE_REQUIRED": "Elija uno de los roles de la organización.",
@@ -9834,7 +9836,7 @@
       "maxDays": "Como máximo {{count}} días seguidos.",
       "tooLong": "Demasiado largo: como máximo {{count}} días seguidos.",
       "confirmEnd": "¿Terminar?",
-      "confirmEndLabel": "¿Terminar esta sustitución? Pulsa otra vez para confirmar",
+      "confirmEndLabel": "¿Terminar esta sustitución? Pulse de nuevo para confirmar",
       "refreshFailed": "No se pudieron actualizar las sustituciones — así estaban {{time}}."
     },
     "step": {
@@ -9883,7 +9885,7 @@
       },
       "reasonLabel": "Motivo",
       "wasHere": "Sí estuvo",
-      "wasHereHelp": "Añade las horas de este turno. La ausencia se cierra al guardarlas.",
+      "wasHereHelp": "Añada las horas de este turno. La ausencia se cierra al guardarlas.",
       "wholeRun": "Decidir los {{count}} días a la vez",
       "save": "Guardar",
       "fixRota": "Corregir el cuadrante"
@@ -9895,7 +9897,7 @@
       "approve": "Aprobar el día",
       "review": "Revisar",
       "needsMinutes": "Para el tiempo extra y las horas extra, indique cuánto tiempo se cuenta: ábralos uno a uno.",
-      "nothingToApprove": "Aquí no se puede aprobar nada de una vez: abre cada elemento.",
+      "nothingToApprove": "Aquí no se puede aprobar nada de una vez: abra cada elemento.",
       "partly": "Aprobado — {{what}} aún necesita a {{role}}.",
       "approved": "Día aprobado para {{name}}",
       "stopped": "Se detuvo en {{what}}: {{reason}}",
@@ -9907,7 +9909,7 @@
         "rules": "Quién aprueba",
         "stand": "Suplentes"
       },
-      "intro": "Elige qué necesita aprobación. Añade una regla cuando deba ir también a otra persona o recordarse si nadie responde.",
+      "intro": "Elija qué necesita aprobación. Añada una regla cuando deba ir también a otra persona o recordarse si nadie responde.",
       "newRule": "Nueva regla",
       "what": "¿Qué necesita aprobación?",
       "first": "Primera aprobación",
@@ -9952,7 +9954,7 @@
       "doneTwo": "Listo · 2 aprobaciones",
       "footnote": "Se aplica cada regla que encaja: el caso necesita todas las aprobaciones que nombran, cada una de una persona distinta. La aprobación de un administrador siempre lo cierra.",
       "removed": "Regla eliminada",
-      "noRoles": "Crea primero un rol que pueda aprobar.",
+      "noRoles": "Cree primero un rol que pueda aprobar.",
       "range": {
         "all": "todos",
         "over": "más de {{from}}",
@@ -10021,7 +10023,7 @@
       "cannotApprove": "{{role}} — no puede aprobar esto",
       "readOnly": "Para todos los espacios — solo la empresa puede cambiarla",
       "confirmRemove": "¿Borrar?",
-      "confirmRemoveLabel": "¿Borrar {{rule}}? Pulsa otra vez para confirmar",
+      "confirmRemoveLabel": "¿Borrar {{rule}}? Pulse de nuevo para confirmar",
       "ruleOff": "Desactivada",
       "daysInARow_one": "{{count}} día seguido",
       "daysInARow_other": "{{count}} días seguidos",
@@ -10029,7 +10031,7 @@
       "capped": "Ajustado al límite máximo: {{max}}",
       "unreadable": "No se puede leer ese número — el límite sigue como estaba."
     },
-    "pressAgain": "Pulsa otra vez para confirmar"
+    "pressAgain": "Pulse de nuevo para confirmar"
   },
   "overtimePage": {
     "title": "Horas extra",

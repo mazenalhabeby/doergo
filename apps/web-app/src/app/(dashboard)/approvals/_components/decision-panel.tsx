@@ -29,6 +29,7 @@ import { NoShowDecision } from "./no-show-decision"
 import { DurationField } from "./duration-field"
 import { nameParts } from "./name-parts"
 import { ConfirmHint } from "./confirm-hint"
+import { useTick } from "../_hooks/use-tick"
 import { ruleLinkForItem } from "../_lib/rule-link"
 import { Icon } from "@/components/ui/icon"
 
@@ -65,6 +66,8 @@ export function DecisionPanel({
   const [minutes, setMinutes] = useState<number | null>(30)
   const [expiresOn, setExpiresOn] = useState("")
   const hintId = useId()
+  // "Raised … ago" moves on the same beat as the header's "Updated …".
+  useTick()
 
   // A different item starts clean — a reason typed for one must never be sent for the next. Keyed on the item
   // alone: a running shift's facts are rebuilt on every refresh, and the form must not close under the typing.
@@ -203,9 +206,8 @@ export function DecisionPanel({
                 // Not `disabled` while the form is incomplete: the button keeps the keyboard focus (send() refuses).
                 disabled={busy}
                 aria-disabled={blocked || undefined}
-                // A two-press action says it is armed — pressed, with "press again" read as its description.
-                aria-pressed={needsForm(a) ? isArmed : undefined}
-                aria-describedby={isArmed ? hintId : undefined}
+                // Armed: "press again" is read as its description, once the form it opened is complete.
+                aria-describedby={isArmed && !blocked ? hintId : undefined}
                 onClick={() => send(a)}
                 className={cn(
                   a.tone === "danger" && !isArmed && "text-destructive hover:text-destructive",
@@ -228,7 +230,8 @@ export function DecisionPanel({
               {t("common.cancel")}
             </Button>
           )}
-          <ConfirmHint id={hintId} asking={!!armed} />
+          {/* Said only once pressing again would send it — not while the reason or the duration is still missing. */}
+          <ConfirmHint id={hintId} asking={!!armed && !reasonMissing && !minutesBad} />
         </div>
       )}
 
