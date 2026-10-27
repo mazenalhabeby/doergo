@@ -9846,7 +9846,11 @@
       "kind": {
         "overtime": "Horas extra y tiempo extra",
         "request": "Permisos y solicitudes",
-        "expense": "Gastos"
+        "expense": "Gastos",
+        "hours": "Horas cambiadas",
+        "noShow": "Sin fichar",
+        "assetProposal": "Documentos de activos",
+        "clientRequest": "Solicitudes de clientes"
       },
       "where": "Dónde",
       "everywhere": "todos los espacios",
@@ -9907,7 +9911,11 @@
       "firstBy": {
         "overtime": "Quien pueda aprobar horas extra en ese espacio de trabajo",
         "request": "Quien planifique los turnos en ese espacio de trabajo",
-        "expense": "Quien gestione el equipo en ese espacio de trabajo"
+        "expense": "Quien gestione el equipo en ese espacio de trabajo",
+        "hours": "Quien pueda aprobar horas en ese espacio de trabajo",
+        "noShow": "Quien pueda corregir horas en ese espacio de trabajo",
+        "assetProposal": "Quien gestione el equipo allí",
+        "clientRequest": "Quien responda solicitudes de clientes allí"
       },
       "rule": "Regla {{n}}",
       "moreThan": "más de",
@@ -9915,7 +9923,9 @@
       "unit": {
         "overtime": "h",
         "request": "días laborables",
-        "expense": "{{currency}}"
+        "expense": "{{currency}}",
+        "hours": "min cambiados a mano",
+        "noShow": "días seguidos"
       },
       "coverShort": "solo si faltaría gente",
       "alsoBy": "Luego también lo aprueba",
@@ -9993,7 +10003,12 @@
         "hits_one": "{{count}} en 90 días",
         "hits_other": "{{count}} en 90 días",
         "makeRule": "Crear una regla como esta"
-      }
+      },
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "assetKind": "Tipo de activo",
+      "anyAssetKind": "Cualquier tipo de activo",
+      "urgentOnly": "Solo urgentes"
     }
   },
   "overtimePage": {

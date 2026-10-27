@@ -24,6 +24,10 @@ function setup() {
       findFirst: jest.fn(async ({ where }: any) => (where.id.startsWith('role-') ? { id: where.id } : null)),
       findMany: jest.fn().mockResolvedValue([]),
     },
+    assetCategory: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'cat' }),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     companyLocation: {
       findFirst: jest.fn().mockResolvedValue({ id: 'site' }),
       findMany: jest.fn().mockResolvedValue([]),

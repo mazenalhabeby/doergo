@@ -9846,7 +9846,11 @@
       "kind": {
         "overtime": "Straordinari e tempo in più",
         "request": "Ferie e richieste",
-        "expense": "Spese"
+        "expense": "Spese",
+        "hours": "Ore modificate",
+        "noShow": "Timbratura mancante",
+        "assetProposal": "Documenti dei beni",
+        "clientRequest": "Richieste clienti"
       },
       "where": "Dove",
       "everywhere": "tutti gli spazi",
@@ -9907,7 +9911,11 @@
       "firstBy": {
         "overtime": "Chi può approvare gli straordinari in quello spazio di lavoro",
         "request": "Chi pianifica i turni in quello spazio di lavoro",
-        "expense": "Chi gestisce l'attrezzatura in quello spazio di lavoro"
+        "expense": "Chi gestisce l'attrezzatura in quello spazio di lavoro",
+        "hours": "Chi può approvare le ore in quello spazio di lavoro",
+        "noShow": "Chi può correggere le ore in quello spazio di lavoro",
+        "assetProposal": "Chi gestisce l’attrezzatura lì",
+        "clientRequest": "Chi risponde alle richieste dei clienti lì"
       },
       "rule": "Regola {{n}}",
       "moreThan": "più di",
@@ -9915,7 +9923,9 @@
       "unit": {
         "overtime": "h",
         "request": "giorni lavorativi",
-        "expense": "{{currency}}"
+        "expense": "{{currency}}",
+        "hours": "min modificati a mano",
+        "noShow": "giorni di fila"
       },
       "coverShort": "solo se mancherebbero persone",
       "alsoBy": "Poi approvato anche da",
@@ -9993,7 +10003,12 @@
         "hits_one": "{{count}} in 90 giorni",
         "hits_other": "{{count}} in 90 giorni",
         "makeRule": "Crea una regola come questa"
-      }
+      },
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "assetKind": "Tipo di bene",
+      "anyAssetKind": "Qualsiasi tipo di bene",
+      "urgentOnly": "Solo urgenti"
     }
   },
   "overtimePage": {

@@ -1,4 +1,11 @@
-import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Optional,
+} from '@nestjs/common';
 import { resolveSpaceDefaultWorkflowId } from '../../workflows/space-workflow.util';
 import {
   PrismaService,
@@ -12,7 +19,9 @@ import {
   type SpaceScopeIds,
   unitAddress,
   workerToAssign,
+  isUrgentPriority,
 } from '@hbcfield/shared';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { TaskSupportService } from '../core/task-support.service';
 import { TaskAssignmentService } from '../assignment/task-assignment.service';
@@ -28,6 +37,7 @@ export class TaskTriageService {
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     private readonly support: TaskSupportService,
     private readonly assignment: TaskAssignmentService,
+    @Optional() private readonly rules?: ApprovalRulesService,
   ) {}
 
   /**
@@ -79,6 +89,17 @@ export class TaskTriageService {
       select: { id: true, lat: true, lng: true, address: true, workflowId: true },
     });
     if (!space) throw new NotFoundException('Space not found');
+
+    // Office rules: an (urgent) request in this workspace may need a second person before it becomes a job.
+    const step = await this.rules?.firstStep({
+      organizationId: data.organizationId,
+      kind: 'clientRequest',
+      itemId: task.id,
+      facts: { spaceIds: [space.id], urgent: isUrgentPriority(data.priority ?? task.priority) },
+      deciderId: data.userId,
+      subjectId: null,
+    });
+    if (step) return success({ id: task.id, triaged: false, ...step }, `Approved — waiting for ${step.waitingFor}`);
 
     // Flow: explicit choice wins; otherwise inherit the space's default flow.
     // null is a valid explicit choice (canonical NEW/ASSIGNED, no workflow).

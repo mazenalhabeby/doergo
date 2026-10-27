@@ -9846,7 +9846,11 @@
       "kind": {
         "overtime": "Überstunden und Mehrzeit",
         "request": "Urlaub und Anträge",
-        "expense": "Ausgaben"
+        "expense": "Ausgaben",
+        "hours": "Geänderte Stunden",
+        "noShow": "Nicht eingestempelt",
+        "assetProposal": "Anlagenunterlagen",
+        "clientRequest": "Kundenanfragen"
       },
       "where": "Wo",
       "everywhere": "allen Arbeitsbereichen",
@@ -9907,7 +9911,11 @@
       "firstBy": {
         "overtime": "Alle, die in diesem Arbeitsbereich Überstunden genehmigen dürfen",
         "request": "Alle, die in diesem Arbeitsbereich den Dienstplan planen",
-        "expense": "Alle, die in diesem Arbeitsbereich die Ausrüstung verwalten"
+        "expense": "Alle, die in diesem Arbeitsbereich die Ausrüstung verwalten",
+        "hours": "Alle, die in diesem Arbeitsbereich Stunden genehmigen dürfen",
+        "noShow": "Alle, die in diesem Arbeitsbereich Stunden korrigieren dürfen",
+        "assetProposal": "Alle, die dort die Ausrüstung verwalten",
+        "clientRequest": "Alle, die dort Kundenanfragen beantworten"
       },
       "rule": "Regel {{n}}",
       "moreThan": "mehr als",
@@ -9915,7 +9923,9 @@
       "unit": {
         "overtime": "Std.",
         "request": "Arbeitstage",
-        "expense": "{{currency}}"
+        "expense": "{{currency}}",
+        "hours": "Min. von Hand geändert",
+        "noShow": "Tage in Folge"
       },
       "coverShort": "nur wenn Leute fehlen würden",
       "alsoBy": "Dann zusätzlich genehmigt von",
@@ -9993,7 +10003,12 @@
         "hits_one": "{{count}} in 90 Tagen",
         "hits_other": "{{count}} in 90 Tagen",
         "makeRule": "Eine Regel wie diese anlegen"
-      }
+      },
+      "minutes_one": "{{count}} Min.",
+      "minutes_other": "{{count}} Min.",
+      "assetKind": "Anlagenart",
+      "anyAssetKind": "Jede Anlagenart",
+      "urgentOnly": "Nur dringende"
     }
   },
   "overtimePage": {

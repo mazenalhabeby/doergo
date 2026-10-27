@@ -1,4 +1,4 @@
-import { pickRule, type ApprovalRuleView, type RuleFacts, type RuleKind } from './approval-rules';
+import { RULE_LIMITS, pickRule, type ApprovalRuleView, type RuleFacts, type RuleKind } from './approval-rules';
 
 /** How far back the rules page looks. */
 export const RULE_INSIGHT_DAYS = 90;
@@ -29,11 +29,10 @@ export interface RuleInsights {
   suggestions: RuleSuggestion[];
 }
 
-/** The fact a kind's limit is about, in its stored unit. */
+/** The fact a kind's limit is about, in its stored unit (null: the kind has no number). */
 export function ruleFactValue(kind: RuleKind, facts: RuleFacts): number | null {
-  if (kind === 'overtime') return facts.minutes ?? null;
-  if (kind === 'request') return facts.days ?? null;
-  return facts.amountCents ?? null;
+  const spec = RULE_LIMITS[kind];
+  return spec ? (facts[spec.fact] ?? null) : null;
 }
 
 const MIN_ITEMS = 8;
@@ -41,8 +40,9 @@ const MIN_SUGGEST = 2;
 
 /** One rounded step per unit, so a suggestion reads like something a person would type. */
 function roundLimit(kind: RuleKind, v: number): number {
-  if (kind === 'overtime') return Math.max(30, Math.round(v / 30) * 30);
-  if (kind === 'request') return Math.max(1, Math.round(v));
+  const fact = RULE_LIMITS[kind]?.fact;
+  if (fact === 'minutes') return Math.max(30, Math.round(v / 30) * 30);
+  if (fact === 'days') return Math.max(1, Math.round(v));
   const step = v >= 100_000 ? 10_000 : v >= 10_000 ? 5_000 : 1_000;
   return Math.max(step, Math.round(v / step) * step);
 }

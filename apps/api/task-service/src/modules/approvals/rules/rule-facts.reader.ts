@@ -3,6 +3,7 @@ import { ModuleRef } from '@nestjs/core';
 import { ABSENCE_WHERE, personName, peopleNames, type RuleFacts, type RuleKind } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { CoverService } from '../../technicians/cover.service';
+import { clientRequestItems, hoursItems, noShowItems, proposalItems } from './rule-facts-kinds';
 
 /** One read looks at no more than this many items per organization and kind. */
 const MAX_ITEMS = 500;
@@ -35,6 +36,10 @@ export class RuleFactsReader {
 
   async read(organizationId: string, kind: RuleKind, window: RuleItemWindow, needCover = false): Promise<RuleItem[]> {
     const created = window.since ? { gte: window.since } : { lte: window.waitingBefore };
+    if (kind === 'hours') return hoursItems(this.prisma, organizationId, window);
+    if (kind === 'noShow') return noShowItems(this.prisma, organizationId, window);
+    if (kind === 'assetProposal') return proposalItems(this.prisma, this.moduleRef, organizationId, window);
+    if (kind === 'clientRequest') return clientRequestItems(this.prisma, organizationId, window);
     if (kind === 'request') {
       const rows = await this.prisma.timeOff.findMany({
         where: {

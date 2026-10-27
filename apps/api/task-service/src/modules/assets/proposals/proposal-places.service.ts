@@ -1,5 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService, activeAssignmentWhere, mayReviewProposal, type ProposalPlace } from '@hbcfield/shared';
+import {
+  PrismaService,
+  activeAssignmentWhere,
+  mayReviewProposal,
+  proposalReviewSpaces,
+  type ProposalPlace,
+} from '@hbcfield/shared';
 import { type ContractActor } from './asset-contract.service';
 import { assetScope } from '../core/asset-access.service';
 import { Placeable, PROPOSAL_STATUS } from './asset-proposal-helpers';
@@ -51,6 +57,21 @@ export class ProposalPlacesService {
         },
       ]),
     );
+  }
+
+  /**
+   * What an office rule reads of a PENDING proposal: its kind (a reviewer's choice at accept wins) and the
+   * workspaces it belongs to — the same place the queue and the reviewer scope read. Null: not pending.
+   */
+  async ruleFacts(id: string, organizationId: string, chosenCategoryId?: string) {
+    const row = await this.prisma.assetProposal.findFirst({
+      where: { id, organizationId, status: PROPOSAL_STATUS.PENDING },
+      select: { id: true, categoryId: true, holderUserId: true, raisedById: true },
+    });
+    if (!row) return null;
+    const categoryId = chosenCategoryId ?? row.categoryId;
+    const place = (await this.placesOf([{ ...row, categoryId }], organizationId)).get(row.id);
+    return { spaceIds: place ? proposalReviewSpaces(place) : [], categoryId, raisedById: row.raisedById };
   }
 
   async reviewable(row: Placeable, organizationId: string, manageSpaceIds: string[] | null): Promise<boolean> {

@@ -14,6 +14,8 @@ const rule = (id: string, spaceId: string | null, minMinutes: number | null, ext
     remindAfterHours: null,
     escalateAfterHours: null,
     escalateRoleId: null,
+    categoryId: null,
+    urgentOnly: false,
     isActive: true,
     ...extra,
   }) as ApprovalRuleView

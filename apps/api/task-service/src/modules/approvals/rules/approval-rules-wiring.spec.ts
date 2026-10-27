@@ -30,3 +30,22 @@ describe('office rules are asked on every approve path of their kinds', () => {
     });
   }
 });
+
+describe('the newer kinds ask through firstStep, before they write', () => {
+  // [file, kind, does the path have a refusal that must drop the open step?]
+  const paths: Array<[string, string, boolean]> = [
+    ['attendance/entries/approval.service.ts', 'hours', true],
+    ['attendance/no-shows/no-show-record.service.ts', 'noShow', true],
+    ['assets/proposals/proposal-review.service.ts', 'assetProposal', true],
+    // A client request has no refusal — it only ever becomes a job.
+    ['tasks/records/task-triage.service.ts', 'clientRequest', false],
+  ];
+  for (const [file, kind, clears] of paths) {
+    it(`${file} asks firstStep for '${kind}' and answers step 1 before writing`, () => {
+      const src = read(file);
+      expect(src).toMatch(new RegExp(`firstStep\\(\\{[\\s\\S]{0,200}kind: '${kind}'`));
+      expect(src).toMatch(/if \(step\) return success\(/);
+      if (clears) expect(src).toMatch(new RegExp(`rules\\?\\.clear\\([^)]*'${kind}'`));
+    });
+  }
+});

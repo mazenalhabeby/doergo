@@ -9846,7 +9846,11 @@
       "kind": {
         "overtime": "Overtime and extra time",
         "request": "Leave and requests",
-        "expense": "Expenses"
+        "expense": "Expenses",
+        "hours": "Changed hours",
+        "noShow": "Didn't clock in",
+        "assetProposal": "Asset papers",
+        "clientRequest": "Client requests"
       },
       "where": "Where",
       "everywhere": "every workspace",
@@ -9907,7 +9911,11 @@
       "firstBy": {
         "overtime": "Anyone who may approve overtime in that workspace",
         "request": "Anyone who plans the rota in that workspace",
-        "expense": "Anyone who manages equipment in that workspace"
+        "expense": "Anyone who manages equipment in that workspace",
+        "hours": "Anyone who may approve hours in that workspace",
+        "noShow": "Anyone who may correct hours in that workspace",
+        "assetProposal": "Anyone who manages equipment there",
+        "clientRequest": "Anyone who answers client requests there"
       },
       "rule": "Rule {{n}}",
       "moreThan": "more than",
@@ -9915,7 +9923,9 @@
       "unit": {
         "overtime": "h",
         "request": "working days",
-        "expense": "{{currency}}"
+        "expense": "{{currency}}",
+        "hours": "min changed by hand",
+        "noShow": "days in a row"
       },
       "coverShort": "only when people would be short",
       "alsoBy": "Then also approved by",
@@ -9993,7 +10003,12 @@
         "hits_one": "{{count}} in 90 days",
         "hits_other": "{{count}} in 90 days",
         "makeRule": "Make a rule like this"
-      }
+      },
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "assetKind": "Asset kind",
+      "anyAssetKind": "Any asset kind",
+      "urgentOnly": "Urgent only"
     }
   },
   "overtimePage": {

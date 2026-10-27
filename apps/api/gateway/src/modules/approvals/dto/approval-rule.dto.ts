@@ -13,5 +13,9 @@ export class ApprovalRuleDto {
   @IsOptional() @IsInt() @Min(1) @Max(720) remindAfterHours?: number | null;
   @IsOptional() @IsInt() @Min(1) @Max(720) escalateAfterHours?: number | null;
   @IsOptional() @IsString() @Length(1, 128) escalateRoleId?: string | null;
+  /** assetProposal: one asset kind (AssetCategory id); null = any. */
+  @IsOptional() @IsString() @Length(1, 128) categoryId?: string | null;
+  /** clientRequest: only urgent requests. */
+  @IsOptional() @IsBoolean() urgentOnly?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
 }

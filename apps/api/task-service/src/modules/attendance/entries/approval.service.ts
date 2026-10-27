@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
-import { success, paginated, ApprovalStatus } from '@hbcfield/shared';
+// size-exempt: deciding time entries — the pending list, approve, reject and bulk approve share one set of checks
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger, Optional } from '@nestjs/common';
+import { success, paginated, ApprovalStatus, handChangedMinutes } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
@@ -9,6 +10,7 @@ import { PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
 import { EntryChangeLog } from './entry-change-log';
 import type { TimeEntryStatus } from '@prisma/client';
 import { announceDayDecided, type DecidedEntry } from './day-decided';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 
 @Injectable()
 export class ApprovalService {
@@ -18,6 +20,7 @@ export class ApprovalService {
     private readonly prisma: PrismaService,
     private readonly changes: EntryChangeLog,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    @Optional() private readonly rules?: ApprovalRulesService,
   ) {}
   /**
    * Get entries pending approval
@@ -124,6 +127,17 @@ export class ApprovalService {
     }
     assertClosedForDecision(entry);
 
+    // Office rules: hours changed by hand past a limit need a second person — step 1 writes nothing here.
+    const step = await this.rules?.firstStep({
+      organizationId: data.organizationId,
+      kind: 'hours',
+      itemId: entry.id,
+      facts: { spaceIds: [entry.locationId], minutes: handChangedMinutes(entry) },
+      deciderId: data.approverId,
+      subjectId: entry.userId,
+    });
+    if (step) return success({ ...entry, ...step }, `Approved — waiting for ${step.waitingFor}`);
+
     const updated = await this.prisma.timeEntry.update({
       where: { id: data.entryId },
       data: {
@@ -197,6 +211,8 @@ export class ApprovalService {
       });
     }
     assertClosedForDecision(entry);
+    // A refusal by anybody who may decide ends a half-approved entry too.
+    await this.rules?.clear(data.organizationId, 'hours', entry.id);
 
     const updated = await this.prisma.timeEntry.update({
       where: { id: data.entryId },
@@ -236,12 +252,14 @@ export class ApprovalService {
   }) {
     const results = {
       approved: [] as string[],
+      /** Approved by the caller, still waiting for a second person (an office rule) — NOT approved yet. */
+      waiting: [] as { id: string; waitingFor: string }[],
       failed: [] as { id: string; reason: string }[],
     };
 
     for (const entryId of data.entryIds) {
       try {
-        await this.approveEntry({
+        const done = await this.approveEntry({
           entryId,
           approverId: data.approverId,
           organizationId: data.organizationId,
@@ -252,7 +270,9 @@ export class ApprovalService {
           scopeSpaceIds: data.scopeSpaceIds,
           notes: data.notes,
         });
-        results.approved.push(entryId);
+        const step = done.data as { stage?: string; waitingFor?: string } | undefined;
+        if (step?.stage === 'FIRST_STEP') results.waiting.push({ id: entryId, waitingFor: step.waitingFor ?? '' });
+        else results.approved.push(entryId);
       } catch (error) {
         results.failed.push({ id: entryId, reason: error.message });
       }

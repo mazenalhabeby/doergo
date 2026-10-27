@@ -1,7 +1,8 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { OBJECT_STORE, ObjectStore, requireObjectStore } from '@hbcfield/shared/storage';
 import { Prisma } from '@prisma/client';
 import { PrismaService, success, mayReviewProposal, proposalInSpace, peopleFaces } from '@hbcfield/shared';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { AssetContractService, type ContractActor, type ContractFields } from './asset-contract.service';
 import { assetScope } from '../core/asset-access.service';
 import { ALLOWED, PENDING_SCAN, PROPOSAL_STATUS, cleanProposalFields } from './asset-proposal-helpers';
@@ -20,6 +21,7 @@ export class ProposalReviewService {
     private readonly places: ProposalPlacesService,
     private readonly notices: ProposalNoticesService,
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    @Optional() private readonly rules?: ApprovalRulesService,
   ) {}
 
   /**
@@ -145,6 +147,9 @@ export class ProposalReviewService {
     // Out of scope answers exactly like decided or missing — and before the
     // claim, so a refused reviewer never takes it out of somebody else's queue.
     await this.places.assertReviewable(data.id, data);
+    // Office rules: papers for some kinds of thing, somewhere, may need a second person — decided before the claim.
+    const step = await this.firstStepOf(data);
+    if (step) return success({ id: data.id, status: PROPOSAL_STATUS.PENDING, ...step });
 
     const proposal = await this.claim(data.id, data.organizationId);
 
@@ -227,10 +232,26 @@ export class ProposalReviewService {
     }
   }
 
+  /** Office rules on accepting: the kind (the reviewer's choice wins) and where it belongs, as the queue reads it. */
+  private async firstStepOf(data: { id: string; categoryId?: string } & ContractActor) {
+    const facts = this.rules && (await this.places.ruleFacts(data.id, data.organizationId, data.categoryId));
+    if (!this.rules || !facts) return null;
+    const { raisedById, ...ruleFacts } = facts;
+    return this.rules.firstStep({
+      organizationId: data.organizationId,
+      kind: 'assetProposal',
+      itemId: data.id,
+      facts: ruleFacts,
+      deciderId: data.userId,
+      subjectId: raisedById,
+    });
+  }
+
   /** Refuse it, with a reason the member reads. */
   async reject(data: { id: string; note?: string } & ContractActor) {
     this.contracts.assertMay(data, 'update assets');
     await this.places.assertReviewable(data.id, data);
+    await this.rules?.clear(data.organizationId, 'assetProposal', data.id);
     const { count } = await this.prisma.assetProposal.updateMany({
       where: { id: data.id, organizationId: data.organizationId, status: PROPOSAL_STATUS.PENDING },
       data: {

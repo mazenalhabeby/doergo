@@ -1,3 +1,4 @@
+import type { RuleKind } from '@hbcfield/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { msg, type LocalizedText } from '../../i18n/translate';
 import { overtimeRequestText } from './push-helpers';
@@ -31,7 +32,7 @@ export class ApprovalPushService {
   /** Nobody answered: remind the usual deciders, or pass it to the escalation role. */
   async sendApprovalReminderPush(data: {
     recipientIds: string[];
-    kind: 'overtime' | 'request' | 'expense';
+    kind: RuleKind;
     itemId: string;
     stage: 'REMIND' | 'ESCALATE';
     subjectName: string;

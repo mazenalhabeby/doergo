@@ -10,7 +10,7 @@ export function ruleLinkFor(kind: RuleKind, spaceId: string | null, limit: numbe
 
 /** A limit just under the item's own value, rounded the way a person would type it — so the rule catches it. */
 function limitUnder(kind: RuleKind, v: number): number {
-  const step = kind === "overtime" ? 30 : kind === "request" ? 1 : 1_000
+  const step = kind === "overtime" ? 30 : kind === "expense" ? 1_000 : 1
   return Math.max(0, Math.floor((v - 1) / step) * step)
 }
 
@@ -23,11 +23,16 @@ export function ruleLinkForItem(item: ApprovalItem): string | null {
   if (!kind) return null
   const d = item.data as Record<string, unknown>
   const num = (k: string) => (typeof d[k] === "number" ? (d[k] as number) : null)
+  // The fact the kind's limit is about, as the inbox item carries it (none for a kind with no limit).
   const value =
     kind === "overtime"
       ? (num("requestedMinutes") ?? num("pastEndMinutes"))
       : kind === "request"
         ? num("workingDays")
-        : num("amountCents")
+        : kind === "noShow"
+          ? num("runCount")
+          : kind === "expense"
+            ? num("amountCents")
+            : null
   return ruleLinkFor(kind, item.space?.id ?? null, value != null && value > 0 ? limitUnder(kind, value) : null)
 }

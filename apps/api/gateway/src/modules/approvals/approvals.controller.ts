@@ -101,7 +101,7 @@ export class ApprovalsController {
   @ApiOperation({ summary: 'What the rules of one kind did over the last 90 days, and the rules worth adding' })
   async ruleInsights(@Query('kind') kind: string, @Request() req: AuthedRequest) {
     const scope = rulesScope(req.user);
-    if (!isRuleKind(kind)) throw new BadRequestException('kind is overtime, request or expense');
+    if (!isRuleKind(kind)) throw new BadRequestException('kind is not a kind approval rules apply to');
     return { success: true, data: await this.rules.insights(callerOrgId(req.user), kind, scope) };
   }
 

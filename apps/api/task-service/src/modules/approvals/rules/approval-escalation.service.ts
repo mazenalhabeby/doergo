@@ -1,14 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
-import {
-  SERVICE_NAMES,
-  noticeDue,
-  pickRule,
-  runWithCronLock,
-  type NoticeStage,
-  type RuleKind,
-} from '@hbcfield/shared';
+import { SERVICE_NAMES, noticeDue, pickRule, runWithCronLock, type NoticeStage, type RuleKind } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { ApprovalRouteService } from './approval-route.service';
 import { ApprovalRulesService } from './approval-rules.service';
@@ -136,5 +129,4 @@ export class ApprovalEscalationService {
     });
     return r.deciders.filter((d) => !d.onLeave).map((d) => d.id);
   }
-
 }

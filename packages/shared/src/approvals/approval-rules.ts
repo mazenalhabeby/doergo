@@ -18,7 +18,7 @@ import type { ApprovalKind } from './approval-kinds';
  * hours (task-service `ApprovalEscalationService`, each said once). A rule can
  * be only that — no second step at all.
  */
-export const RULE_KINDS = ['overtime', 'request', 'expense'] as const;
+export const RULE_KINDS = ['overtime', 'request', 'expense', 'hours', 'noShow', 'assetProposal', 'clientRequest'] as const;
 export type RuleKind = (typeof RULE_KINDS)[number];
 
 export function isRuleKind(v: unknown): v is RuleKind {
@@ -30,7 +30,38 @@ export function ruleKindOf(kind: ApprovalKind): RuleKind | null {
   if (kind === 'overtime' || kind === 'extraTime') return 'overtime';
   if (kind === 'request') return 'request';
   if (kind === 'expense') return 'expense';
+  if (kind === 'hours' || kind === 'noShow' || kind === 'assetProposal' || kind === 'clientRequest') return kind;
   return null;
+}
+
+/** The limit a kind's rule may set: which column holds it, which fact it is compared with, and its ceiling. */
+export interface RuleLimitSpec {
+  field: 'minMinutes' | 'minDays' | 'minAmountCents';
+  fact: 'minutes' | 'days' | 'amountCents';
+  max: number;
+}
+
+/**
+ * THE table of limits — matching, choosing, checking, saving and the rules page all read it, so a kind
+ * cannot be limited one way here and another way there. Null = the kind has no number to pass:
+ * asset papers are told apart by their asset kind, client requests by being urgent.
+ */
+export const RULE_LIMITS: Record<RuleKind, RuleLimitSpec | null> = {
+  overtime: { field: 'minMinutes', fact: 'minutes', max: 1440 },
+  request: { field: 'minDays', fact: 'days', max: 366 },
+  expense: { field: 'minAmountCents', fact: 'amountCents', max: 100_000_000 },
+  // Hours changed by hand: how many minutes differ from what was clocked.
+  hours: { field: 'minMinutes', fact: 'minutes', max: 1440 },
+  // Didn't clock in: how many days in a row.
+  noShow: { field: 'minDays', fact: 'days', max: 366 },
+  assetProposal: null,
+  clientRequest: null,
+};
+
+/** A rule's limit, in its kind's stored unit (null = none). */
+export function ruleLimitOf(rule: Pick<ApprovalRuleView, 'kind' | 'minMinutes' | 'minDays' | 'minAmountCents'>) {
+  const spec = RULE_LIMITS[rule.kind];
+  return spec ? (rule[spec.field] ?? null) : null;
 }
 
 export interface ApprovalRuleView {
@@ -50,6 +81,11 @@ export interface ApprovalRuleView {
   escalateAfterHours: number | null;
   escalateRoleId: string | null;
   escalateRoleName?: string | null;
+  /** assetProposal: only papers for this asset kind (null = any kind). */
+  categoryId: string | null;
+  categoryName?: string | null;
+  /** clientRequest: only urgent requests. */
+  urgentOnly: boolean;
   isActive: boolean;
 }
 
@@ -64,6 +100,8 @@ export interface ApprovalRuleInput {
   remindAfterHours?: number | null;
   escalateAfterHours?: number | null;
   escalateRoleId?: string | null;
+  categoryId?: string | null;
+  urgentOnly?: boolean;
   isActive?: boolean;
 }
 
@@ -76,36 +114,44 @@ export interface RuleFacts {
   amountCents?: number | null;
   /** request: the leave would drop cover below the minimum or miss a skill (the wallchart's verdict). */
   coverShort?: boolean | null;
+  /** assetProposal: the asset kind the papers are for. */
+  categoryId?: string | null;
+  /** clientRequest: the request is urgent. */
+  urgent?: boolean | null;
 }
 
 /** Does this rule apply? Strictly MORE than the threshold; no threshold = always. */
 type RuleShape = Pick<
   ApprovalRuleView,
   'kind' | 'spaceId' | 'minMinutes' | 'minDays' | 'minAmountCents' | 'isActive'
-> & { whenCoverShort?: boolean };
+> & { whenCoverShort?: boolean; categoryId?: string | null; urgentOnly?: boolean };
 
 export function ruleMatches(rule: RuleShape, facts: RuleFacts): boolean {
   if (!rule.isActive) return false;
   if (rule.spaceId && !facts.spaceIds.includes(rule.spaceId)) return false;
-  switch (rule.kind) {
-    case 'overtime':
-      return rule.minMinutes == null || (facts.minutes ?? 0) > rule.minMinutes;
-    case 'request':
-      // Both, when both are set: "over 3 days AND short of people".
-      if (rule.whenCoverShort && facts.coverShort !== true) return false;
-      return rule.minDays == null || (facts.days ?? 0) > rule.minDays;
-    case 'expense':
-      return rule.minAmountCents == null || (facts.amountCents ?? 0) > rule.minAmountCents;
-  }
+  // Both, when both are set: "over 3 days AND short of people".
+  if (rule.kind === 'request' && rule.whenCoverShort && facts.coverShort !== true) return false;
+  if (rule.kind === 'assetProposal' && rule.categoryId && facts.categoryId !== rule.categoryId) return false;
+  if (rule.kind === 'clientRequest' && rule.urgentOnly && facts.urgent !== true) return false;
+  const spec = RULE_LIMITS[rule.kind];
+  const limit = ruleLimitOf(rule);
+  return !spec || limit == null || (facts[spec.fact] ?? 0) > limit;
 }
 
-/** Of several rules that apply, the one to follow: a workspace's own before every-workspace, then the highest threshold. */
+/**
+ * Of several rules that apply, the one to follow: a workspace's own before every-workspace, then the more
+ * particular (one asset kind, urgent only), then the highest threshold.
+ */
 export function pickRule<R extends RuleShape>(rules: R[], facts: RuleFacts): R | null {
-  const threshold = (r: R) => r.minMinutes ?? r.minDays ?? r.minAmountCents ?? -1;
+  const threshold = (r: R) => ruleLimitOf(r) ?? -1;
+  const particular = (r: R) => Number(!!r.categoryId) + Number(!!r.urgentOnly);
   return (
     rules
       .filter((r) => ruleMatches(r, facts))
-      .sort((a, b) => Number(!!b.spaceId) - Number(!!a.spaceId) || threshold(b) - threshold(a))[0] ?? null
+      .sort(
+        (a, b) =>
+          Number(!!b.spaceId) - Number(!!a.spaceId) || particular(b) - particular(a) || threshold(b) - threshold(a),
+      )[0] ?? null
   );
 }
 
@@ -127,10 +173,9 @@ export function ruleInputProblem(
   if (input.escalateRoleId && input.escalateAfterHours == null) return 'RULE_HOURS_INVALID';
   // It must DO something: a second step, a reminder, or an escalation.
   if (!input.secondRoleId && input.remindAfterHours == null && input.escalateAfterHours == null) return 'RULE_EMPTY';
-  const n =
-    input.kind === 'overtime' ? input.minMinutes : input.kind === 'request' ? input.minDays : input.minAmountCents;
-  const max = input.kind === 'overtime' ? 1440 : input.kind === 'request' ? 366 : 100_000_000;
-  if (n != null && (!Number.isInteger(n) || n < 0 || n > max)) return 'RULE_THRESHOLD_INVALID';
+  const spec = RULE_LIMITS[input.kind];
+  const n = spec ? input[spec.field] : null;
+  if (spec && n != null && (!Number.isInteger(n) || n < 0 || n > spec.max)) return 'RULE_THRESHOLD_INVALID';
   return null;
 }
 

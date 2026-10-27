@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import {
   personName,
   NO_SHOW_OPEN_STATES,
@@ -13,6 +13,7 @@ import { assertNotSelfDecision } from '../core/self-decision';
 import { DAY } from './no-show-record-helpers';
 import { PrismaService } from '@hbcfield/shared';
 import { monthFacts, runHints, runsFor, spaceRows } from './no-show-run-facts';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 
 /**
  * The no-show RECORD and its decisions (shared attendance/no-show.ts):
@@ -27,7 +28,10 @@ import { monthFacts, runHints, runsFor, spaceRows } from './no-show-run-facts';
  */
 @Injectable()
 export class NoShowRecordService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly rules?: ApprovalRulesService,
+  ) {}
 
   async list(data: {
     organizationId: string;
@@ -149,11 +153,23 @@ export class NoShowRecordService {
 
     if (!isOpenNoShow(inst.state))
       throw new BadRequestException({ code: 'NO_SHOW_ALREADY_DECIDED', message: 'This no-show was already decided.' });
-    const ids = data.wholeRun
-      ? ((await runsFor(this.prisma, [inst], new Date())).get(inst.id)?.ids ?? [inst.id])
-      : [inst.id];
+    const run = (await runsFor(this.prisma, [inst], new Date())).get(inst.id);
+    const ids = data.wholeRun ? (run?.ids ?? [inst.id]) : [inst.id];
     const now = new Date();
     const excuse = data.action === 'excuse';
+    // Office rules: excusing a long run of missed days may need a second person; marking absent ends it.
+    if (!excuse) await this.rules?.clear(data.organizationId, 'noShow', inst.id);
+    const step = excuse
+      ? await this.rules?.firstStep({
+          organizationId: data.organizationId,
+          kind: 'noShow',
+          itemId: inst.id,
+          facts: { spaceIds: inst.spaceId ? [inst.spaceId] : [], days: run?.count ?? 1 },
+          deciderId: data.excusedById ?? '',
+          subjectId: inst.userId,
+        })
+      : null;
+    if (step) return success({ id: inst.id, state: inst.state, decided: 0, ...step });
     const res = await this.prisma.shiftInstance.updateMany({
       // Only the ones still open — a day closed meanwhile keeps its own answer.
       where: { id: { in: ids }, state: { in: [...NO_SHOW_OPEN_STATES] } },

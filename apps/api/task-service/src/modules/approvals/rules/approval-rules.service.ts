@@ -148,6 +148,15 @@ export class ApprovalRulesService {
     );
   }
 
+  /**
+   * `gate` for an approve path that only needs to know whether to stop: null = go on and write; otherwise
+   * step 1 of 2 is recorded and this is what to answer (the gateway reads `stage`).
+   */
+  async firstStep(input: Parameters<ApprovalRulesService['gate']>[0]) {
+    const verdict = await this.gate(input);
+    return verdict.finalize ? null : { stage: 'FIRST_STEP' as const, waitingFor: verdict.roleName };
+  }
+
   /** A rejection — by anybody who may decide — ends the two-step for this item. */
   async clear(organizationId: string, kind: RuleKind, itemId: string): Promise<void> {
     await this.prisma.approvalStep.updateMany({

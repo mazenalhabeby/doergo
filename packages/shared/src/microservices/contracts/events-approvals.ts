@@ -1,5 +1,6 @@
 /** Events about approvals: second steps and reminders (notification-service approval handler). */
 import { event } from '../event';
+import type { RuleKind } from '../../approvals/approval-rules';
 import type { SentNotRead } from './events-types';
 
 export const approvalSecondStepEvent = event<
@@ -15,7 +16,7 @@ export const approvalSecondStepEvent = event<
 export const approvalReminderEvent = event<
   {
     recipientIds?: string[];
-    kind: 'overtime' | 'request' | 'expense';
+    kind: RuleKind;
     itemId: string;
     stage: 'REMIND' | 'ESCALATE';
     subjectName?: string;

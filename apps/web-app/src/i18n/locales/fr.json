@@ -9846,7 +9846,11 @@
       "kind": {
         "overtime": "Heures supplémentaires et temps en plus",
         "request": "Congés et demandes",
-        "expense": "Dépenses"
+        "expense": "Dépenses",
+        "hours": "Heures modifiées",
+        "noShow": "Pas pointé",
+        "assetProposal": "Documents d’équipement",
+        "clientRequest": "Demandes clients"
       },
       "where": "Où",
       "everywhere": "tous les espaces",
@@ -9907,7 +9911,11 @@
       "firstBy": {
         "overtime": "Toute personne pouvant approuver les heures sup. dans cet espace de travail",
         "request": "Toute personne qui planifie le planning dans cet espace de travail",
-        "expense": "Toute personne qui gère l'équipement dans cet espace de travail"
+        "expense": "Toute personne qui gère l'équipement dans cet espace de travail",
+        "hours": "Toute personne pouvant approuver les heures dans cet espace de travail",
+        "noShow": "Toute personne pouvant corriger les heures dans cet espace de travail",
+        "assetProposal": "Toute personne qui gère l’équipement là-bas",
+        "clientRequest": "Toute personne qui répond aux demandes clients là-bas"
       },
       "rule": "Règle {{n}}",
       "moreThan": "plus de",
@@ -9915,7 +9923,9 @@
       "unit": {
         "overtime": "h",
         "request": "jours ouvrés",
-        "expense": "{{currency}}"
+        "expense": "{{currency}}",
+        "hours": "min modifiées à la main",
+        "noShow": "jours d’affilée"
       },
       "coverShort": "seulement s'il manquerait du monde",
       "alsoBy": "Puis aussi approuvé par",
@@ -9993,7 +10003,12 @@
         "hits_one": "{{count}} en 90 jours",
         "hits_other": "{{count}} en 90 jours",
         "makeRule": "Créer une règle comme celle-ci"
-      }
+      },
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "assetKind": "Type d’équipement",
+      "anyAssetKind": "Tout type d’équipement",
+      "urgentOnly": "Urgentes seulement"
     }
   },
   "overtimePage": {

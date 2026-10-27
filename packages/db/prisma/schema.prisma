@@ -2663,13 +2663,13 @@ model ApprovalRule {
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  /// overtime | request | expense
+  /// overtime | request | expense | hours | noShow | assetProposal | clientRequest (shared RULE_KINDS)
   kind           String
   /// One workspace, or null = every workspace.
   spaceId        String?
-  /// overtime: more than this many minutes approved
+  /// overtime: more than this many minutes approved · hours: more than this many minutes changed by hand
   minMinutes     Int?
-  /// request: more than this many working days
+  /// request: more than this many working days · noShow: more than this many days in a row
   minDays        Int?
   /// expense: more than this amount (organization's currency, cents)
   minAmountCents Int?
@@ -2682,6 +2682,10 @@ model ApprovalRule {
   /// Still nobody: pass it to the holders of `escalateRoleId` after this many hours.
   escalateAfterHours Int?
   escalateRoleId     String?
+  /// assetProposal: only papers for this asset kind (AssetCategory id); null = any kind.
+  categoryId     String?
+  /// clientRequest: only urgent requests.
+  urgentOnly     Boolean      @default(false)
   isActive       Boolean      @default(true)
   createdById    String
   createdAt      DateTime     @default(now())

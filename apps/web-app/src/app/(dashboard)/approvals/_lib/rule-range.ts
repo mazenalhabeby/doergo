@@ -59,10 +59,12 @@ export interface FallThrough {
 /**
  * Where items get ONLY the first approval. A workspace is covered by its own rules AND the every-workspace
  * ones (the server tries them all); a rule with no limit covers everything, otherwise the lowest limit
- * leaves the items at or under it uncaught. Rules that need "people would be short" never cover the rest.
+ * leaves the items at or under it uncaught. Rules that need "people would be short", one asset kind or urgent
+ * requests never cover the rest.
  */
 export function fallThrough(rules: ApprovalRuleView[], workspaces: { id: string; name: string }[]): FallThrough[] {
-  const live = rules.filter((r) => r.isActive && !r.whenCoverShort)
+  // A rule for one asset kind, or urgent requests only, covers just part of what arrives there: it never covers the rest.
+  const live = rules.filter((r) => r.isActive && !r.whenCoverShort && !r.categoryId && !r.urgentOnly)
   return workspaces.flatMap<FallThrough>((w) => {
     const here = live.filter((r) => !r.spaceId || r.spaceId === w.id)
     if (!here.length) return [{ id: w.id, name: w.name, upTo: null }]

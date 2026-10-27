@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ruleInputProblem,
+  RULE_LIMITS,
   type ApprovalRuleInput,
   type ApprovalRuleView,
   type RuleKind,
@@ -28,10 +29,14 @@ export class ApprovalRulesAdminService {
       orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }],
     });
     const roleIds = [...new Set(rules.flatMap((r) => [r.secondRoleId, r.escalateRoleId]).filter(Boolean) as string[])];
-    const [roles, spaces] = await Promise.all([
+    const [roles, spaces, categories] = await Promise.all([
       roleNames(this.prisma, roleIds),
       this.prisma.companyLocation.findMany({
         where: { id: { in: rules.map((r) => r.spaceId).filter(Boolean) as string[] } },
+        select: { id: true, name: true },
+      }),
+      this.prisma.assetCategory.findMany({
+        where: { id: { in: rules.map((r) => r.categoryId).filter(Boolean) as string[] } },
         select: { id: true, name: true },
       }),
     ]);
@@ -50,6 +55,9 @@ export class ApprovalRulesAdminService {
       escalateAfterHours: r.escalateAfterHours,
       escalateRoleId: r.escalateRoleId,
       escalateRoleName: roles.find((x) => x.id === r.escalateRoleId)?.name ?? null,
+      categoryId: r.categoryId,
+      categoryName: categories.find((c) => c.id === r.categoryId)?.name ?? null,
+      urgentOnly: r.urgentOnly,
       isActive: r.isActive,
     }));
   }
@@ -70,23 +78,32 @@ export class ApprovalRulesAdminService {
     }
     // Any of the organization's SHARED roles — never somebody's personal role.
     const sharedRole = (id: string) => sharedRoleInOrg(this.prisma, id, organizationId);
-    const [second, escalate, space] = await Promise.all([
+    const [second, escalate, space, category] = await Promise.all([
       input.secondRoleId ? sharedRole(input.secondRoleId) : Promise.resolve({ id: null }),
       input.escalateRoleId ? sharedRole(input.escalateRoleId) : Promise.resolve({ id: null }),
       input.spaceId
         ? this.prisma.companyLocation.findFirst({ where: { id: input.spaceId, organizationId }, select: { id: true } })
         : Promise.resolve({ id: null }),
+      // An asset kind only for asset papers, and only one of this organization's.
+      input.kind === 'assetProposal' && input.categoryId
+        ? this.prisma.assetCategory.findFirst({ where: { id: input.categoryId, organizationId }, select: { id: true } })
+        : Promise.resolve({ id: null }),
     ]);
+    if (!category) throw new NotFoundException('Asset kind not found');
     if (!second || !escalate)
       throw new BadRequestException({ message: RULE_MESSAGES.RULE_ROLE_REQUIRED, code: 'RULE_ROLE_REQUIRED' });
     if (!space) throw new NotFoundException('Workspace not found');
+    const limit = RULE_LIMITS[input.kind];
     const data = {
       kind: input.kind,
       spaceId: input.spaceId ?? null,
-      minMinutes: input.kind === 'overtime' ? (input.minMinutes ?? null) : null,
-      minDays: input.kind === 'request' ? (input.minDays ?? null) : null,
-      minAmountCents: input.kind === 'expense' ? (input.minAmountCents ?? null) : null,
+      // Only the limit the kind has (shared RULE_LIMITS) — never a stray number from another kind.
+      minMinutes: limit?.field === 'minMinutes' ? (input.minMinutes ?? null) : null,
+      minDays: limit?.field === 'minDays' ? (input.minDays ?? null) : null,
+      minAmountCents: limit?.field === 'minAmountCents' ? (input.minAmountCents ?? null) : null,
       whenCoverShort: input.kind === 'request' ? input.whenCoverShort === true : false,
+      categoryId: input.kind === 'assetProposal' ? (category.id ?? null) : null,
+      urgentOnly: input.kind === 'clientRequest' ? input.urgentOnly === true : false,
       secondRoleId: input.secondRoleId || null,
       remindAfterHours: input.remindAfterHours ?? null,
       escalateAfterHours: input.escalateAfterHours ?? null,
