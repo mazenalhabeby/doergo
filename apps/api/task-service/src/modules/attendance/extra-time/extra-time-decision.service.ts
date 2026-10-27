@@ -9,8 +9,7 @@ import { ApprovalRulesService } from '../../approvals/rules/approval-rules.servi
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { closeLapsedOvertimeSteps } from './overtime-rule-facts';
-import { alreadyDecided } from '../../approvals/rules/already-decided';
+import { changedMeanwhile } from '../../approvals/rules/already-decided';
 
 /** The office deciding extra time after the fact: refusing it, taking back approved overtime, adding it. */
 
@@ -136,8 +135,6 @@ export class ExtraTimeDecisionService {
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
     await this.approval.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
-    // Approvals half-way for a round that lapsed since are not about this decision.
-    await closeLapsedOvertimeSteps(this.prisma, this.rules, data.organizationId, entry.id);
     // Office rules: adding it is approving it — past a threshold it waits for the others, nothing written yet.
     const decided = await this.rules.decide(
       {
@@ -209,7 +206,7 @@ export class ExtraTimeDecisionService {
     });
     await this.prisma
       .$transaction([moved, round])
-      .catch(alreadyDecided('OVERTIME_ALREADY_DECIDED', 'Decided a moment ago.'));
+      .catch(changedMeanwhile('The shift changed a moment ago — try again.'));
     await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
     await relabelAfterEndMoved(this.prisma, entry, newExpected);
 

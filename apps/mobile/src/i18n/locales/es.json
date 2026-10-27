@@ -5280,24 +5280,10 @@
     "blocksWork": "Necesario antes de trabajar",
     "back": "Volver",
     "flag": {
-      "overtime": "Horas extra",
-      "missedClockOut": "Salida sin fichar",
       "outsideGeofence": "Fuera de la geocerca",
-      "lateArrival": "Llegada tardía",
-      "earlyDeparture": "Salida anticipada",
-      "unscheduledDay": "Día no programado",
       "needsReview": "Requiere revisión",
-      "outsideGeofenceIn": "Entrada fuera",
-      "outsideGeofenceOut": "Salida fuera",
-      "missedBreak": "Descanso perdido",
-      "autoClockIn": "Entrada auto",
-      "autoClockOut": "Salida auto",
-      "autoRest": "Descanso auto",
-      "remoteWithWorkspace": "Remoto con espacio asignado",
       "earlyArrival": "Llegada anticipada",
-      "missingClockout": "Sin fichaje de salida",
-      "clockOutProvisional": "Salida fijada por el sistema",
-      "recordedOffline": "Registrado sin señal"
+      "missingClockout": "Sin fichaje de salida"
     },
     "leave": {
       "VACATION": "Vacaciones",

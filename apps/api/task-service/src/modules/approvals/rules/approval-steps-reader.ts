@@ -2,13 +2,12 @@ import { Injectable } from '@nestjs/common';
 import {
   personName,
   peopleNames,
-  requiredRoleIds,
   roleNames,
   PrismaService,
   type ApprovalStepView,
   type RuleKind,
 } from '@hbcfield/shared';
-import { joinRoleNames, parseStoredFacts, stepRules } from './approval-steps';
+import { joinRoleNames, rolesStillNeeded, stepRules } from './approval-steps';
 
 /**
  * The open steps for the inbox: who went first and which roles are still needed. What is needed is read the way
@@ -47,14 +46,11 @@ export class ApprovalStepsReader {
       .filter((r) => wanted.has(`${r.kind}:${r.itemId}`));
     if (!rows.length) return [];
     const rules = await stepRules(this.prisma, organizationId, [...new Set(rows.map((r) => r.kind as RuleKind))]);
-    const left = (r: (typeof rows)[number]) => {
-      const ofKind = rules.filter((x) => x.kind === r.kind);
-      const facts = parseStoredFacts(r.facts);
-      const needed = facts
-        ? requiredRoleIds(ofKind, facts)
-        : r.requiredRoleIds.filter((id) => ofKind.some((x) => x.secondRoleId === id));
-      return needed.filter((x) => !r.doneRoleIds.includes(x));
-    };
+    const left = (r: (typeof rows)[number]) =>
+      rolesStillNeeded(
+        r,
+        rules.filter((x) => x.kind === r.kind),
+      );
     const leftOf = new Map(rows.map((r) => [r, left(r)]));
     const [people, roles] = await Promise.all([
       peopleNames(this.prisma, [...new Set(rows.map((r) => r.firstById))]),

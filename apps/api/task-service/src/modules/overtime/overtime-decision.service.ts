@@ -13,6 +13,7 @@ import {
 } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance/attendance.service';
 import { SIGNED_CONFIRM_WINDOW_MINUTES, afterOvertimeRefusal, notifyOvertime } from './overtime-helpers';
+import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
 
 /** The leader's decision on overtime: approve, approve with the member's signature in person, refuse. */
 @Injectable()
@@ -25,6 +26,8 @@ export class OvertimeDecisionService {
     private readonly notificationClient: ClientProxy,
     // Approving is ONE rule, owned by attendance (approveExtraTime) — see approveRequest.
     private readonly attendance: AttendanceService,
+    // A refusal ends the office rules' approvals given for this round (keyed by its shift).
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /**
@@ -215,6 +218,8 @@ export class OvertimeDecisionService {
     if (claimed.count === 0) {
       throw new NotFoundException('Overtime request not found or not pending approval');
     }
+    // Refused: every rejection ends the office rules' approvals half-way.
+    await this.rules.clear(data.organizationId, 'overtime', request.timeEntryId);
 
     // A refusal never clocks anyone out: the time after the planned end is not counted, and they are nudged.
     await afterOvertimeRefusal(this.prisma, request.timeEntryId, now);

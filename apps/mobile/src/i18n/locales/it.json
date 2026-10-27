@@ -5280,24 +5280,10 @@
     "blocksWork": "Necessario prima di lavorare",
     "back": "Indietro",
     "flag": {
-      "overtime": "Straordinario",
-      "missedClockOut": "Uscita non timbrata",
       "outsideGeofence": "Fuori dal geofence",
-      "lateArrival": "Arrivo in ritardo",
-      "earlyDeparture": "Uscita anticipata",
-      "unscheduledDay": "Giorno non pianificato",
       "needsReview": "Da verificare",
-      "outsideGeofenceIn": "Entrata fuori sede",
-      "outsideGeofenceOut": "Uscita fuori sede",
-      "missedBreak": "Pausa saltata",
-      "autoClockIn": "Entrata auto",
-      "autoClockOut": "Uscita auto",
-      "autoRest": "Pausa auto",
-      "remoteWithWorkspace": "Da remoto con spazio assegnato",
       "earlyArrival": "Arrivo anticipato",
-      "missingClockout": "Uscita non timbrata",
-      "clockOutProvisional": "Uscita impostata dal sistema",
-      "recordedOffline": "Registrato senza segnale"
+      "missingClockout": "Uscita non timbrata"
     },
     "leave": {
       "VACATION": "Ferie",

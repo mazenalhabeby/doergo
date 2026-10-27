@@ -11,23 +11,10 @@ export function roleNames(db: On<'accessRole', 'findMany'>, ids: string[]) {
   return db.accessRole.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
 }
 
-/** One role's name ('' = no such role). */
-export async function roleNameOf(db: On<'accessRole', 'findUnique'>, roleId: string): Promise<string> {
-  return (await db.accessRole.findUnique({ where: { id: roleId }, select: { name: true } }))?.name ?? '';
-}
-
 /** A SHARED role of the organization (never somebody's personal one) — `{ id }` or null. */
 export function sharedRoleInOrg(db: On<'accessRole', 'findFirst'>, roleId: string, organizationId: string) {
   return db.accessRole.findFirst({
     where: { id: roleId, organizationId, personalAssignmentId: null },
-    select: { id: true },
-  });
-}
-
-/** Does this active member hold this (active) role organization-wide? `{ id }` or null. */
-export function holdsOrgRole(db: On<'user', 'findFirst'>, userId: string, organizationId: string, roleId: string) {
-  return db.user.findFirst({
-    where: { id: userId, organizationId, isActive: true, memberRoleId: roleId, memberRole: { isActive: true } },
     select: { id: true },
   });
 }

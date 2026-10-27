@@ -102,7 +102,14 @@ export class RuleFactsReader {
     // Overtime: the formal round waiting for a leader — keyed by its shift, like its approval step.
     const rows = await this.prisma.overtimeRequest.findMany({
       where: window.since
-        ? { organizationId, createdAt: { gte: window.since }, ...inSpaces(window, 'locationId') }
+        ? {
+            organizationId,
+            createdAt: { gte: window.since },
+            ...inSpaces(window, 'locationId'),
+            // Rounds somebody decided on, or that wait for it — never a prompt that lapsed, or a refused one.
+            status: { in: ['APPROVED', 'COMPLETED', 'PENDING_APPROVAL'] },
+            maxDurationMinutes: { gt: 0 },
+          }
         : {
             organizationId,
             ...inSpaces(window, 'locationId'),
@@ -135,7 +142,7 @@ export class RuleFactsReader {
     const approved = await approvedOvertimeByEntry(this.prisma, [...new Set(rows.map((o) => o.timeEntryId))]);
     const later = (o: (typeof rows)[number]) =>
       rows
-        .filter((r) => r.timeEntryId === o.timeEntryId && r.status === 'APPROVED' && r.cycle >= o.cycle)
+        .filter((r) => r.timeEntryId === o.timeEntryId && (r.status === 'APPROVED' || r.status === 'COMPLETED') && r.cycle >= o.cycle)
         .reduce((n, r) => n + (r.maxDurationMinutes ?? 0), 0);
     return [
       ...rows.map((o) => {

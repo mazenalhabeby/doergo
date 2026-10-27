@@ -89,7 +89,7 @@ export class RequestPrecheckService {
 
     const ruleKind = value.kind === 'OVERTIME' ? 'overtime' : 'request';
     const secondApproval = await this.rules
-      .secondStepFor(data.organizationId, ruleKind, {
+      .approvalsNeededFor(data.organizationId, ruleKind, {
         spaceIds,
         days: workingDays ?? undefined,
         minutes: value.minutes ?? undefined,

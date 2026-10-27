@@ -25,7 +25,7 @@ import { askAboutOwnRequest } from '../../approvals/own-request-route';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { ExtraTimeDecisionService } from './extra-time-decision.service';
 import { approvedOvertimeByEntry } from './overtime-rule-facts';
-import { overtimeRuleFacts } from '@hbcfield/shared';
+import { overtimeRuleFacts, ruleStepItemId } from '@hbcfield/shared';
 
 /** How far back an undecided outside time is still asked about — older belongs to closed payroll. */
 const LOOKBACK_DAYS = 31;
@@ -155,7 +155,7 @@ export class OutsideShiftService {
       return counted > 0
         ? [
             {
-              itemId: `${r.id}:outside`,
+              itemId: ruleStepItemId('outside', r.id),
               since: r.clockOutAt ?? r.clockInAt,
               subjectId: r.userId,
               user: r.user,
@@ -244,7 +244,7 @@ export class OutsideShiftService {
 
     let plan = planAfterCounting(entry, outside, Number.isFinite(data.minutes) ? data.minutes : 0);
     // Its OWN step (never the extra-time one on the same entry: approving one must not finish or cancel the other).
-    const stepId = `${entry.id}:outside`;
+    const stepId = ruleStepItemId('outside', entry.id);
     if (plan.counted === 0) {
       // Not counted: a step half-way under an office rule is dropped, like every refusal.
       await this.rules.clear(data.organizationId, 'overtime', stepId);

@@ -81,9 +81,21 @@ def _sign_out_all():
 
 atexit.register(_sign_out_all)
 
-# Every run asks for days nobody asked for before (the overlap rule would rightly refuse a repeat).
+# Every run asks for days nobody asked for before (the overlap rule would rightly refuse a repeat) — and removes the
+# leave it asked for at the end, so runs never use the free weeks up.
 import random
 _BASE = date(2027, 1, 4) + timedelta(weeks=random.randint(0, 400))
+_STARTED = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time.time() - 5))
+
+
+def _remove_own_leave():
+    sql = ('delete from time_off_requests where reason=\'e2e\' '
+           f"and \"createdAt\" >= '{_STARTED}';")
+    subprocess.run(['docker', 'exec', '-i', 'hbcfield-postgres', 'psql', '-U', 'hbcfield', '-d', 'hbcfield', '-q'],
+                   input=sql, capture_output=True, text=True)
+
+
+atexit.register(_remove_own_leave)
 
 
 def _reopen_shift(entry_id):

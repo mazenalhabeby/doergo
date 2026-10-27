@@ -11,7 +11,8 @@ export async function approvedOvertimeByEntry(prisma: PrismaService, entryIds: s
   const [rounds, before] = await Promise.all([
     prisma.overtimeRequest.groupBy({
       by: ['timeEntryId'],
-      where: { timeEntryId: { in: entryIds }, status: 'APPROVED' },
+      // COMPLETED: the older flow's word for an approved round that ran its course — still approved overtime.
+      where: { timeEntryId: { in: entryIds }, status: { in: ['APPROVED', 'COMPLETED'] } },
       _sum: { maxDurationMinutes: true },
     }),
     prisma.timeEntry.findMany({
@@ -24,22 +25,12 @@ export async function approvedOvertimeByEntry(prisma: PrismaService, entryIds: s
   return out;
 }
 
-/**
- * Approvals half-way under an office rule for a round of this shift that has LAPSED since (expired, declined) are
- * not about a new decision on the same shift — they end (their step is keyed by the shift). Returns the last round's
- * number, for a round written next.
- */
-export async function closeLapsedOvertimeSteps(
-  prisma: PrismaService,
-  rules: { clearBefore(organizationId: string, kind: 'overtime', itemId: string, since: Date): Promise<void> },
-  organizationId: string,
-  entryId: string,
-): Promise<number> {
+/** The number of the last overtime round on a shift (0 = none) — the next round written is numbered after it. */
+export async function lastRoundCycle(prisma: PrismaService, entryId: string): Promise<number> {
   const last = await prisma.overtimeRequest.findFirst({
     where: { timeEntryId: entryId },
     orderBy: { cycle: 'desc' },
-    select: { cycle: true, updatedAt: true },
+    select: { cycle: true },
   });
-  if (last) await rules.clearBefore(organizationId, 'overtime', entryId, last.updatedAt);
   return last?.cycle ?? 0;
 }

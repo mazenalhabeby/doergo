@@ -5280,24 +5280,10 @@
     "blocksWork": "Needed before they can work",
     "back": "Back",
     "flag": {
-      "overtime": "Overtime",
-      "missedClockOut": "Missed clock-out",
       "outsideGeofence": "Out of geofence",
-      "lateArrival": "Late arrival",
-      "earlyDeparture": "Early departure",
-      "unscheduledDay": "Unscheduled day",
       "needsReview": "Needs review",
-      "outsideGeofenceIn": "Off-site in",
-      "outsideGeofenceOut": "Off-site out",
-      "missedBreak": "Missed rest",
-      "autoClockIn": "Auto in",
-      "autoClockOut": "Auto out",
-      "autoRest": "Auto rest",
-      "remoteWithWorkspace": "Remote, has a workspace",
       "earlyArrival": "Early arrival",
-      "missingClockout": "No clock-out",
-      "clockOutProvisional": "Clock-out set by the system",
-      "recordedOffline": "Recorded without signal"
+      "missingClockout": "No clock-out"
     },
     "leave": {
       "VACATION": "Vacation",

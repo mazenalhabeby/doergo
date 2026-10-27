@@ -18,18 +18,18 @@ describe('RequestPrecheckService', () => {
   const ledger: any = { getBalance: jest.fn().mockResolvedValue({ remaining: 2 }) };
   const resolver: any = { plannedWindows: jest.fn() };
   const moduleRef: any = { get: jest.fn().mockReturnValue(resolver) };
-  const rules: any = { secondStepFor: jest.fn().mockResolvedValue(null) };
+  const rules: any = { approvalsNeededFor: jest.fn().mockResolvedValue(null) };
   const svc = new RequestPrecheckService(prisma, technicians, cover, ledger, moduleRef, rules);
   const who = { userId: 'me', organizationId: 'o' };
 
   beforeEach(() => jest.clearAllMocks());
 
   it('leave: working days, balance before → after, cover as a level only, the rule that would apply', async () => {
-    rules.secondStepFor.mockResolvedValueOnce('Space Manager');
+    rules.approvalsNeededFor.mockResolvedValueOnce('Space Manager');
     const r = await svc.precheck({ ...who, body: { kind: 'LEAVE', type: 'VACATION', startDate: '2026-11-03', endDate: '2026-11-05' } });
     expect(r).toEqual({ workingDays: 3, balance: { before: 2, after: -1 }, clashes: [], cover: 'short', dailyLimit: null, secondApproval: 'Space Manager' });
     expect(JSON.stringify(r)).not.toContain('Lisa');
-    expect(rules.secondStepFor).toHaveBeenCalledWith('o', 'request', expect.objectContaining({ days: 3, coverShort: true, spaceIds: ['s1'] }));
+    expect(rules.approvalsNeededFor).toHaveBeenCalledWith('o', 'request', expect.objectContaining({ days: 3, coverShort: true, spaceIds: ['s1'] }));
   });
 
   it('a clash with their own request is said before sending', async () => {
@@ -45,7 +45,7 @@ describe('RequestPrecheckService', () => {
     const r = await svc.precheck({ ...who, body: { kind: 'OVERTIME', startDate: day, endDate: day, minutes: 120 } });
     expect(r.dailyLimit).toEqual({ plannedMinutes: 510, requestedMinutes: 120, limitMinutes: 600, over: true });
     expect(r.cover).toBeNull();
-    expect(rules.secondStepFor).toHaveBeenCalledWith('o', 'overtime', expect.objectContaining({ minutes: 120 }));
+    expect(rules.approvalsNeededFor).toHaveBeenCalledWith('o', 'overtime', expect.objectContaining({ minutes: 120 }));
   });
 
   it('a body the request parser refuses is refused here the same way', async () => {

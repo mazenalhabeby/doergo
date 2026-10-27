@@ -12,7 +12,7 @@ export function noOfficeRules(): ApprovalRulesService {
     clearItem: jest.fn(async () => undefined),
     clearBefore: jest.fn(async () => undefined),
     reopen: jest.fn(async () => undefined),
-    secondStepFor: jest.fn(async () => null),
+    approvalsNeededFor: jest.fn(async () => null),
     needsMoreFor: jest.fn(async (_org: string, _kind: string, facts: unknown[]) => facts.map(() => false)),
   } as unknown as ApprovalRulesService;
 }

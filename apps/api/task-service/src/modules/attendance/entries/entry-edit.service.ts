@@ -23,7 +23,13 @@ import { closeByOffice } from './office-close';
 import { ShiftCloser } from '../clock-out/shift-closer.service';
 import type { Prisma } from '@prisma/client';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
-import { BACK_TO_PENDING, handChangeHolds, originalTimes, withHoursChanged } from '../core/hand-edit-review';
+import {
+  BACK_TO_PENDING,
+  forgottenEnd,
+  handChangeHolds,
+  originalTimes,
+  withHoursChanged,
+} from '../core/hand-edit-review';
 
 /** The office correcting one entry: times, rests, the reason — audited. */
 @Injectable()
@@ -126,10 +132,10 @@ export class EntryEditService {
       editReason: data.reason,
     };
 
-    // The times before any hand change (core/hand-edit-review.ts) — kept on the first edit, and a running shift the
-    // office closes gets its original end now: it was running until then.
+    // The times before any hand change (core/hand-edit-review.ts) — kept on the first edit; a forgotten shift the
+    // office closes ended where it should have (its planned end), never "when the office looked".
     const closingByOffice = entry.status === 'CLOCKED_IN' && !!newClockOut;
-    const original = originalTimes(entry, closingByOffice ? new Date() : undefined);
+    const original = originalTimes(entry, closingByOffice ? forgottenEnd(entry, new Date()) : undefined);
     if (!entry.isEdited || (entry.originalClockOut == null && original.originalClockOut))
       Object.assign(updateData, original);
 

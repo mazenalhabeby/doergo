@@ -38,7 +38,7 @@ const en = {
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} is ready',
   'app.update.body': "See what's new. Updating takes about a minute.",
-  'approval.secondStep.title': 'A second approval is needed',
+  'approval.secondStep.title': 'Your approval is needed too',
   'approval.secondStep.body': '{{first}} approved — it needs you too.',
   'approval.secondStep.bodyAbout': '{{first}} approved {{subject}}\'s request — it needs you too.',
   'approval.remind.title': 'Waiting for your decision',
@@ -314,7 +314,7 @@ const de: Record<PushKey, string> = {
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} ist da',
   'app.update.body': 'Sehen Sie, was neu ist. Das Update dauert etwa eine Minute.',
-  'approval.secondStep.title': 'Eine zweite Freigabe ist nötig',
+  'approval.secondStep.title': 'Ihre Freigabe wird auch gebraucht',
   'approval.secondStep.body': '{{first}} hat freigegeben — es braucht auch Sie.',
   'approval.secondStep.bodyAbout': '{{first}} hat den Antrag von {{subject}} freigegeben — es braucht auch Sie.',
   'approval.remind.title': 'Wartet auf Ihre Entscheidung',
@@ -571,7 +571,7 @@ const es: Record<PushKey, string> = {
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} está listo',
   'app.update.body': 'Mira las novedades. Actualizar tarda un minuto.',
-  'approval.secondStep.title': 'Se necesita una segunda aprobación',
+  'approval.secondStep.title': 'También se necesita su aprobación',
   'approval.secondStep.body': '{{first}} aprobó — también le necesita a usted.',
   'approval.secondStep.bodyAbout': '{{first}} aprobó la solicitud de {{subject}} — también le necesita a usted.',
   'approval.remind.title': 'Espera su decisión',
@@ -828,7 +828,7 @@ const fr: Record<PushKey, string> = {
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} est prêt',
   'app.update.body': 'Découvrez les nouveautés. La mise à jour prend une minute.',
-  'approval.secondStep.title': 'Une seconde validation est nécessaire',
+  'approval.secondStep.title': 'Votre validation est aussi nécessaire',
   'approval.secondStep.body': '{{first}} a validé — il faut aussi la vôtre.',
   'approval.secondStep.bodyAbout': '{{first}} a validé la demande de {{subject}} — il faut aussi la vôtre.',
   'approval.remind.title': 'En attente de votre décision',
@@ -1085,7 +1085,7 @@ const it: Record<PushKey, string> = {
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} è pronto',
   'app.update.body': "Scopri le novità. L'aggiornamento richiede un minuto.",
-  'approval.secondStep.title': 'Serve una seconda approvazione',
+  'approval.secondStep.title': 'Serve anche la sua approvazione',
   'approval.secondStep.body': '{{first}} ha approvato — serve anche lei.',
   'approval.secondStep.bodyAbout': '{{first}} ha approvato la richiesta di {{subject}} — serve anche lei.',
   'approval.remind.title': 'In attesa della sua decisione',

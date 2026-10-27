@@ -4,8 +4,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import {
   SERVICE_NAMES,
   noticeDue,
+  orgTimezone,
   pickRule,
-  requiredRoleIds,
   roleHolderIds,
   runWithCronLock,
   type NoticeStage,
@@ -16,7 +16,7 @@ import { ApprovalRouteService } from './approval-route.service';
 import { RuleFactsReader, type RuleItem } from './rule-facts.reader';
 import { emitEvent, approvalReminderEvent } from '@hbcfield/shared/microservices';
 import { awayOn, leaveDay } from './away-today';
-import { parseStoredFacts, stepRules } from './approval-steps';
+import { rolesStillNeeded, stepRules } from './approval-steps';
 
 /**
  * WHEN NOBODY ANSWERS (shared `approval-rules.ts` → `noticeDue`).
@@ -93,6 +93,9 @@ export class ApprovalEscalationService {
           ).map((st) => [st.itemId, st]),
         );
         const gating = half.size ? await stepRules(this.prisma, organizationId, [kind]) : [];
+        // The organization's zone, read once for the group when a half-way reminder needs "on leave today".
+        let zone: Promise<string | null> | undefined;
+        const zoneOf = () => (zone ??= orgTimezone(this.prisma, organizationId).then((o) => o?.timezone ?? null));
         const sentFor = new Map<string, Set<NoticeStage>>();
         for (const n of notices)
           (sentFor.get(n.itemId) ?? sentFor.set(n.itemId, new Set()).get(n.itemId)!).add(n.stage as NoticeStage);
@@ -131,9 +134,7 @@ export class ApprovalEscalationService {
           // Half-way: whom it still waits for by the rules as they are NOW (the gate's own reading), minus who
           // already approved and anybody on leave today.
           const step = half.get(item.itemId);
-          const facts = step ? parseStoredFacts(step.facts) : null;
-          const needed = step ? (facts ? requiredRoleIds(gating, facts) : step.requiredRoleIds) : [];
-          const waitingOn = needed.find((r) => !step!.doneRoleIds.includes(r));
+          const waitingOn = step ? rolesStillNeeded(step, gating)[0] : undefined;
           if (stage === 'REMIND' && step && waitingOn) {
             const holders = await roleHolderIds(this.prisma, {
               organizationId,
@@ -142,12 +143,15 @@ export class ApprovalEscalationService {
               exclude: [...step.approverIds, ...(item.subjectId ? [item.subjectId] : [])],
               now,
             });
-            const away = await awayOn(this.prisma, holders, leaveDay(now));
+            const away = await awayOn(this.prisma, holders, leaveDay(now, await zoneOf()));
             recipientIds = holders.filter((id) => !away.has(id));
           }
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.
           if (!recipientIds.length)
-            recipientIds = await cached(`usual|${who}`, () => this.usualDeciders(organizationId, kind, item));
+            recipientIds = (await cached(`usual|${who}`, () => this.usualDeciders(organizationId, kind, item))).filter(
+              // Never a reminder to somebody who already approved it (they would be refused).
+              (id) => !step?.approverIds.includes(id),
+            );
           if (!recipientIds.length) continue;
           emitEvent(this.notifications, approvalReminderEvent, {
             organizationId,

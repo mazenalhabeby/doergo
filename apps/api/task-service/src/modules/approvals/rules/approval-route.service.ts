@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
-  activeWindowWhere,
   APPROVAL_KIND_SPECS,
-  delegationDay,
   grantHolds,
   standInsOn,
-  ORG_ACCESS_SELECT,
   decideVia,
   isApprovalKind,
   memberAccessOf,
@@ -94,14 +91,12 @@ export class ApprovalRouteService {
     exclude: readonly string[] = [],
   ): Promise<WorkspaceDecider[]> {
     const now = new Date();
-    const today = leaveDay(now);
     const [members, org] = await Promise.all([
       orgMembersWithAccess(this.prisma, { organizationId, exclude: [...exclude], spaceId, now }),
       orgTimezone(this.prisma, organizationId),
     ]);
-    const standIns = await standInsOn(this.prisma as never, organizationId, delegationDay(now, org?.timezone)).catch(
-      () => new Map(),
-    );
+    const today = leaveDay(now, org?.timezone);
+    const standIns = await standInsOn(this.prisma as never, organizationId, today).catch(() => new Map());
 
     const out: WorkspaceDecider[] = [];
     for (const m of members) {
@@ -149,8 +144,4 @@ function strongest(
   if (!b) return a;
   const rank: Record<string, number> = { ASSIGNED: 0, DELEGATED: 1, SPACE: 2, ORG: 3, ADMIN: 4 };
   return rank[a] <= rank[b] ? a : b;
-}
-
-function activeWindow(now: Date) {
-  return { ...activeWindowWhere(now) };
 }

@@ -5280,24 +5280,10 @@
     "blocksWork": "Requis avant de travailler",
     "back": "Retour",
     "flag": {
-      "overtime": "Heures supplémentaires",
-      "missedClockOut": "Départ non pointé",
       "outsideGeofence": "Hors géorepère",
-      "lateArrival": "Arrivée tardive",
-      "earlyDeparture": "Départ anticipé",
-      "unscheduledDay": "Jour non planifié",
       "needsReview": "À vérifier",
-      "outsideGeofenceIn": "Entrée hors zone",
-      "outsideGeofenceOut": "Sortie hors zone",
-      "missedBreak": "Pause manquée",
-      "autoClockIn": "Arrivée auto",
-      "autoClockOut": "Départ auto",
-      "autoRest": "Pause auto",
-      "remoteWithWorkspace": "À distance, a un espace",
       "earlyArrival": "Arrivée en avance",
-      "missingClockout": "Pas de pointage de sortie",
-      "clockOutProvisional": "Sortie fixée par le système",
-      "recordedOffline": "Enregistré sans réseau"
+      "missingClockout": "Pas de pointage de sortie"
     },
     "leave": {
       "VACATION": "Congés",

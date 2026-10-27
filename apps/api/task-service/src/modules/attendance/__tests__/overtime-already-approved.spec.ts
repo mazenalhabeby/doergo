@@ -1,4 +1,4 @@
-import { approvedOvertimeByEntry, closeLapsedOvertimeSteps } from '../extra-time/overtime-rule-facts';
+import { approvedOvertimeByEntry, lastRoundCycle } from '../extra-time/overtime-rule-facts';
 
 /*
   What an office rule on overtime counts as ALREADY approved on a shift: every approved round, and time outside
@@ -23,13 +23,10 @@ describe('overtime already approved on a shift', () => {
     expect(got.get('e2')).toBe(20);
   });
 
-  it('a round that lapsed since: the approvals half-way for it end before a new decision on the shift', async () => {
-    const lapsedAt = new Date('2026-10-27T10:00:00Z');
-    const prisma: any = {
-      overtimeRequest: { findFirst: jest.fn().mockResolvedValue({ cycle: 2, updatedAt: lapsedAt }) },
-    };
-    const rules = { clearBefore: jest.fn() };
-    expect(await closeLapsedOvertimeSteps(prisma, rules, 'o', 'e1')).toBe(2);
-    expect(rules.clearBefore).toHaveBeenCalledWith('o', 'overtime', 'e1', lapsedAt);
+  it('the last round’s number — the next round written is numbered after it', async () => {
+    const prisma: any = { overtimeRequest: { findFirst: jest.fn().mockResolvedValue({ cycle: 2 }) } };
+    expect(await lastRoundCycle(prisma, 'e1')).toBe(2);
+    prisma.overtimeRequest.findFirst.mockResolvedValue(null);
+    expect(await lastRoundCycle(prisma, 'e1')).toBe(0);
   });
 });

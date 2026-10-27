@@ -28,6 +28,7 @@ describe('ApprovalEscalationService.sweep', () => {
   const prisma: any = {
     approvalRule: { findMany: jest.fn() },
     approvalStep: { findMany: jest.fn(async () => openSteps) },
+    organization: { findUnique: jest.fn(async () => ({ timezone: 'Europe/Vienna' })) },
     // Who is away today (nobody is reminded on holiday).
     timeOff: { findMany: jest.fn(async () => away.map((technicianId) => ({ technicianId }))) },
     assetMoney: { findMany: jest.fn() },
@@ -76,7 +77,10 @@ describe('ApprovalEscalationService.sweep', () => {
     openSteps = [];
     away = [];
     jest.clearAllMocks();
-    prisma.approvalRule.findMany.mockResolvedValue([rule]);
+    // Two reads: the rules that remind/escalate, and (for half-way items) the rules that ask more people.
+    prisma.approvalRule.findMany.mockImplementation(async ({ where }: any) =>
+      where.secondRoleId ? [{ ...rule, secondRoleId: 'finance' }] : [rule],
+    );
   });
 
   it('after the reminder hours: the usual deciders, nobody on leave, once', async () => {

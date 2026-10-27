@@ -15,6 +15,7 @@ import { personName } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance/attendance.service';
 import { DecidedCloseService } from '../attendance/clock-out/decided-close.service';
 import { afterOvertimeRefusal, notifyOvertime } from './overtime-helpers';
+import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
 
 /** The overtime flow outside a leader's decision: the member's answer, the timeout sweep, the reads. */
 @Injectable()
@@ -30,6 +31,8 @@ export class OvertimeService {
     // counted time, rests, excursions, reminders, jobs and the event, never a
     // hand-written status flip. Needs DecidedCloseService in AttendanceModule's exports.
     private readonly decidedClose: DecidedCloseService,
+    // A round that lapses waiting for a leader ends the office rules' approvals given for it (keyed by the shift).
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /**
@@ -187,6 +190,8 @@ export class OvertimeService {
         data: { status: 'EXPIRED_NO_APPROVAL' },
       });
       if (claim.count === 0) continue;
+      // The round ended unapproved: approvals half-way for it are about nothing now — never carried into the next.
+      await this.rules.clear(req.organizationId, 'overtime', req.timeEntryId);
       /*
         Path B: the signature drawn on the technician's phone was never confirmed
         in time. The member stays clocked in (decided 2026-10-18) and is nudged;

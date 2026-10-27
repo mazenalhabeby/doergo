@@ -1,7 +1,10 @@
 import { HOURS_CHANGED_FLAG, hoursRuleFacts, type RuleFacts, type handChangedMinutes } from '@hbcfield/shared';
 import type { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 
-type HandChanged = Parameters<typeof handChangedMinutes>[0] & { locationId?: string | null };
+type HandChanged = Parameters<typeof handChangedMinutes>[0] & {
+  locationId?: string | null;
+  clockOutProvisional?: boolean | null;
+};
 
 /** What the office writes when a change by hand is held: waiting, nobody's approval yet. */
 export const BACK_TO_PENDING = {
@@ -29,9 +32,10 @@ export function withHoursChanged(flags: readonly string[], holds: boolean): stri
 /**
  * What the times were before ANY hand change — the baseline a hand change is measured from, kept on the first edit.
  * ⚠️ A day TYPED IN by the office keeps no original clock-in (null): it is by hand from start to end, and stays so.
- * ⚠️ A clocked shift still running has no clock-out yet: its original end is filled at the close
- * (`handHoldAtClose`), or, when the OFFICE closes it, it is the moment they did — it was running until then.
- * Never "none" once it ends, or every later change of the clock-out would count as nothing.
+ * ⚠️ A clocked shift still running has no clock-out yet. Its original end is the real clock-out (filled at the close,
+ * `handHoldAtClose`, or on its next edit for shifts closed before that was kept); when the OFFICE closes a shift
+ * somebody forgot, it is where it should have ended — the planned end, else the last moment they were seen
+ * (`closingAt`): never the moment the office got round to it, or a fix the next morning counts as 15 h by hand.
  */
 export function originalTimes(
   entry: {
@@ -41,15 +45,20 @@ export function originalTimes(
     clockInAt: Date;
     clockOutAt?: Date | null;
   },
-  closingNow?: Date,
+  closingAt?: Date,
 ): { originalClockIn: Date | null; originalClockOut: Date | null } {
   if (!entry.isEdited)
-    return { originalClockIn: entry.clockInAt, originalClockOut: entry.clockOutAt ?? closingNow ?? null };
+    return { originalClockIn: entry.clockInAt, originalClockOut: entry.clockOutAt ?? closingAt ?? null };
   const clocked = entry.originalClockIn != null;
   return {
     originalClockIn: entry.originalClockIn ?? null,
-    originalClockOut: entry.originalClockOut ?? (clocked ? (closingNow ?? null) : null),
+    originalClockOut: entry.originalClockOut ?? (clocked ? (entry.clockOutAt ?? closingAt ?? null) : null),
   };
+}
+
+/** Where a forgotten shift the office closes should have ended: its planned end, else when they were last seen. */
+export function forgottenEnd(entry: { expectedClockOutAt?: Date | null; lastSeenAt?: Date | null }, now: Date): Date {
+  return entry.expectedClockOutAt ?? entry.lastSeenAt ?? now;
 }
 
 /**
@@ -63,8 +72,10 @@ export async function handHoldAtClose(
   flags: readonly string[],
 ): Promise<{ approvalStatus?: 'PENDING'; flagReasons?: string[]; originalClockOut?: Date }> {
   if (!entry.isEdited) return {};
-  // A clocked shift's original end, now known; a typed-in day keeps none (by hand from start to end).
-  const fill = entry.originalClockIn != null && entry.originalClockOut == null ? { originalClockOut: clockOutAt } : {};
+  // A clocked shift's original end, now known — never a provisional guess (the real clock-out replaces it and
+  // fills it then); a typed-in day keeps none (by hand from start to end).
+  const known = entry.originalClockIn != null && entry.originalClockOut == null && !entry.clockOutProvisional;
+  const fill = known ? { originalClockOut: clockOutAt } : {};
   const facts = hoursRuleFacts({ ...entry, originalClockOut: entry.originalClockOut ?? clockOutAt, clockOutAt });
   if (!(await handChangeHolds(rules, entry.organizationId, facts))) return fill;
   return { ...fill, approvalStatus: 'PENDING', flagReasons: withHoursChanged(flags, true) };

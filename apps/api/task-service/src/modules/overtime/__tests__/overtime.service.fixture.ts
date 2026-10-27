@@ -1,6 +1,7 @@
 import { combinedServices } from '../../../common/testing/combined-services';
 import { OvertimeService } from '../overtime.service';
 import { OvertimeDecisionService } from '../overtime-decision.service';
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };
@@ -19,9 +20,16 @@ export function overtimeServices(
   _overtimeQueue?: unknown,
   attendance?: unknown,
   decidedClose?: unknown,
+  rules: unknown = noOfficeRules(),
 ): OvertimeServiceParts {
   return combinedServices<OvertimeServiceParts>(
-    new OvertimeService(prisma as never, notificationClient as never, attendance as never, decidedClose as never),
-    new OvertimeDecisionService(prisma as never, notificationClient as never, attendance as never),
+    new OvertimeService(
+      prisma as never,
+      notificationClient as never,
+      attendance as never,
+      decidedClose as never,
+      rules as never,
+    ),
+    new OvertimeDecisionService(prisma as never, notificationClient as never, attendance as never, rules as never),
   );
 }

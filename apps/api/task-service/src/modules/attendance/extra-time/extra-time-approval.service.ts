@@ -11,9 +11,9 @@ import { CountedTimeService } from '../core/counted-time.service';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { approvedOvertimeByEntry, closeLapsedOvertimeSteps } from './overtime-rule-facts';
+import { approvedOvertimeByEntry, lastRoundCycle } from './overtime-rule-facts';
 import { overtimeRuleFacts } from '@hbcfield/shared';
-import { alreadyDecided } from '../../approvals/rules/already-decided';
+import { changedMeanwhile } from '../../approvals/rules/already-decided';
 
 /**
  * Approving extra time — the ONE decision path (office rules, self-decision,
@@ -88,10 +88,8 @@ export class ExtraTimeApprovalService {
     if (round) await this.rules.clearBefore(data.organizationId, 'overtime', entry.id, round.createdAt);
     // No round asked for (extra time approved straight from the shift): it is written as one, or the next decision
     // on this shift would count it as nothing — 50-minute approvals, one after another, past a one-hour rule.
-    // …and approvals half-way for a round that lapsed since are not about this decision either.
-    const lastCycle = round
-      ? 0
-      : await closeLapsedOvertimeSteps(this.prisma, this.rules, data.organizationId, entry.id);
+    // (A round that lapsed or was refused ended its own approvals when it did — overtime.service / -decision.)
+    const lastCycle = round ? 0 : await lastRoundCycle(this.prisma, entry.id);
 
     // Office rules: past a threshold this approval is one of several, and the shift waits for the others.
     const decided = await this.rules.decide(
@@ -182,7 +180,7 @@ export class ExtraTimeApprovalService {
                   }),
                 ]),
           ])
-          .catch(alreadyDecided('OVERTIME_ALREADY_DECIDED', 'This overtime was decided a moment ago.'));
+          .catch(changedMeanwhile('The shift changed a moment ago — try again.'));
 
         // Closed: the timesheet already counted it — count it again with the approval.
         if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });

@@ -15,8 +15,9 @@ import {
   PrismaService,
 } from '@hbcfield/shared';
 import type { Decided, GateVerdict, RuleGateInput } from './approval-rules-helpers';
-import { consumeStep, joinRoleNames, openStep, stepRules, storedFacts } from './approval-steps';
+import { consumeStep, joinRoleNames, openStep, stepCreateData, stepRules, storedFacts } from './approval-steps';
 import { tellNextApprovers } from './approval-step-notices';
+import { CHANGED_MEANWHILE } from './already-decided';
 
 export { type Decided, type GateVerdict, type RuleGateInput } from './approval-rules-helpers';
 
@@ -56,7 +57,8 @@ export class ApprovalRulesService {
     try {
       return { done: await write(verdict.minutes) };
     } catch (e) {
-      const gone = e instanceof HttpException && [404, 409].includes(e.getStatus());
+      const changed = (e as { response?: { code?: string } }).response?.code === CHANGED_MEANWHILE;
+      const gone = e instanceof HttpException && [404, 409].includes(e.getStatus()) && !changed;
       if (!gone) await this.reopen(verdict.stepId);
       throw e;
     }
@@ -90,24 +92,19 @@ export class ApprovalRulesService {
       const first = pickRule(rules, input.facts)!;
       try {
         await this.prisma.approvalStep.create({
-          data: {
-            organizationId: input.organizationId,
-            kind: input.kind,
-            itemId: input.itemId,
+          data: stepCreateData(input, {
+            ...input,
             ruleId: first.id,
-            firstById: input.deciderId,
-            approverIds: [input.deciderId],
-            requiredRoleIds: required,
-            minutes: input.agreeMinutes ?? input.facts.minutes ?? null,
-            facts: storedFacts(input.facts),
-          },
+            required,
+            minutes: input.agreeMinutes,
+          }),
         });
       } catch (e) {
         // Somebody went first a moment ago (the partial unique index): this is now the next step, judged as one.
         if (retried || !(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')) throw e;
         return this.gate(input, true);
       }
-      if (!input.quiet) await this.tellNext(required[0], input, deciderName);
+      await this.tellNext(required[0], input, deciderName);
       return { finalize: false, roleName: await this.roleLabel(required) };
     }
 
@@ -170,7 +167,7 @@ export class ApprovalRulesService {
     if (!count)
       throw new ConflictException({ message: 'Somebody else decided this a moment ago.', code: 'SECOND_STEP_TAKEN' });
     if (stillLeft.length) {
-      if (!input.quiet) await this.tellNext(stillLeft[0], input, deciderName);
+      await this.tellNext(stillLeft[0], input, deciderName);
       return { finalize: false, roleName: await this.roleLabel(stillLeft) };
     }
     return { finalize: true, stepId: open.id, ...(minutes != null ? { minutes } : {}) };
@@ -193,26 +190,15 @@ export class ApprovalRulesService {
     const decider = await personRoleAndName(this.prisma, input.deciderId, input.organizationId);
     if (decider?.role === 'ADMIN' && decider.isActive) return items.map((i) => i.itemId);
     await this.prisma.approvalStep.createMany({
-      data: waiting.map((i) => ({
-        organizationId: input.organizationId,
-        kind: input.kind,
-        itemId: i.itemId,
-        ruleId: pickRule(rules, i.facts)!.id,
-        firstById: input.deciderId,
-        approverIds: [input.deciderId],
-        requiredRoleIds: i.required,
-        minutes: i.facts.minutes ?? null,
-        facts: storedFacts(i.facts),
-      })),
+      data: waiting.map((i) => stepCreateData(input, { ...i, ruleId: pickRule(rules, i.facts)!.id })),
       // A new item has no open step; a retry of the same batch finds the ones it opened (the partial unique index).
       skipDuplicates: true,
     });
-    const first = waiting[0];
-    await this.tellNext(
-      first.required[0],
-      { ...input, itemId: first.itemId, facts: first.facts },
-      decider ? personName(decider) : '',
-    );
+    // Each group the batch reaches (the first role still needed, in its workspace) is told once.
+    const toldOnce = new Set<string>();
+    const name = decider ? personName(decider) : '';
+    for (const i of waiting)
+      await this.tellNext(i.required[0], { ...input, itemId: i.itemId, facts: i.facts, toldOnce }, name);
     return judged.filter((i) => !i.required.length).map((i) => i.itemId);
   }
 
@@ -233,12 +219,12 @@ export class ApprovalRulesService {
   }
 
   /** Would a decision like this need more approvals, and by which roles? For the member's pre-check. */
-  async secondStepFor(organizationId: string, kind: RuleKind, facts: RuleFacts): Promise<string | null> {
+  async approvalsNeededFor(organizationId: string, kind: RuleKind, facts: RuleFacts): Promise<string | null> {
     const required = requiredRoleIds(await stepRules(this.prisma, organizationId, [kind]), facts);
     return required.length ? this.roleLabel(required) : null;
   }
 
-  /** `secondStepFor` for a batch of items of one kind — the rules read once. True = more approvals needed. */
+  /** `approvalsNeededFor` for a batch of items of one kind — the rules read once. True = more approvals needed. */
   async needsMoreFor(organizationId: string, kind: RuleKind, facts: RuleFacts[]): Promise<boolean[]> {
     const rules = await stepRules(this.prisma, organizationId, [kind]);
     return facts.map((f) => requiredRoleIds(rules, f).length > 0);
@@ -289,8 +275,11 @@ export class ApprovalRulesService {
     return joinRoleNames(roleIds, new Map(roles.map((r) => [r.id, r.name])));
   }
 
-  /** The holders of the next role needed are told (approval-step-notices.ts). */
-  private tellNext(roleId: string, input: RuleGateInput, firstName: string) {
-    return tellNextApprovers(this.prisma, this.notifications, this.logger, roleId, input, firstName);
+  /** The holders of the next role needed are told (approval-step-notices.ts) — once per role and workspace in a batch. */
+  private async tellNext(roleId: string, input: RuleGateInput, firstName: string) {
+    const key = `${roleId}|${[...input.facts.spaceIds].sort().join(',')}`;
+    if (input.toldOnce?.has(key)) return;
+    input.toldOnce?.add(key);
+    await tellNextApprovers(this.prisma, this.notifications, this.logger, roleId, input, firstName);
   }
 }

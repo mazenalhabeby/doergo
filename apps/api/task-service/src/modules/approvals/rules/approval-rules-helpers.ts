@@ -19,8 +19,11 @@ export interface RuleGateInput {
    * earlier rounds included — so 59-minute rounds are no way round a one-hour rule). Defaults to the facts' own.
    */
   agreeMinutes?: number;
-  /** One of a batch already announced (days typed in together): the next approvers are told once, not per day. */
-  quiet?: boolean;
+  /**
+   * A batch ("Approve all"): who was already told, per role and workspace — the next approvers of each hear once
+   * for the batch, and a group the batch reaches later is still told.
+   */
+  toldOnce?: Set<string>;
 }
 
 /** What a decision's approve path learns from the gate. */

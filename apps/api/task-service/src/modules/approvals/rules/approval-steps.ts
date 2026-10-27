@@ -1,4 +1,4 @@
-import type { PrismaService, RuleFacts, RuleKind } from '@hbcfield/shared';
+import { requiredRoleIds, type PrismaService, type RuleFacts, type RuleKind } from '@hbcfield/shared';
 
 /**
  * The open approval step of one item, closing steps, and the rules that gate. One OPEN step per item is a partial
@@ -23,7 +23,7 @@ export async function consumeStep(prisma: PrismaService, id: string) {
 }
 
 /**
- * The active rules with a SECOND STEP for these kinds, oldest first, read as the shared rule helpers take them.
+ * The active rules that ask more people to approve these kinds, oldest first, read as the shared rule helpers take them.
  * (Reminder-only rules are the sweep's; they never gate a decision.)
  */
 export async function stepRules(prisma: PrismaService, organizationId: string, kinds: RuleKind[]) {
@@ -59,4 +59,38 @@ export function joinRoleNames(roleIds: string[], names: ReadonlyMap<string, stri
       .filter(Boolean)
       .join(' + ') || 'an administrator'
   );
+}
+
+/** A new step: the first approval given, the roles every rule that applies still needs, and the facts judged on. */
+export function stepCreateData(
+  input: { organizationId: string; kind: RuleKind; deciderId: string },
+  item: { itemId: string; facts: RuleFacts; ruleId: string; required: string[]; minutes?: number | null },
+) {
+  return {
+    organizationId: input.organizationId,
+    kind: input.kind,
+    itemId: item.itemId,
+    ruleId: item.ruleId,
+    firstById: input.deciderId,
+    approverIds: [input.deciderId],
+    requiredRoleIds: item.required,
+    minutes: item.minutes ?? item.facts.minutes ?? null,
+    facts: storedFacts(item.facts),
+  };
+}
+
+/**
+ * Which roles an open step still waits for, read against the rules as they are NOW (the gate's own reading):
+ * from the facts it was judged on, else — a step from before they were stored — the roles active rules still name.
+ * ONE answer for the inbox, the reminders and anybody else asking.
+ */
+export function rolesStillNeeded(
+  step: { requiredRoleIds: string[]; doneRoleIds: string[]; facts?: unknown },
+  rules: Array<Parameters<typeof requiredRoleIds>[0][number]>,
+): string[] {
+  const facts = parseStoredFacts(step.facts);
+  const needed = facts
+    ? requiredRoleIds(rules, facts)
+    : step.requiredRoleIds.filter((id) => rules.some((r) => r.secondRoleId === id));
+  return needed.filter((r) => !step.doneRoleIds.includes(r));
 }

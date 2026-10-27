@@ -1,4 +1,4 @@
-import { handHoldAtClose, originalTimes, withHoursChanged } from '../core/hand-edit-review';
+import { forgottenEnd, handHoldAtClose, originalTimes, withHoursChanged } from '../core/hand-edit-review';
 
 /*
   A shift the office changed BY HAND is measured from the times before any hand change. A running shift has no
@@ -39,7 +39,7 @@ describe('changed by hand — the hours rule', () => {
     expect(r.needsMoreFor).not.toHaveBeenCalled();
   });
 
-  it('the office closing a running shift: its original end is the moment they did it', () => {
+  it('the office closing a running shift: its original end is where it should have ended (given)', () => {
     const now = at(15);
     expect(originalTimes({ isEdited: false, clockInAt: at(8), clockOutAt: null }, now)).toEqual({
       originalClockIn: at(8),
@@ -73,6 +73,27 @@ describe('changed by hand — the hours rule', () => {
     expect(originalTimes(typed, at(19))).toEqual({ originalClockIn: null, originalClockOut: null });
     // …and its close writes no original end either.
     expect(await handHoldAtClose(rules(false), { ...typed, organizationId: 'o' }, at(18), [])).toEqual({});
+  });
+
+  it('a provisional close never saves its guess as the original end — the real clock-out does, later', async () => {
+    expect(await handHoldAtClose(rules(false), { ...running, clockOutProvisional: true }, at(19), [])).toEqual({});
+  });
+
+  it('a shift edited while running and closed BEFORE the end was kept: its next edit takes the clock-out as it', () => {
+    const legacy = {
+      isEdited: true,
+      originalClockIn: at(8),
+      originalClockOut: null,
+      clockInAt: at(9),
+      clockOutAt: at(17),
+    };
+    expect(originalTimes(legacy)).toEqual({ originalClockIn: at(8), originalClockOut: at(17) });
+  });
+
+  it('a forgotten shift the office closes ended at its planned end — not when the office got round to it', () => {
+    expect(forgottenEnd({ expectedClockOutAt: at(17), lastSeenAt: at(16) }, at(30))).toEqual(at(17));
+    expect(forgottenEnd({ expectedClockOutAt: null, lastSeenAt: at(16) }, at(30))).toEqual(at(16));
+    expect(forgottenEnd({}, at(30))).toEqual(at(30));
   });
 
   it('the label is added once, and dropped when a change goes back under the rule', () => {

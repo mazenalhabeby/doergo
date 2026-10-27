@@ -1,8 +1,11 @@
-import { ABSENCE_WHERE, type PrismaService } from '@hbcfield/shared';
+import { ABSENCE_WHERE, delegationDay, type PrismaService } from '@hbcfield/shared';
 
-/** The day `now` falls on, as the leave table's DATE columns store it (UTC midnight). */
-export function leaveDay(now: Date): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+/**
+ * The day `now` falls on in the ORGANIZATION's zone, as the leave table's DATE columns store it (UTC midnight of
+ * that local day) — the same day the stand-ins are read for. UTC's own day put HBC USA's evening on tomorrow.
+ */
+export function leaveDay(now: Date, timeZone: string | null | undefined): Date {
+  return delegationDay(now, timeZone);
 }
 
 /**

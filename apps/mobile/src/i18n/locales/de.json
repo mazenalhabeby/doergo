@@ -5280,24 +5280,10 @@
     "blocksWork": "Wird vor Arbeitsbeginn benötigt",
     "back": "Zurück",
     "flag": {
-      "overtime": "Überstunden",
-      "missedClockOut": "Ausstempeln verpasst",
       "outsideGeofence": "Außerhalb des Geofence",
-      "lateArrival": "Verspäteter Beginn",
-      "earlyDeparture": "Vorzeitiger Feierabend",
-      "unscheduledDay": "Ungeplanter Tag",
       "needsReview": "Zu prüfen",
-      "outsideGeofenceIn": "Einstempeln außerhalb",
-      "outsideGeofenceOut": "Ausstempeln außerhalb",
-      "missedBreak": "Pause verpasst",
-      "autoClockIn": "Auto ein",
-      "autoClockOut": "Auto aus",
-      "autoRest": "Auto-Pause",
-      "remoteWithWorkspace": "Auswärts trotz Arbeitsbereich",
       "earlyArrival": "Früh angekommen",
-      "missingClockout": "Kein Ausstempeln",
-      "clockOutProvisional": "Ausstempeln vom System gesetzt",
-      "recordedOffline": "Ohne Empfang erfasst"
+      "missingClockout": "Kein Ausstempeln"
     },
     "leave": {
       "VACATION": "Urlaub",
