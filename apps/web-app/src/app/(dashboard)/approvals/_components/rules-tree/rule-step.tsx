@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { ApprovalRuleInput, ApprovalRuleView } from "@hbcfield/shared/client"
 import { Icon } from "@/components/ui/icon"
@@ -11,10 +12,35 @@ import { ChoiceSelect, DoneNode, FlowNode, NONE } from "./tree-nodes"
 import { WhenNode } from "./when-node"
 
 const HOURS = [4, 24, 48, 72]
-/** The bin shows when the row is pointed at or focused — a rule is not deleted by accident while reading. */
+/**
+ * The bin shows when the row is pointed at or focused (always on a touch screen, which cannot point), and deletes
+ * only on a SECOND press — a rule is never lost to one stray tap.
+ */
 const BIN =
-  "grid size-8 place-items-center rounded-lg text-muted-foreground opacity-0 transition-opacity hover:bg-accent " +
-  "hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
+  "grid h-8 min-w-8 place-items-center rounded-lg px-1.5 text-muted-foreground opacity-0 transition-opacity " +
+  "hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 " +
+  "[@media(hover:none)]:opacity-100"
+
+function RemoveButton({ label, onRemove }: { label: string; onRemove: () => void }) {
+  const { t } = useTranslation()
+  const [asking, setAsking] = useState(false)
+  // Asked, then left alone: the question goes away again.
+  useEffect(() => {
+    if (!asking) return
+    const id = setTimeout(() => setAsking(false), 4000)
+    return () => clearTimeout(id)
+  }, [asking])
+  return (
+    <button
+      type="button"
+      onClick={() => (asking ? onRemove() : setAsking(true))}
+      aria-label={label}
+      className={cn(BIN, asking && "bg-shell-crit/10 text-[12px] font-semibold text-shell-crit opacity-100")}
+    >
+      {asking ? t("approvals.tree.confirmRemove") : <Icon name="trash" size={15} />}
+    </button>
+  )
+}
 
 export type RulePartName = "head" | "where" | "when" | "also" | "chase" | "done"
 
@@ -61,11 +87,13 @@ export function RulePart({
   ]
     .flatMap(([id, name]) => (id && !roleOf(id) ? [{ value: id, label: name ?? "—" }] : []))
     .filter((c, i, list) => list.findIndex((o) => o.value === c.value) === i)
+  // A role nobody holding it may approve this kind with is shown, never chosen (the server refuses it too).
   const roleChoices = [
-    ...roles.map((r) => ({
-      value: r.id,
-      label: r.inSpace ? t("approvals.tree.inThatWorkspace", { role: r.name }) : r.name,
-    })),
+    ...roles.map((r) => {
+      const name = r.inSpace ? t("approvals.tree.inThatWorkspace", { role: r.name }) : r.name
+      const can = r.decides.includes(rule.kind)
+      return { value: r.id, label: can ? name : t("approvals.tree.cannotApprove", { role: name }), disabled: !can }
+    }),
     ...missing,
   ]
   const wait = (h: number) =>
@@ -77,7 +105,7 @@ export function RulePart({
     .map((h) => ({ value: String(h), label: wait(h) }))
   // Named by the list, else by the rule itself (the list may still be loading).
   const named = (id: string | null, name: string | null | undefined) =>
-    roleOf(id) ?? (id && name ? { id, name, inSpace: false, holders: -1 } : undefined)
+    roleOf(id) ?? (id && name ? { id, name, inSpace: false, holders: -1, decides: [] } : undefined)
   const second = named(rule.secondRoleId, rule.secondRoleName)
   const pass = named(rule.escalateRoleId, rule.escalateRoleName)
   const chase = [
@@ -86,21 +114,34 @@ export function RulePart({
   ].filter(Boolean)
 
   const dim = !rule.isActive && "opacity-45"
+  // Each rule's own switch and bin say which rule they are about, for a screen reader.
+  const ruleName = t("approvals.tree.rule", { n })
+  const activeLabel = t("approvals.rules.active")
+  const removeLabel = t("approvals.rules.remove")
+  // An every-workspace rule shown to a manager of some workspaces: read, never changed (the server refuses it too).
+  const readOnly = rule.editable === false
   switch (part) {
     case "head":
       return (
         <div className={cn("group/row", dim)}>
           <div className="flex h-7 items-center gap-2">
             <span className="text-[12.5px] font-semibold text-muted-foreground">{t("approvals.tree.rule", { n })}</span>
-            <Switch
-              checked={rule.isActive}
-              onCheckedChange={(v) => onChange({ isActive: v })}
-              aria-label={t("approvals.rules.active")}
-              className="scale-90"
-            />
-            <button type="button" onClick={onRemove} aria-label={t("approvals.rules.remove")} className={BIN}>
-              <Icon name="trash" size={15} />
-            </button>
+            {readOnly ? (
+              <span className="text-[11.5px] text-muted-foreground">{t("approvals.tree.readOnly")}</span>
+            ) : (
+              <>
+                <Switch
+                  checked={rule.isActive}
+                  onCheckedChange={(v) => onChange({ isActive: v })}
+                  aria-label={`${activeLabel} · ${ruleName}`}
+                  className="scale-90"
+                />
+                <RemoveButton
+                  label={`${removeLabel} · ${ruleName}`}
+                  onRemove={onRemove}
+                />
+              </>
+            )}
             {hits != null && (
               <span className="rounded-full bg-shell-chip px-2 py-0.5 text-[11.5px] font-semibold text-muted-foreground">
                 {t("approvals.tree.smart.hits", { count: hits })}
@@ -113,6 +154,7 @@ export function RulePart({
       return (
         <div className={cn(dim)}>
           <FlowNode
+            readOnly={readOnly}
             icon="workspaces"
             label={t("approvals.tree.node.where")}
             value={
@@ -156,6 +198,7 @@ export function RulePart({
       return (
         <div className={cn(dim)}>
           <FlowNode
+            readOnly={readOnly}
             icon="userLine"
             label={t("approvals.tree.node.also")}
             value={second?.name ?? t("approvals.tree.nobody")}
@@ -183,6 +226,7 @@ export function RulePart({
       return (
         <div className={cn(dim)}>
           <FlowNode
+            readOnly={readOnly}
             icon="alarm"
             label={t("approvals.tree.node.chase")}
             value={chase.length ? chase[0] : t("approvals.tree.chase.off")}
@@ -224,7 +268,13 @@ export function RulePart({
     case "done":
       return (
         <div className={cn(dim)}>
-          <DoneNode>{rule.secondRoleId ? t("approvals.tree.doneTwo") : t("approvals.tree.doneOne")}</DoneNode>
+          <DoneNode>
+            {!rule.secondRoleId
+              ? t("approvals.tree.doneOne")
+              : range.alsoWith.length
+                ? t("approvals.tree.doneMore", { count: 2 })
+                : t("approvals.tree.doneTwo")}
+          </DoneNode>
         </div>
       )
   }

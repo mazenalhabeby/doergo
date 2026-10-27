@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { DELEGATION_MAX_DAYS, type StandInView } from "@hbcfield/shared/client"
+import { DELEGATION_MAX_DAYS, localDateKey, type StandInView } from "@hbcfield/shared/client"
 
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
@@ -18,10 +18,8 @@ import { GroupLabel, Panel } from "@/components/page/page-kit"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ListTableError } from "@/components/common/list-page"
 
-const todayKey = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
+// Today on this device's calendar (the shared day key).
+const todayKey = () => localDateKey()
 const day = (k: string) => formatMediumDate(`${k}T12:00:00Z`)
 
 /**

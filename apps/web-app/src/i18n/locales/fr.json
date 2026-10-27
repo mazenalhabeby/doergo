@@ -8334,8 +8334,9 @@
     "SECOND_STEP_REQUIRED": "La seconde validation revient à {{role}}.",
     "SECOND_STEP_TAKEN": "Quelqu’un d’autre vient de décider.",
     "RULE_ROLE_REQUIRED": "Choisissez l’un des rôles de l’organisation.",
+    "RULE_ROLE_CANNOT_DECIDE": "Personne ayant ce rôle ne peut approuver ce type de cas — choisis un autre rôle.",
     "RULE_THRESHOLD_INVALID": "Le seuil n’est pas un nombre valide.",
-    "RULE_KIND_INVALID": "Les règles existent pour les heures supplémentaires, les demandes et les dépenses.",
+    "RULE_KIND_INVALID": "Les règles existent pour les heures sup., congés et demandes, dépenses, heures modifiées, pointages manqués, papiers d’équipements et demandes clients.",
     "RULE_EMPTY": "Une règle demande une seconde validation, un rappel ou une transmission.",
     "RULE_HOURS_INVALID": "Les heures doivent être un nombre entier entre 1 et 720.",
     "RULE_ESCALATE_ROLE_REQUIRED": "Choisissez à qui transmettre si personne ne répond.",
@@ -10011,7 +10012,11 @@
       "assetKind": "Type d’équipement",
       "anyAssetKind": "Tout type d’équipement",
       "urgentOnly": "Urgentes seulement",
-      "loadFailed": "Impossible de charger les règles."
+      "loadFailed": "Impossible de charger les règles.",
+      "doneMore": "Terminé · {{count}} approbations ou plus",
+      "cannotApprove": "{{role}} — ne peut pas approuver ceci",
+      "readOnly": "Pour tous les espaces — seule l’entreprise peut la modifier",
+      "confirmRemove": "Supprimer ?"
     }
   },
   "overtimePage": {

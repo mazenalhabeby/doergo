@@ -35,6 +35,8 @@ export function FlowNode({
   value,
   sub,
   bad,
+  readOnly,
+  onClose,
   children,
 }: {
   icon: IconName
@@ -42,20 +44,28 @@ export function FlowNode({
   value: ReactNode
   sub?: ReactNode
   bad?: boolean
+  /** Shown, never opened: a rule the caller may read but not change. */
+  readOnly?: boolean
+  /** The editor closed (click away, Escape, or the node again) — save what was typed. */
+  onClose?: () => void
   children: ReactNode
 }) {
+  const face = (
+    <>
+      <span className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+        <Icon name={icon} size={14} />
+        {label}
+      </span>
+      <span className={cn("truncate text-[14.5px] font-semibold", bad ? "text-shell-crit" : "text-foreground")}>
+        {value}
+      </span>
+      {sub && <span className="line-clamp-2 text-[12px] leading-snug text-muted-foreground">{sub}</span>}
+    </>
+  )
+  if (readOnly) return <div className={cn(NODE, "cursor-default border-border")}>{face}</div>
   return (
-    <Popover>
-      <PopoverTrigger className={cn(NODE, bad ? "border-shell-crit" : "border-border")}>
-        <span className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
-          <Icon name={icon} size={14} />
-          {label}
-        </span>
-        <span className={cn("truncate text-[14.5px] font-semibold", bad ? "text-shell-crit" : "text-foreground")}>
-          {value}
-        </span>
-        {sub && <span className="line-clamp-2 text-[12px] leading-snug text-muted-foreground">{sub}</span>}
-      </PopoverTrigger>
+    <Popover onOpenChange={(open) => !open && onClose?.()}>
+      <PopoverTrigger className={cn(NODE, bad ? "border-shell-crit" : "border-border")}>{face}</PopoverTrigger>
       <PopoverContent align="start" className="flex w-[300px] flex-col gap-3 rounded-2xl p-4 shadow-shell-pop">
         <b className="text-sm">{label}</b>
         {children}
@@ -84,7 +94,7 @@ export function ChoiceSelect({
 }: {
   value: string
   onChange: (v: string) => void
-  choices: { value: string; label: string }[]
+  choices: { value: string; label: string; disabled?: boolean }[]
   label: string
   bad?: boolean
 }) {
@@ -102,7 +112,7 @@ export function ChoiceSelect({
       </SelectTrigger>
       <SelectContent>
         {choices.map((c) => (
-          <SelectItem key={c.value} value={c.value}>
+          <SelectItem key={c.value} value={c.value} disabled={c.disabled}>
             {c.label}
           </SelectItem>
         ))}

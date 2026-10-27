@@ -8334,8 +8334,9 @@
     "SECOND_STEP_REQUIRED": "La seconda approvazione spetta a {{role}}.",
     "SECOND_STEP_TAKEN": "Qualcun altro l’ha appena deciso.",
     "RULE_ROLE_REQUIRED": "Scelga uno dei ruoli dell’organizzazione.",
+    "RULE_ROLE_CANNOT_DECIDE": "Nessuno con questo ruolo può approvare questo tipo di casi — scegli un altro ruolo.",
     "RULE_THRESHOLD_INVALID": "La soglia non è un numero valido.",
-    "RULE_KIND_INVALID": "Le regole esistono per straordinari, richieste e spese.",
+    "RULE_KIND_INVALID": "Le regole esistono per straordinari, ferie e richieste, spese, ore modificate, timbrature mancate, documenti dei beni e richieste dei clienti.",
     "RULE_EMPTY": "Una regola richiede una seconda approvazione, un promemoria o un passaggio.",
     "RULE_HOURS_INVALID": "Le ore devono essere un numero intero tra 1 e 720.",
     "RULE_ESCALATE_ROLE_REQUIRED": "Scelga a chi passa se nessuno risponde.",
@@ -10011,7 +10012,11 @@
       "assetKind": "Tipo di bene",
       "anyAssetKind": "Qualsiasi tipo di bene",
       "urgentOnly": "Solo urgenti",
-      "loadFailed": "Impossibile caricare le regole."
+      "loadFailed": "Impossibile caricare le regole.",
+      "doneMore": "Fatto · {{count}} o più approvazioni",
+      "cannotApprove": "{{role}} — non può approvare questo",
+      "readOnly": "Per tutti gli spazi — solo l’azienda può cambiarla",
+      "confirmRemove": "Eliminare?"
     }
   },
   "overtimePage": {

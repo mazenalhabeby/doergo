@@ -19,9 +19,16 @@ import { DayRow } from "./_components/day-row"
 import { DayPanel } from "./_components/day-panel"
 
 // Its own tab: never part of the inbox's first load.
-const RulesTree = dynamic(() => import("./_components/rules-tree/rules-tree").then((m) => m.RulesTree), { ssr: false })
-
-const StandInsTab = dynamic(() => import("./_components/stand-ins-tab").then((m) => m.StandInsTab), { ssr: false })
+// The tab's own shape while its code arrives — never a blank panel.
+const TabLoading = () => <Skeleton className="h-[420px] w-full rounded-[22px]" />
+const RulesTree = dynamic(() => import("./_components/rules-tree/rules-tree").then((m) => m.RulesTree), {
+  ssr: false,
+  loading: TabLoading,
+})
+const StandInsTab = dynamic(() => import("./_components/stand-ins-tab").then((m) => m.StandInsTab), {
+  ssr: false,
+  loading: TabLoading,
+})
 
 /**
  * Approvals — everything waiting for the member to decide, in one place.
@@ -112,7 +119,20 @@ export default function ApprovalsPage() {
       )}
 
       {tabs.length > 1 && (
-        <div role="tablist" aria-label={t("approvals.title")} className="mb-4 flex gap-1 border-b border-border">
+        <div
+          role="tablist"
+          aria-label={t("approvals.title")}
+          className="mb-4 flex gap-1 border-b border-border"
+          // ← / → move between the tabs (the focus follows), as a tab list does.
+          onKeyDown={(e) => {
+            if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
+            e.preventDefault()
+            const at = tabs.indexOf(shown)
+            const next = tabs[(at + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]!
+            setTab(next)
+            document.getElementById(`approvals-tab-${next}`)?.focus()
+          }}
+        >
           {tabs.map((k) => (
             <button
               key={k}
@@ -121,6 +141,7 @@ export default function ApprovalsPage() {
               id={`approvals-tab-${k}`}
               aria-controls="approvals-panel"
               aria-selected={shown === k}
+              tabIndex={shown === k ? 0 : -1}
               onClick={() => setTab(k)}
               className={cn(
                 "-mb-px h-11 border-b-2 px-3 text-sm font-semibold transition-colors",

@@ -3,12 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  APPROVAL_KINDS,
-  type ApprovalDecision,
-  type ApprovalKind,
-  type ApprovalInbox,
-} from "@hbcfield/shared/client"
+import { APPROVAL_KINDS, type ApprovalDecision, type ApprovalKind, type ApprovalInbox } from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
@@ -41,9 +36,12 @@ export function useApprovalsPage() {
   }, [])
   // "Who approves" — the office's rules — is a tab of its own (?tab=rules opens it).
   const [tab, setTabState] = useState<ApprovalsTab>("decide")
+  // The inbox (a fan-out over every kind) is read only once the tab is known, and only on "To decide".
+  const [tabKnown, setTabKnown] = useState(false)
   useEffect(() => {
     const want = new URLSearchParams(window.location.search).get("tab")
     if (want === "rules" || want === "stand") setTabState(want)
+    setTabKnown(true)
   }, [])
   // The open tab stays in the address, so a reload or a shared link lands on it.
   const setTab = useCallback((next: ApprovalsTab) => {
@@ -61,6 +59,7 @@ export function useApprovalsPage() {
     queryKey: keys.approvals.list(),
     queryFn: approvalsApi.list,
     staleTime: 15_000,
+    enabled: tabKnown && tab === "decide",
   })
 
   const items = useMemo(() => data?.items ?? [], [data])
@@ -88,11 +87,20 @@ export function useApprovalsPage() {
       setSelected(itemKey(visible[0]!))
   }, [current, visible, selected])
 
-  // ↑ / ↓ walk the list — a queue is worked through, not clicked through.
+  /*
+    ↑ / ↓ walk the list — a queue is worked through, not clicked through. Only on "To decide", and never while
+    the focus is in something that uses the arrows itself (a field, a select, a list box, a menu, the tabs).
+  */
   useEffect(() => {
+    if (tab !== "decide") return
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return
+      if (
+        el &&
+        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)
+      )
+        return
+      if (el?.closest('[role="combobox"],[role="listbox"],[role="menu"],[role="tablist"],[role="slider"]')) return
       if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return
       const at = visible.findIndex((i) => itemKey(i) === selected)
       const next = visible[Math.min(visible.length - 1, Math.max(0, at + (e.key === "ArrowDown" ? 1 : -1)))]
@@ -103,7 +111,7 @@ export function useApprovalsPage() {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [visible, selected])
+  }, [visible, selected, tab])
 
   const decide = useMutation({
     mutationFn: (d: ApprovalDecision) => approvalsApi.decide(d),
@@ -154,7 +162,8 @@ export function useApprovalsPage() {
     tab,
     setTab,
     managesRules,
-    isLoading,
+    // Not read yet because the tab is not known: still loading, never "nothing to decide".
+    isLoading: isLoading || !tabKnown,
     isError,
     error,
     refetch,

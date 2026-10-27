@@ -14,8 +14,6 @@ export interface RuleRange {
   shadowedBy: number | null
 }
 
-const limitOf = (r: ApprovalRuleView) => ruleLimitOf(r)
-
 /** Two rules can meet on one item: the same workspace, or one of them everywhere; one asset kind each, if any. */
 const overlap = (a: ApprovalRuleView, b: ApprovalRuleView) =>
   (!a.spaceId || !b.spaceId || a.spaceId === b.spaceId) &&
@@ -24,7 +22,7 @@ const overlap = (a: ApprovalRuleView, b: ApprovalRuleView) =>
 /** The same rule twice: same place, limit and conditions, and the same approver. */
 const twins = (a: ApprovalRuleView, b: ApprovalRuleView) =>
   a.spaceId === b.spaceId &&
-  limitOf(a) === limitOf(b) &&
+  ruleLimitOf(a) === ruleLimitOf(b) &&
   a.whenCoverShort === b.whenCoverShort &&
   (a.categoryId ?? null) === (b.categoryId ?? null) &&
   a.urgentOnly === b.urgentOnly &&
@@ -35,7 +33,7 @@ export function ruleRanges(rules: ApprovalRuleView[]): RuleRange[] {
   return rules.map((r, i) => {
     const twin = rules.findIndex((o, j) => j < i && o.isActive && twins(o, r))
     return {
-      from: limitOf(r),
+      from: ruleLimitOf(r),
       alsoWith: r.isActive
         ? rules.flatMap((o, j) =>
             j !== i && o.isActive && o.secondRoleId && overlap(o, r) && !twins(o, r) ? [j + 1] : [],
@@ -67,7 +65,7 @@ export function fallThrough(rules: ApprovalRuleView[], workspaces: { id: string;
   return workspaces.flatMap<FallThrough>((w) => {
     const here = live.filter((r) => !r.spaceId || r.spaceId === w.id)
     if (!here.length) return [{ id: w.id, name: w.name, upTo: null }]
-    if (here.some((r) => limitOf(r) == null)) return []
-    return [{ id: w.id, name: w.name, upTo: Math.min(...here.map((r) => limitOf(r) as number)) }]
+    if (here.some((r) => ruleLimitOf(r) == null)) return []
+    return [{ id: w.id, name: w.name, upTo: Math.min(...here.map((r) => ruleLimitOf(r) as number)) }]
   })
 }

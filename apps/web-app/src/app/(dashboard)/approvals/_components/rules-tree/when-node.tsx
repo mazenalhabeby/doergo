@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import { RULE_LIMITS, type ApprovalRuleInput, type ApprovalRuleView } from "@hbcfield/shared/client"
@@ -33,11 +33,9 @@ export function WhenNode({
   const [limit, setLimit] = useState(stored)
   // Follows the SAVED value only when it changes — a refetch of the same rule never wipes what is being typed.
   useEffect(() => setLimit(stored), [stored])
+  // Saved on Enter, on leaving the field, and when the editor closes (Escape or a click away) — never on unmount,
+  // which is also what a DELETED rule does.
   const commit = () => limit !== stored && onChange(limitPatch(rule.kind, limit))
-  // Closing the step's popover unmounts the field without a blur: what was typed is still saved.
-  const latest = useRef(commit)
-  latest.current = commit
-  useEffect(() => () => void latest.current(), [])
   const hasLimit = !!RULE_LIMITS[rule.kind]
   // Asset kinds are read only for an asset-papers rule, and once for every such rule (shared cache).
   const { data: kinds } = useQuery({
@@ -65,6 +63,8 @@ export function WhenNode({
       label={t("approvals.tree.node.when")}
       value={value}
       bad={range.shadowedBy != null}
+      readOnly={rule.editable === false}
+      onClose={commit}
       sub={
         range.shadowedBy != null
           ? t("approvals.tree.range.twin", { n: range.shadowedBy })

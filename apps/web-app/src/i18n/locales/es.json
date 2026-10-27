@@ -8334,8 +8334,9 @@
     "SECOND_STEP_REQUIRED": "La segunda aprobación corresponde a {{role}}.",
     "SECOND_STEP_TAKEN": "Otra persona lo decidió hace un momento.",
     "RULE_ROLE_REQUIRED": "Elija uno de los roles de la organización.",
+    "RULE_ROLE_CANNOT_DECIDE": "Nadie con este rol puede aprobar este tipo de casos — elige otro rol.",
     "RULE_THRESHOLD_INVALID": "El umbral no es un número válido.",
-    "RULE_KIND_INVALID": "Hay reglas para horas extra, solicitudes y gastos.",
+    "RULE_KIND_INVALID": "Hay reglas para horas extra, permisos y solicitudes, gastos, horas cambiadas, fichajes no hechos, papeles de activos y solicitudes de clientes.",
     "RULE_EMPTY": "Una regla necesita una segunda aprobación, un recordatorio o un paso a otro.",
     "RULE_HOURS_INVALID": "Las horas deben ser un número entero entre 1 y 720.",
     "RULE_ESCALATE_ROLE_REQUIRED": "Elija a quién pasa si nadie responde.",
@@ -10011,7 +10012,11 @@
       "assetKind": "Tipo de activo",
       "anyAssetKind": "Cualquier tipo de activo",
       "urgentOnly": "Solo urgentes",
-      "loadFailed": "No se pudieron cargar las reglas."
+      "loadFailed": "No se pudieron cargar las reglas.",
+      "doneMore": "Listo · {{count}} o más aprobaciones",
+      "cannotApprove": "{{role}} — no puede aprobar esto",
+      "readOnly": "Para todos los espacios — solo la empresa puede cambiarla",
+      "confirmRemove": "¿Borrar?"
     }
   },
   "overtimePage": {

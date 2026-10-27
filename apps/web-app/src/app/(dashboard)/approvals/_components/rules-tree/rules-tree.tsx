@@ -1,7 +1,8 @@
 "use client"
 
+import { useCallback, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { RULE_KINDS, type RuleKind } from "@hbcfield/shared/client"
+import { RULE_KINDS, type ApprovalRuleInput, type ApprovalRuleView, type RuleKind } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { Icon } from "@/components/ui/icon"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -31,9 +32,34 @@ export function RulesTree() {
   const { user } = useAuth()
   const currency = user?.orgCurrency ?? "EUR"
   const tree = useRulesTree(true)
-  const spaceName = (id: string) => tree.workspaces.find((w) => w.id === id)?.name ?? "?"
-  const ranges = ruleRanges(tree.rules)
-  const uncaught = fallThrough(tree.rules, tree.workspaces)
+  // A workspace no longer listed (archived) keeps the name its rule carries.
+  const spaceName = (id: string) =>
+    tree.workspaces.find((w) => w.id === id)?.name ?? tree.rules.find((r) => r.spaceId === id)?.spaceName ?? "—"
+  const ranges = useMemo(() => ruleRanges(tree.rules), [tree.rules])
+  const uncaught = useMemo(() => fallThrough(tree.rules, tree.workspaces), [tree.rules, tree.workspaces])
+  // The canvas's nodes re-render only when what they show changes — never on an unrelated query or a save starting.
+  const latest = useRef(tree)
+  latest.current = tree
+  const onChange = useCallback(
+    (r: ApprovalRuleView, patch: Partial<ApprovalRuleInput>) => latest.current.change(r, patch),
+    [],
+  )
+  const onRemove = useCallback((r: ApprovalRuleView) => latest.current.remove.mutate(r.id), [])
+  const hits = tree.insights?.kind === tree.kind ? tree.insights.perRule : undefined
+  const ctx = useMemo(
+    () => ({
+      rules: tree.rules,
+      ranges,
+      roles: tree.roles,
+      workspaces: tree.workspaces,
+      currency,
+      onChange,
+      onRemove,
+      hits,
+      everywhere: tree.everywhere,
+    }),
+    [tree.rules, ranges, tree.roles, tree.workspaces, currency, onChange, onRemove, hits, tree.everywhere],
+  )
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
   const showLimit = (v: number) => limitText(t, tree.kind, v, currency)
@@ -61,13 +87,18 @@ export function RulesTree() {
     <UncaughtNode
       items={uncaught}
       limitText={showLimit}
-      busy={tree.busy}
+      busy={tree.busy || !tree.canAdd}
       everywhere={tree.everywhere}
       onAdd={(spaceId) => void tree.add({ spaceId }).catch(() => {})}
     />
   ) : null
   const add = (
-    <button type="button" onClick={() => void tree.add().catch(() => {})} disabled={tree.busy} className={NEW_NODE}>
+    <button
+      type="button"
+      onClick={() => void tree.add().catch(() => {})}
+      disabled={tree.busy || !tree.canAdd}
+      className={NEW_NODE}
+    >
       <Icon name="plus" size={16} />
       {t("approvals.tree.newRule")}
     </button>
@@ -80,10 +111,15 @@ export function RulesTree() {
         insights={tree.insights?.kind === tree.kind ? tree.insights : undefined}
         kindLabel={kindName(tree.kind)}
         offers={offers}
-        busy={tree.busy}
+        busy={tree.busy || !tree.canAdd}
         approver={tree.defaultRole?.name}
         // Gone once it is really added — a failed save leaves the offer to try again.
-        onAdd={(o) => void tree.add({ spaceId: o.spaceId, limit: o.limit }).then(() => dismiss(o), () => {})}
+        onAdd={(o) =>
+          void tree.add({ spaceId: o.spaceId, limit: o.limit }).then(
+            () => dismiss(o),
+            () => {},
+          )
+        }
         onDismiss={dismiss}
       />
       <div className="grid items-start gap-4 lg:grid-cols-[210px_minmax(0,1fr)]">
@@ -97,7 +133,7 @@ export function RulesTree() {
               <button
                 key={k}
                 type="button"
-                aria-current={tree.kind === k}
+                aria-pressed={tree.kind === k}
                 onClick={() => tree.setKind(k)}
                 className={cn(RAIL_ROW, "h-auto items-start py-2.5")}
               >
@@ -116,23 +152,7 @@ export function RulesTree() {
         ) : tree.isLoading ? (
           <Skeleton className="h-[420px] w-full rounded-[22px]" />
         ) : (
-          <RulesCanvas
-            kind={tree.kind}
-            start={start}
-            uncaught={fallsThrough}
-            add={add}
-            ctx={{
-              rules: tree.rules,
-              ranges,
-              roles: tree.roles,
-              workspaces: tree.workspaces,
-              currency,
-              onChange: tree.change,
-              onRemove: (r) => tree.remove.mutate(r.id),
-              hits: tree.insights?.kind === tree.kind ? tree.insights.perRule : undefined,
-              everywhere: tree.everywhere,
-            }}
-          />
+          <RulesCanvas kind={tree.kind} start={start} uncaught={fallsThrough} add={add} ctx={ctx} />
         )}
       </div>
       <p className="text-[12.5px] text-muted-foreground">{t("approvals.tree.footnote")}</p>

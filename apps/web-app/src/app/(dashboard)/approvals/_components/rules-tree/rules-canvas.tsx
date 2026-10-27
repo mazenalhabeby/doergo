@@ -152,11 +152,16 @@ function layout(rules: { id: string; isActive: boolean }[], hasUncaught: boolean
   return { nodes, edges }
 }
 
+/** How far the view may zoom out to fit: a phone needs the whole chain in view, a desk keeps it readable. */
+const fitMinZoom = () => (typeof window !== "undefined" && window.innerWidth < 900 ? 0.3 : 0.7)
+
 /** Re-frames the view, animated, whenever the set of nodes changes (another type, a rule added or removed). */
 function Refit({ signature }: { signature: string }) {
   const flow = useReactFlow()
   useEffect(() => {
-    const id = requestAnimationFrame(() => flow.fitView({ duration: 450, padding: 0.08, maxZoom: 1, minZoom: 0.7 }))
+    const id = requestAnimationFrame(() =>
+      flow.fitView({ duration: 450, padding: 0.08, maxZoom: 1, minZoom: fitMinZoom() }),
+    )
     return () => cancelAnimationFrame(id)
   }, [signature, flow])
   return null
@@ -193,11 +198,11 @@ export function RulesCanvas(props: {
             onNodeClick={NOOP}
             nodesFocusable={false}
             edgesFocusable={false}
-            minZoom={0.4}
+            minZoom={0.25}
             maxZoom={1.4}
             proOptions={{ hideAttribution: true }}
             fitView
-            fitViewOptions={{ padding: 0.08, maxZoom: 1, minZoom: 0.7 }}
+            fitViewOptions={{ padding: 0.08, maxZoom: 1, minZoom: fitMinZoom() }}
           >
             <Background
               variant={BackgroundVariant.Dots}

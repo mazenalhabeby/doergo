@@ -101,10 +101,14 @@ const approvalsKeys = {
   count: () => named("approvals", ["count"]),
   route: (kind: string, id: string) => named("approvals", ["route", kind, id]),
   standIns: () => named("approvals", ["stand-ins"]),
-  rules: () => named("approvals", ["rules"]),
-  ruleInsights: (kind: string) => named("approvals", ["rules", "insights", kind]),
-  /** Not under "rules": saving a rule does not change who holds a role. */
-  ruleRoles: () => named("approvals", ["rule-roles"]),
+  /*
+    The rules page's data lives OUTSIDE "approvals": every live approval event re-reads `approvals.all()` (the
+    inbox), and must not re-read the rules, their 90-day numbers or the roles mid-edit. Each is its own key, so
+    saving a rule re-reads the rules only, and the numbers once the saves are done.
+  */
+  rules: () => named("approval-rules"),
+  ruleInsights: (kind: string) => named("approval-rule-insights", [kind]),
+  ruleRoles: () => named("approval-rule-roles"),
 } as const
 
 const shiftIssuesKeys = {

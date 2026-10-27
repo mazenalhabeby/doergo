@@ -8334,8 +8334,9 @@
     "SECOND_STEP_REQUIRED": "The second approval is for {{role}}.",
     "SECOND_STEP_TAKEN": "Somebody else decided this a moment ago.",
     "RULE_ROLE_REQUIRED": "Choose one of the organization’s roles.",
+    "RULE_ROLE_CANNOT_DECIDE": "Nobody holding this role may approve this kind of item — choose another role.",
     "RULE_THRESHOLD_INVALID": "The threshold is not a valid number.",
-    "RULE_KIND_INVALID": "Rules exist for overtime, requests and expenses.",
+    "RULE_KIND_INVALID": "Rules exist for overtime, leave and requests, expenses, changed hours, missed clock-ins, asset papers and client requests.",
     "RULE_EMPTY": "A rule needs a second approval, a reminder or an escalation.",
     "RULE_HOURS_INVALID": "Hours must be a whole number between 1 and 720.",
     "RULE_ESCALATE_ROLE_REQUIRED": "Choose who it passes to when nobody answers.",
@@ -10011,7 +10012,11 @@
       "assetKind": "Asset kind",
       "anyAssetKind": "Any asset kind",
       "urgentOnly": "Urgent only",
-      "loadFailed": "The rules could not be loaded."
+      "loadFailed": "The rules could not be loaded.",
+      "doneMore": "Done · {{count}} or more approvals",
+      "cannotApprove": "{{role}} — cannot approve this",
+      "readOnly": "For every workspace — only the company can change it",
+      "confirmRemove": "Delete?"
     }
   },
   "overtimePage": {
