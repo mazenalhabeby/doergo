@@ -26,11 +26,13 @@ export function UncaughtNode({
   items,
   limitText,
   busy,
+  everywhere,
   onAdd,
 }: {
   items: FallThrough[]
   limitText: (v: number) => string
   busy: boolean
+  everywhere: boolean
   onAdd: (spaceId: string | null) => void
 }) {
   const { t } = useTranslation()
@@ -56,10 +58,12 @@ export function UncaughtNode({
           </span>
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-[340px] flex-col gap-2 rounded-2xl p-3 shadow-shell-pop">
-          <button type="button" disabled={busy} onClick={() => onAdd(null)} className={EVERY}>
-            <Icon name="plus" size={16} />
-            {t("approvals.tree.uncaught.everyWorkspace")}
-          </button>
+          {everywhere && (
+            <button type="button" disabled={busy} onClick={() => onAdd(null)} className={EVERY}>
+              <Icon name="plus" size={16} />
+              {t("approvals.tree.uncaught.everyWorkspace")}
+            </button>
+          )}
           <ul className="flex max-h-72 flex-col overflow-y-auto">
             {items.map((f) => (
               <li key={f.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent">

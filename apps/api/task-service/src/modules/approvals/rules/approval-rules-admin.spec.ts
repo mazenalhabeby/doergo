@@ -154,3 +154,41 @@ describe('listing office rules', () => {
     expect(view).toMatchObject({ spaceName: 'Depot', secondRoleName: 'Site Manager', escalateRoleName: null });
   });
 });
+
+describe('a caller who may manage approval rules in some workspaces only', () => {
+  const MINE = ['site-a'];
+
+  it("lists only those workspaces' rules — never the every-workspace ones", async () => {
+    const { prisma, svc } = setup();
+    await svc.listRules(ORG, MINE);
+    expect(prisma.approvalRule.findMany.mock.calls[0][0].where).toEqual({ organizationId: ORG, spaceId: { in: MINE } });
+  });
+
+  it('refuses a rule for every workspace or for another workspace, writing nothing', async () => {
+    const { prisma, svc } = setup();
+    for (const spaceId of [null, 'site-b'])
+      await expect(svc.saveRule(ORG, 'u1', { ...rule, spaceId }, undefined, MINE)).rejects.toMatchObject({
+        response: { code: 'RULE_OUT_OF_SCOPE' },
+      });
+    expect(prisma.approvalRule.create).not.toHaveBeenCalled();
+  });
+
+  it('cannot move, change or delete a rule that lives outside their workspaces (it reads as missing)', async () => {
+    const { prisma, svc } = setup();
+    prisma.approvalRule.findFirst = jest.fn().mockResolvedValue({ spaceId: null });
+    await expect(svc.saveRule(ORG, 'u1', { ...rule, spaceId: 'site-a' }, 'r-1', MINE)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(svc.deleteRule(ORG, 'r-1', MINE)).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.approvalRule.updateMany).not.toHaveBeenCalled();
+    expect(prisma.approvalRule.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('saves a rule for their own workspace', async () => {
+    const { prisma, svc } = setup();
+    await expect(svc.saveRule(ORG, 'u1', { ...rule, spaceId: 'site-a' }, undefined, MINE)).resolves.toEqual({
+      id: 'r-new',
+    });
+    expect(prisma.approvalRule.create).toHaveBeenCalled();
+  });
+});

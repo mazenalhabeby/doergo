@@ -57,21 +57,21 @@ export class ApprovalsController {
 
   @MessagePattern(pattern(approvalRulesList))
   listRules(@Payload() data: RpcRequest<typeof approvalRulesList>) {
-    return this.rulesAdmin.listRules(data.organizationId);
+    return this.rulesAdmin.listRules(data.organizationId, data.spaceIds);
   }
 
   @MessagePattern(pattern(approvalRulesInsights))
   ruleInsights(@Payload() data: RpcRequest<typeof approvalRulesInsights>) {
-    return this.insights.insights(data.organizationId, data.kind);
+    return this.insights.insights(data.organizationId, data.kind, data.spaceIds);
   }
 
   @MessagePattern(pattern(approvalRulesSave))
   saveRule(@Payload() data: RpcRequest<typeof approvalRulesSave>) {
-    return this.rulesAdmin.saveRule(data.organizationId, data.userId, data.input, data.id);
+    return this.rulesAdmin.saveRule(data.organizationId, data.userId, data.input, data.id, data.spaceIds);
   }
 
   @MessagePattern(pattern(approvalRulesDelete))
   deleteRule(@Payload() data: RpcRequest<typeof approvalRulesDelete>) {
-    return this.rulesAdmin.deleteRule(data.organizationId, data.id);
+    return this.rulesAdmin.deleteRule(data.organizationId, data.id, data.spaceIds);
   }
 }

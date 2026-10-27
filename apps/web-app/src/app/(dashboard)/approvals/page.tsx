@@ -44,7 +44,7 @@ export default function ApprovalsPage() {
     setSelected,
     tab,
     setTab,
-    managesPeople,
+    managesRules,
     isLoading,
     isError,
     error,
@@ -66,7 +66,7 @@ export default function ApprovalsPage() {
   } = useApprovalsPage()
   // An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL).
   const tabs = (["decide", "rules", "stand"] as const).filter(
-    (k) => k === "decide" || (k === "rules" ? managesPeople : !user?.isExternal),
+    (k) => k === "decide" || (k === "rules" ? managesRules : !user?.isExternal),
   )
 
   return (
@@ -131,7 +131,7 @@ export default function ApprovalsPage() {
         </div>
       )}
 
-      {tab === "rules" && managesPeople ? (
+      {tab === "rules" && managesRules ? (
         <RulesTree />
       ) : tab === "stand" && !user?.isExternal ? (
         <StandInsTab />
@@ -244,7 +244,7 @@ export default function ApprovalsPage() {
                     busy={decide.isPending}
                     onDecide={onDecide}
                     onMakeRule={
-                      managesPeople
+                      managesRules
                         ? (link) => {
                             window.history.replaceState(null, "", link)
                             setTab("rules")

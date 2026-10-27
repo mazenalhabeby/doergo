@@ -50,6 +50,13 @@ export const SCHEMA_FIRST: PermissionSchemaEntry[] = [
     external: true,
   },
   {
+    key: 'canManageApprovalRules',
+    label: 'Manage approval rules',
+    description: 'Decide who must also approve, and who is chased when nobody answers — in a workspace, its rules only',
+    domain: 'members',
+    scopes: ['org', 'space'],
+  },
+  {
     key: 'canViewReports',
     label: 'View reports',
     description: 'Build and run reports',

@@ -9,6 +9,8 @@ import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { useOrgRoles } from "@/hooks/use-org-roles"
 import { useSpaceDirectory } from "@/hooks/use-space-directory"
+import { useAuth } from "@/contexts/auth-context"
+import { isAdmin, spacesGranting } from "@hbcfield/shared/client"
 
 /** A role a rule may name: one that grants something (a work role grants nothing), with how many hold it. */
 export interface RuleRole {
@@ -72,9 +74,21 @@ export function useRulesTree(enabled: boolean) {
     return [...out.values()].sort((a, b) => a.name.localeCompare(b.name))
   }, [orgRoles, spaceRoles])
 
+  // Held in some workspaces only: those workspaces, and never a rule for "every workspace" (the server agrees).
+  const { user } = useAuth()
+  const scope = useMemo(
+    () =>
+      !user || isAdmin(user) || user.canManageApprovalRules === true
+        ? null
+        : spacesGranting(user.access as never, "canManageApprovalRules"),
+    [user],
+  )
   const workspaces = useMemo(
-    () => (spaces ?? []).filter((s) => s.isActive !== false).map((s) => ({ id: s.id, name: s.name })),
-    [spaces],
+    () =>
+      (spaces ?? [])
+        .filter((s) => s.isActive !== false && (!scope || scope.includes(s.id)))
+        .map((s) => ({ id: s.id, name: s.name })),
+    [spaces, scope],
   )
 
   const refresh = () => qc.invalidateQueries({ queryKey: keys.approvals.all() })
@@ -110,6 +124,7 @@ export function useRulesTree(enabled: boolean) {
    * for a second approval: a rule must DO something.
    */
   const add = ({ spaceId = null, limit = null }: { spaceId?: string | null; limit?: number | null } = {}) => {
+    if (scope && !spaceId) spaceId = workspaces[0]?.id ?? null
     const role = roles.find((r) => r.holders > 0) ?? roles[0]
     if (!role) return notify.error(t("approvals.tree.noRoles"))
     const at = (k: RuleKind) => (kind === k ? limit : null)
@@ -131,6 +146,7 @@ export function useRulesTree(enabled: boolean) {
     kind,
     setKind,
     insights,
+    everywhere: !scope,
     rules: ofKind,
     counts: rules ?? [],
     isLoading,

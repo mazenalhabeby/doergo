@@ -44,9 +44,9 @@ export function useApprovalsPage() {
     const want = new URLSearchParams(window.location.search).get("tab")
     if (want === "rules" || want === "stand") setTab(want)
   }, [])
-  // Office rules are the organization's own policy: people managers only (the server checks the same).
   const { holds } = useRouteAccess()
-  const managesPeople = holds("org:canManageUsers")
+  // Office rules: "manage approval rules", org-wide or in a workspace (the server narrows to those workspaces).
+  const managesRules = holds("any:canManageApprovalRules")
 
   const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: keys.approvals.list(),
@@ -144,7 +144,7 @@ export function useApprovalsPage() {
     setSelected,
     tab,
     setTab,
-    managesPeople,
+    managesRules,
     isLoading,
     isError,
     error,

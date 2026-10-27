@@ -26,17 +26,23 @@ export const approvalSteps = rpc<
   ApprovalStepView[]
 >('approval_steps');
 
-export const approvalRulesList = rpc<{ organizationId: string }, ApprovalRuleView[]>('approval_rules_list');
+/**
+ * `spaceIds` = the caller holds "manage approval rules" only in these workspaces: they see and change only
+ * those workspaces' rules (absent = org-wide). The SERVICE enforces it.
+ */
+export const approvalRulesList = rpc<{ organizationId: string; spaceIds?: string[] }, ApprovalRuleView[]>(
+  'approval_rules_list',
+);
 
 export const approvalRulesSave = rpc<
-  { organizationId: string; userId: string; input: ApprovalRuleInput; id?: string },
+  { organizationId: string; userId: string; input: ApprovalRuleInput; id?: string; spaceIds?: string[] },
   { id: string }
 >('approval_rules_save');
 
-export const approvalRulesInsights = rpc<{ organizationId: string; kind: RuleKind }, RuleInsights>(
+export const approvalRulesInsights = rpc<{ organizationId: string; kind: RuleKind; spaceIds?: string[] }, RuleInsights>(
   'approval_rules_insights',
 );
 
-export const approvalRulesDelete = rpc<{ organizationId: string; id: string }, { deleted: true }>(
+export const approvalRulesDelete = rpc<{ organizationId: string; id: string; spaceIds?: string[] }, { deleted: true }>(
   'approval_rules_delete',
 );

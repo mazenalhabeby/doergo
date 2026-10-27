@@ -65,6 +65,7 @@ export interface User {
   canAnswerPortal?: boolean
   canAddSpaceMembers?: boolean
   canGrantSpaceRoles?: boolean
+  canManageApprovalRules?: boolean
   crmViewOwn?: boolean
   crmViewAll?: boolean
   crmWork?: boolean

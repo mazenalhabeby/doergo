@@ -57,7 +57,13 @@ export function RulesTree() {
     </div>
   )
   const fallsThrough = uncaught.length ? (
-    <UncaughtNode items={uncaught} limitText={showLimit} busy={tree.busy} onAdd={(spaceId) => tree.add({ spaceId })} />
+    <UncaughtNode
+      items={uncaught}
+      limitText={showLimit}
+      busy={tree.busy}
+      everywhere={tree.everywhere}
+      onAdd={(spaceId) => tree.add({ spaceId })}
+    />
   ) : null
   const add = (
     <button type="button" onClick={() => tree.add()} disabled={tree.busy} className={NEW_NODE}>
@@ -122,6 +128,7 @@ export function RulesTree() {
               onChange: tree.change,
               onRemove: (r) => tree.remove.mutate(r.id),
               hits: tree.insights?.kind === tree.kind ? tree.insights.perRule : undefined,
+              everywhere: tree.everywhere,
             }}
           />
         )}

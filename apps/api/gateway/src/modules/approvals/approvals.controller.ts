@@ -13,7 +13,8 @@ import {
   Query,
   Request,
 } from '@nestjs/common';
-import { accessAllows, isAdmin, isApprovalKind, isRuleKind, ownAccess } from '@hbcfield/shared';
+import { isApprovalKind, isRuleKind } from '@hbcfield/shared';
+import { scopeFor } from '../../common/permission-scope';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DecideApprovalDto } from './dto/decide.dto';
 import { DecideDayDto } from './dto/decide-day.dto';
@@ -93,37 +94,36 @@ export class ApprovalsController {
   @Get('rules')
   @ApiOperation({ summary: "The office's approval rules (thresholds → a second approval)" })
   async listRules(@Request() req: AuthedRequest) {
-    assertManagesPeople(req.user);
-    return { success: true, data: await this.rules.list(callerOrgId(req.user)) };
+    return { success: true, data: await this.rules.list(callerOrgId(req.user), rulesScope(req.user)) };
   }
 
   @Get('rules/insights')
   @ApiOperation({ summary: 'What the rules of one kind did over the last 90 days, and the rules worth adding' })
   async ruleInsights(@Query('kind') kind: string, @Request() req: AuthedRequest) {
-    assertManagesPeople(req.user);
+    const scope = rulesScope(req.user);
     if (!isRuleKind(kind)) throw new BadRequestException('kind is overtime, request or expense');
-    return { success: true, data: await this.rules.insights(callerOrgId(req.user), kind) };
+    return { success: true, data: await this.rules.insights(callerOrgId(req.user), kind, scope) };
   }
 
   @Post('rules')
   @ApiOperation({ summary: 'Add an approval rule' })
   async createRule(@Body() dto: ApprovalRuleDto, @Request() req: AuthedRequest) {
-    assertManagesPeople(req.user);
-    return { success: true, data: await this.rules.save(callerOrgId(req.user), req.user.id, dto) };
+    const scope = rulesScope(req.user);
+    return { success: true, data: await this.rules.save(callerOrgId(req.user), req.user.id, dto, undefined, scope) };
   }
 
   @Patch('rules/:id')
   @ApiOperation({ summary: 'Change an approval rule' })
   async updateRule(@Param('id') id: string, @Body() dto: ApprovalRuleDto, @Request() req: AuthedRequest) {
-    assertManagesPeople(req.user);
-    return { success: true, data: await this.rules.save(callerOrgId(req.user), req.user.id, dto, id) };
+    const scope = rulesScope(req.user);
+    return { success: true, data: await this.rules.save(callerOrgId(req.user), req.user.id, dto, id, scope) };
   }
 
   @Delete('rules/:id')
   @ApiOperation({ summary: 'Remove an approval rule' })
   async deleteRule(@Param('id') id: string, @Request() req: AuthedRequest) {
-    assertManagesPeople(req.user);
-    return { success: true, data: await this.rules.remove(callerOrgId(req.user), id) };
+    const scope = rulesScope(req.user);
+    return { success: true, data: await this.rules.remove(callerOrgId(req.user), id, scope) };
   }
 
   @Post('decide')
@@ -155,11 +155,13 @@ function caller(req: AuthedRequest) {
 }
 
 /**
- * Office rules decide who may finish a decision, so they are the organization's
- * own policy: an administrator, or `canManageUsers` held org-wide on their OWN
- * access (never through a stand-in). An external member never holds it org-wide.
+ * Office rules decide who may finish a decision, so they are the organization's own policy: an administrator,
+ * or "manage approval rules" (bridged from canManageUsers org-wide, so nobody lost it when it was split out).
+ * Held in some workspaces only → those workspaces' rules (undefined = org-wide). Never through a stand-in —
+ * the key is not one a stand-in can hold — and never an external member (not on the external allow-list).
  */
-function assertManagesPeople(user: SessionUser) {
-  if (isAdmin(user) || accessAllows(ownAccess(user?.access), 'canManageUsers')) return;
-  throw new ForbiddenException('Only somebody who manages people can set approval rules');
+function rulesScope(user: SessionUser): string[] | undefined {
+  const scope = scopeFor(user, 'canManageApprovalRules');
+  if (scope && !scope.length) throw new ForbiddenException('Only somebody who may manage approval rules can do this');
+  return scope ?? undefined;
 }

@@ -57,6 +57,7 @@ export function RulePart({
   currency,
   range,
   hits,
+  everywhere = true,
   onChange,
   onRemove,
 }: {
@@ -68,6 +69,8 @@ export function RulePart({
   currency: string
   range: RuleRange
   hits?: number
+  /** May this caller set a rule for every workspace (not when they manage rules in some only)? */
+  everywhere?: boolean
   onChange: (patch: Partial<ApprovalRuleInput>) => void
   onRemove: () => void
 }) {

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ruleInputProblem,
   type ApprovalRuleInput,
@@ -21,9 +21,10 @@ export class ApprovalRulesAdminService {
 
   // ── The office's rules ────────────────────────────────────────────────
 
-  async listRules(organizationId: string): Promise<ApprovalRuleView[]> {
+  async listRules(organizationId: string, spaceIds?: string[]): Promise<ApprovalRuleView[]> {
     const rules = await this.prisma.approvalRule.findMany({
-      where: { organizationId },
+      // Held in some workspaces only: their rules, never the every-workspace ones or another workspace's.
+      where: { organizationId, ...(spaceIds ? { spaceId: { in: spaceIds } } : {}) },
       orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }],
     });
     const roleIds = [...new Set(rules.flatMap((r) => [r.secondRoleId, r.escalateRoleId]).filter(Boolean) as string[])];
@@ -58,9 +59,15 @@ export class ApprovalRulesAdminService {
     userId: string,
     input: ApprovalRuleInput,
     id?: string,
+    spaceIds?: string[],
   ): Promise<{ id: string }> {
     const problem = ruleInputProblem(input);
     if (problem) throw new BadRequestException({ message: RULE_MESSAGES[problem], code: problem });
+    // A workspace-scoped caller writes only their workspaces' rules — the new place AND the rule's current one.
+    if (spaceIds) {
+      if (!input.spaceId || !spaceIds.includes(input.spaceId)) throw outOfScope();
+      if (id) await this.assertRuleInScope(organizationId, id, spaceIds);
+    }
     // Any of the organization's SHARED roles — never somebody's personal role.
     const sharedRole = (id: string) => sharedRoleInOrg(this.prisma, id, organizationId);
     const [second, escalate, space] = await Promise.all([
@@ -99,11 +106,25 @@ export class ApprovalRulesAdminService {
     });
   }
 
-  async deleteRule(organizationId: string, id: string): Promise<{ deleted: true }> {
+  async deleteRule(organizationId: string, id: string, spaceIds?: string[]): Promise<{ deleted: true }> {
+    if (spaceIds) await this.assertRuleInScope(organizationId, id, spaceIds);
     const { count } = await this.prisma.approvalRule.deleteMany({ where: { id, organizationId } });
     if (!count) throw new NotFoundException('Rule not found');
     // Items half-way under it finish on their next approval, and stop saying "needs …" now.
     await closeStepsOf(this.prisma, organizationId, id);
     return { deleted: true };
   }
+
+  /** A rule outside the caller's workspaces is "not found" — never a hint that it exists. */
+  private async assertRuleInScope(organizationId: string, id: string, spaceIds: string[]): Promise<void> {
+    const rule = await this.prisma.approvalRule.findFirst({ where: { id, organizationId }, select: { spaceId: true } });
+    if (!rule || !rule.spaceId || !spaceIds.includes(rule.spaceId)) throw new NotFoundException('Rule not found');
+  }
+}
+
+function outOfScope() {
+  return new ForbiddenException({
+    message: 'You can set approval rules only for the workspaces where you may manage them.',
+    code: 'RULE_OUT_OF_SCOPE',
+  });
 }

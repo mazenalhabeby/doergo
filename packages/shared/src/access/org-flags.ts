@@ -41,6 +41,7 @@ export const ORG_FLAG_BRIDGES: Partial<Record<AccessPermissionKey, readonly Acce
   canViewTracking: ['canViewAllTasks'],
   canAddSpaceMembers: ['canManageUsers'],
   canGrantSpaceRoles: ['canManageUsers'],
+  canManageApprovalRules: ['canManageUsers'],
 };
 
 const CRM_KEYS = new Set<AccessPermissionKey>([

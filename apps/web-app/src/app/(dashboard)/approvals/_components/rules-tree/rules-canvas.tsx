@@ -31,6 +31,7 @@ export interface RulesCtx {
   onRemove: (r: ApprovalRuleView) => void
   /** How many items each rule would have taken over the last 90 days (absent while loading). */
   hits?: Record<string, number>
+  everywhere: boolean
 }
 const Ctx = createContext<RulesCtx | null>(null)
 
@@ -65,6 +66,7 @@ function PartNode({ data }: NodeProps<Node<PartData>>) {
         currency={ctx.currency}
         range={ctx.ranges[i]}
         hits={ctx.hits ? (ctx.hits[rule.id] ?? 0) : undefined}
+        everywhere={ctx.everywhere}
         onChange={(patch) => ctx.onChange(rule, patch)}
         onRemove={() => ctx.onRemove(rule)}
       />

@@ -25,29 +25,33 @@ export class ApprovalRulesClient extends BaseGatewayService {
       items,
     } satisfies RpcRequest<typeof approvalSteps>);
   }
-  list(organizationId: string) {
+  list(organizationId: string, spaceIds?: string[]) {
     return this.send<RpcReply<typeof approvalRulesList>>(pattern(approvalRulesList), {
       organizationId,
+      spaceIds,
     } satisfies RpcRequest<typeof approvalRulesList>);
   }
-  insights(organizationId: string, kind: RuleKind) {
+  insights(organizationId: string, kind: RuleKind, spaceIds?: string[]) {
     return this.send<RpcReply<typeof approvalRulesInsights>>(pattern(approvalRulesInsights), {
       organizationId,
       kind,
+      spaceIds,
     } satisfies RpcRequest<typeof approvalRulesInsights>);
   }
-  save(organizationId: string, userId: string, input: ApprovalRuleInput, id?: string) {
+  save(organizationId: string, userId: string, input: ApprovalRuleInput, id?: string, spaceIds?: string[]) {
     return this.sendOnce<RpcReply<typeof approvalRulesSave>>(pattern(approvalRulesSave), {
       organizationId,
       userId,
       input,
       id,
+      spaceIds,
     } satisfies RpcRequest<typeof approvalRulesSave>);
   }
-  remove(organizationId: string, id: string) {
+  remove(organizationId: string, id: string, spaceIds?: string[]) {
     return this.sendOnce<RpcReply<typeof approvalRulesDelete>>(pattern(approvalRulesDelete), {
       organizationId,
       id,
+      spaceIds,
     } satisfies RpcRequest<typeof approvalRulesDelete>);
   }
 }

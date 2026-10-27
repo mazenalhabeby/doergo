@@ -74,6 +74,10 @@ export const PERMISSION_KEYS = [
   // on canManageUsers, which in a space ALSO sets what each person bills at.
   'canAddSpaceMembers',
   'canGrantSpaceRoles',
+  // The office's approval rules (who must also approve, and the chase when nobody answers). Split out of
+  // canManageUsers so a manager or secretary can keep the rules without managing people; held in a
+  // workspace it covers only that workspace's rules.
+  'canManageApprovalRules',
   // Task-type / workflow definitions: which statuses exist and how work flows.
   'canManageTaskTypes',
   // Where staff physically are. Split from canViewAllTasks because reading a
