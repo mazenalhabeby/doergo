@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { DELEGATION_MAX_DAYS, type StandInView } from "@hbcfield/shared/client"
@@ -14,7 +14,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { Combobox } from "@/components/ui/combobox"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { GroupLabel, Panel } from "@/components/page/page-kit"
 
 const todayKey = () => {
   const d = new Date()
@@ -23,28 +23,20 @@ const todayKey = () => {
 const day = (k: string) => formatMediumDate(`${k}T12:00:00Z`)
 
 /**
- * Stand-ins: hand your approvals to a colleague for some days, see who covers
- * whom, end one. What a stand-in may then decide is the server's (shared
- * `access/delegation.ts`); this only records who, to whom, which days.
+ * The Stand-ins tab: hand your approvals to a colleague for some days (left), and who covers whom now and
+ * later (right), with "end". What a stand-in may then decide is the server's (shared `access/delegation.ts`);
+ * this only records who, to whom, which days.
  */
-export function StandInDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export function StandInsTab() {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const { data } = useQuery({ queryKey: keys.approvals.standIns(), queryFn: approvalsApi.standIns, enabled: open })
+  const { data } = useQuery({ queryKey: keys.approvals.standIns(), queryFn: approvalsApi.standIns })
 
   const [toUserId, setTo] = useState("")
   const [fromUserId, setFrom] = useState("")
   const [startsOn, setStart] = useState(todayKey())
   const [endsOn, setEnd] = useState(todayKey())
   const [note, setNote] = useState("")
-  useEffect(() => {
-    if (!open) return
-    setTo("")
-    setFrom("")
-    setStart(todayKey())
-    setEnd(todayKey())
-    setNote("")
-  }, [open])
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: keys.approvals.all() })
@@ -91,12 +83,12 @@ export function StandInDialog({ open, onOpenChange }: { open: boolean; onOpenCha
   const ready = !!toUserId && !!startsOn && !!endsOn && endsOn >= startsOn && !create.isPending
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-xl">
-        <DialogHeader>
-          <DialogTitle>{t("approvals.standIn.title")}</DialogTitle>
-          <DialogDescription>{t("approvals.standIn.intro")}</DialogDescription>
-        </DialogHeader>
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+      <Panel className="flex flex-col gap-3 p-5">
+        <div>
+          <b className="text-base">{t("approvals.standIn.title")}</b>
+          <p className="mt-1 text-sm text-muted-foreground">{t("approvals.standIn.intro")}</p>
+        </div>
 
         {data && !canFill && <p className="text-sm text-muted-foreground">{t("approvals.standIn.nothing")}</p>}
 
@@ -150,9 +142,10 @@ export function StandInDialog({ open, onOpenChange }: { open: boolean; onOpenCha
             </Button>
           </div>
         )}
-
+      </Panel>
+      <Panel className="flex flex-col gap-4 p-5">
         {data && (
-          <div className="space-y-4 border-t border-border pt-4">
+          <div className="space-y-4">
             <StandInList
               title={t("approvals.standIn.yours")}
               rows={data.given}
@@ -179,8 +172,8 @@ export function StandInDialog({ open, onOpenChange }: { open: boolean; onOpenCha
             )}
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </Panel>
+    </div>
   )
 }
 
@@ -201,7 +194,7 @@ function StandInList({
   if (!rows.length) return null
   return (
     <div>
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>
+      <GroupLabel className="px-0 pt-0">{title}</GroupLabel>
       <ul className="divide-y divide-border rounded-lg border border-border">
         {rows.map((r) => (
           <li key={r.id} className="flex items-center gap-3 px-3 py-2 text-sm">

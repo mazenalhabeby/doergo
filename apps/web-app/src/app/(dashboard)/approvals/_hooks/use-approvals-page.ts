@@ -38,11 +38,11 @@ export function useApprovalsPage() {
       if (id) setSelected(`${kind}:${id}`)
     }
   }, [])
-  const [standInOpen, setStandInOpen] = useState(false)
   // "Who approves" — the office's rules — is a tab of its own (?tab=rules opens it).
-  const [tab, setTab] = useState<"decide" | "rules">("decide")
+  const [tab, setTab] = useState<"decide" | "rules" | "stand">("decide")
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("tab") === "rules") setTab("rules")
+    const want = new URLSearchParams(window.location.search).get("tab")
+    if (want === "rules" || want === "stand") setTab(want)
   }, [])
   // Office rules are the organization's own policy: people managers only (the server checks the same).
   const { holds } = useRouteAccess()
@@ -142,8 +142,6 @@ export function useApprovalsPage() {
     setFilter,
     selected,
     setSelected,
-    standInOpen,
-    setStandInOpen,
     tab,
     setTab,
     managesPeople,

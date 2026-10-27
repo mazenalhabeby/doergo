@@ -9814,7 +9814,6 @@
     },
     "standIn": {
       "title": "Sostituto",
-      "open": "Sostituto",
       "intro": "Va via? Affidi le sue approvazioni a un collega per quei giorni. Decide ore, tempo in più, straordinari, ferie e richieste nei suoi spazi — mai denaro, documenti, nuove persone o clienti, e mai su di lei.",
       "who": "Chi la sostituisce",
       "whose": "Approvazioni di",
@@ -9898,7 +9897,8 @@
     "tree": {
       "tab": {
         "decide": "Da decidere",
-        "rules": "Chi approva"
+        "rules": "Chi approva",
+        "stand": "Sostituti"
       },
       "intro": "Scegli cosa va approvato. Aggiungi una regola quando deve passare anche a qualcun altro, o essere sollecitato se nessuno risponde.",
       "newRule": "Nuova regola",

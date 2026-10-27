@@ -9814,7 +9814,6 @@
     },
     "standIn": {
       "title": "Vertretung",
-      "open": "Vertretung",
       "intro": "Sie sind weg? Übergeben Sie Ihre Freigaben für diese Tage an eine Kollegin oder einen Kollegen. Die Vertretung entscheidet Stunden, Mehrzeit, Überstunden, Urlaub und Anträge in Ihren Arbeitsbereichen — nie Geld, Dokumente, neue Personen oder Kunden, und nie über Sie.",
       "who": "Wer vertritt",
       "whose": "Wessen Freigaben",
@@ -9898,7 +9897,8 @@
     "tree": {
       "tab": {
         "decide": "Zu entscheiden",
-        "rules": "Wer genehmigt"
+        "rules": "Wer genehmigt",
+        "stand": "Vertretungen"
       },
       "intro": "Wähle, was genehmigt werden muss. Füge eine Regel hinzu, wenn es zusätzlich an jemand anderen gehen oder nachgefasst werden soll, wenn niemand antwortet.",
       "newRule": "Neue Regel",

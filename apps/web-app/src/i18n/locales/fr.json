@@ -9814,7 +9814,6 @@
     },
     "standIn": {
       "title": "Remplaçant",
-      "open": "Remplaçant",
       "intro": "Vous partez ? Confiez vos validations à un collègue pour ces jours. Il décide des heures, du temps en plus, des heures supplémentaires, des congés et des demandes dans vos espaces — jamais d’argent, de documents, de nouvelles personnes ni de clients, et jamais à votre sujet.",
       "who": "Qui vous remplace",
       "whose": "Validations de",
@@ -9898,7 +9897,8 @@
     "tree": {
       "tab": {
         "decide": "À décider",
-        "rules": "Qui approuve"
+        "rules": "Qui approuve",
+        "stand": "Remplaçants"
       },
       "intro": "Choisissez ce qui doit être approuvé. Ajoutez une règle quand cela doit aussi aller à quelqu'un d'autre, ou être relancé quand personne ne répond.",
       "newRule": "Nouvelle règle",

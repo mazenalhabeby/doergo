@@ -21,9 +21,7 @@ import { DayPanel } from "./_components/day-panel"
 // Its own tab: never part of the inbox's first load.
 const RulesTree = dynamic(() => import("./_components/rules-tree/rules-tree").then((m) => m.RulesTree), { ssr: false })
 
-const StandInDialog = dynamic(() => import("./_components/stand-in-dialog").then((m) => m.StandInDialog), {
-  ssr: false,
-})
+const StandInsTab = dynamic(() => import("./_components/stand-ins-tab").then((m) => m.StandInsTab), { ssr: false })
 
 /**
  * Approvals — everything waiting for the member to decide, in one place.
@@ -44,8 +42,6 @@ export default function ApprovalsPage() {
     setFilter,
     selected,
     setSelected,
-    standInOpen,
-    setStandInOpen,
     tab,
     setTab,
     managesPeople,
@@ -68,6 +64,10 @@ export default function ApprovalsPage() {
     membersOf,
     approveDay,
   } = useApprovalsPage()
+  // An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL).
+  const tabs = (["decide", "rules", "stand"] as const).filter(
+    (k) => k === "decide" || (k === "rules" ? managesPeople : !user?.isExternal),
+  )
 
   return (
     <div className={PAGE_SHELL}>
@@ -81,13 +81,6 @@ export default function ApprovalsPage() {
               <span className="hidden text-sm text-muted-foreground sm:inline">
                 {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
               </span>
-            )}
-            {/* An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL). */}
-            {!user?.isExternal && (
-              <Button variant="outline" size="pill" onClick={() => setStandInOpen(true)}>
-                <UserRoundCheck />
-                {t("approvals.standIn.open")}
-              </Button>
             )}
             <Button
               variant="outline"
@@ -116,9 +109,9 @@ export default function ApprovalsPage() {
         </Notice>
       )}
 
-      {managesPeople && (
+      {tabs.length > 1 && (
         <div role="tablist" aria-label={t("approvals.title")} className="mb-4 flex gap-1 border-b border-border">
-          {(["decide", "rules"] as const).map((k) => (
+          {tabs.map((k) => (
             <button
               key={k}
               type="button"
@@ -140,6 +133,8 @@ export default function ApprovalsPage() {
 
       {tab === "rules" && managesPeople ? (
         <RulesTree />
+      ) : tab === "stand" && !user?.isExternal ? (
+        <StandInsTab />
       ) : isError ? (
         <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
       ) : (
@@ -262,7 +257,6 @@ export default function ApprovalsPage() {
           </aside>
         </div>
       )}
-      {standInOpen && <StandInDialog open={standInOpen} onOpenChange={setStandInOpen} />}
     </div>
   )
 }

@@ -9814,7 +9814,6 @@
     },
     "standIn": {
       "title": "Stand-in",
-      "open": "Stand-in",
       "intro": "Going away? Hand your approvals to a colleague for those days. They decide hours, extra time, overtime, leave and requests in your workspaces — never money, documents, new people or clients, and never about you.",
       "who": "Who stands in",
       "whose": "Whose approvals",
@@ -9898,7 +9897,8 @@
     "tree": {
       "tab": {
         "decide": "To decide",
-        "rules": "Who approves"
+        "rules": "Who approves",
+        "stand": "Stand-ins"
       },
       "intro": "Pick what needs approval. Add a rule when it should also go to someone else, or be chased when nobody answers.",
       "newRule": "New rule",

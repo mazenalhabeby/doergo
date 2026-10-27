@@ -9814,7 +9814,6 @@
     },
     "standIn": {
       "title": "Sustituto",
-      "open": "Sustituto",
       "intro": "¿Se va? Pase sus aprobaciones a un compañero esos días. Decide horas, tiempo extra, horas extra, permisos y solicitudes en sus espacios — nunca dinero, documentos, personas nuevas ni clientes, y nunca sobre usted.",
       "who": "Quién le sustituye",
       "whose": "Aprobaciones de",
@@ -9898,7 +9897,8 @@
     "tree": {
       "tab": {
         "decide": "Por decidir",
-        "rules": "Quién aprueba"
+        "rules": "Quién aprueba",
+        "stand": "Suplentes"
       },
       "intro": "Elige qué necesita aprobación. Añade una regla cuando deba ir también a otra persona o recordarse si nadie responde.",
       "newRule": "Nueva regla",
