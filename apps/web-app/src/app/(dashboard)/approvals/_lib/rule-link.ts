@@ -37,5 +37,7 @@ export function ruleLinkForItem(item: ApprovalItem): string | null {
           : kind === "expense"
             ? num("amountCents")
             : null
-  return ruleLinkFor(kind, item.space?.id ?? null, value != null && value > 0 ? limitUnder(kind, value) : null)
+  // A limit that rounds down to nothing (20 min of overtime) is no limit: the rule is offered for "every one".
+  const limit = value != null && value > 0 ? limitUnder(kind, value) : 0
+  return ruleLinkFor(kind, item.space?.id ?? null, limit > 0 ? limit : null)
 }

@@ -9835,7 +9835,10 @@
       "nothing": "Vous n’avez aucune validation à confier.",
       "covering": "Vous remplacez {{names}} — leurs validations sont dans votre liste.",
       "pickPerson": "Choisir une personne",
-      "maxDays": "Au plus {{count}} jours d’affilée."
+      "maxDays": "Au plus {{count}} jours d’affilée.",
+      "tooLong": "Trop long — au plus {{count}} jours d’affilée.",
+      "confirmEnd": "Terminer ?",
+      "confirmEndLabel": "Terminer ce remplacement ? Appuyez à nouveau pour confirmer"
     },
     "step": {
       "firstDone": "Validé — en attente de {{role}}.",
@@ -9923,11 +9926,13 @@
       "moreThan": "plus de",
       "any": "tous",
       "unit": {
-        "overtime": "h",
+        "overtime": "min",
         "request": "jours ouvrés",
         "expense": "{{currency}}",
         "hours": "min modifiées à la main",
-        "noShow": "jours d’affilée"
+        "noShow": "jours d’affilée",
+        "h": "h",
+        "min": "min"
       },
       "coverShort": "seulement s'il manquerait du monde",
       "alsoBy": "Puis aussi approuvé par",
@@ -10007,8 +10012,6 @@
         "fromItemAny": "Une règle comme pour la demande ouverte : {{where}}, toutes.",
         "approver": "Seconde approbation par {{role}} — modifiable sur le canevas"
       },
-      "minutes_one": "{{count}} min",
-      "minutes_other": "{{count}} min",
       "assetKind": "Type d’équipement",
       "anyAssetKind": "Tout type d’équipement",
       "urgentOnly": "Urgentes seulement",
@@ -10016,7 +10019,9 @@
       "doneMore": "Terminé · {{count}} approbations ou plus",
       "cannotApprove": "{{role}} — ne peut pas approuver ceci",
       "readOnly": "Pour tous les espaces — seule l’entreprise peut la modifier",
-      "confirmRemove": "Supprimer ?"
+      "confirmRemove": "Supprimer ?",
+      "confirmRemoveLabel": "Supprimer {{rule}} ? Appuyez à nouveau pour confirmer",
+      "ruleOff": "Désactivée"
     }
   },
   "overtimePage": {

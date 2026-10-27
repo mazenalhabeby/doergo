@@ -37,7 +37,10 @@ export function RulesTree() {
     tree.workspaces.find((w) => w.id === id)?.name ?? tree.rules.find((r) => r.spaceId === id)?.spaceName ?? "—"
   const ranges = useMemo(() => ruleRanges(tree.rules), [tree.rules])
   const uncaught = useMemo(() => fallThrough(tree.rules, tree.workspaces), [tree.rules, tree.workspaces])
-  // The canvas's nodes re-render only when what they show changes — never on an unrelated query or a save starting.
+  /*
+    The callbacks reach the LATEST tree through a ref, so they never change: the context below changes only
+    with what the nodes show (the rules, their ranges, the roles …) — not on every render of this page.
+  */
   const latest = useRef(tree)
   latest.current = tree
   const onChange = useCallback(
@@ -45,6 +48,7 @@ export function RulesTree() {
     [],
   )
   const onRemove = useCallback((r: ApprovalRuleView) => latest.current.remove.mutate(r.id), [])
+  const onAddAt = useCallback((spaceId?: string | null) => void latest.current.add({ spaceId }).catch(() => {}), [])
   const hits = tree.insights?.kind === tree.kind ? tree.insights.perRule : undefined
   const ctx = useMemo(
     () => ({
@@ -57,12 +61,24 @@ export function RulesTree() {
       onRemove,
       hits,
       everywhere: tree.everywhere,
+      removing: tree.removing,
     }),
-    [tree.rules, ranges, tree.roles, tree.workspaces, currency, onChange, onRemove, hits, tree.everywhere],
+    [
+      tree.rules,
+      ranges,
+      tree.roles,
+      tree.workspaces,
+      currency,
+      onChange,
+      onRemove,
+      hits,
+      tree.everywhere,
+      tree.removing,
+    ],
   )
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
-  const showLimit = (v: number) => limitText(t, tree.kind, v, currency)
+  const showLimit = useCallback((v: number) => limitText(t, tree.kind, v, currency), [t, tree.kind, currency])
   const { offers, dismiss } = useRuleOffers({
     kind: tree.kind,
     setKind: tree.setKind,
@@ -71,37 +87,38 @@ export function RulesTree() {
     limitText: showLimit,
   })
 
-  const start = (
-    <div className={START}>
-      <span className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
-        <Icon name="flash" size={14} />
-        {t("approvals.tree.startLabel")}
-      </span>
-      <b className="text-[16px] leading-snug">{kindName(tree.kind)}</b>
-      <span className="text-[12px] leading-snug text-muted-foreground">
-        {t("approvals.tree.first")}: {t(`approvals.tree.firstBy.${tree.kind}`)}
-      </span>
-    </div>
+  // The canvas's three boxes, each made again only when what it shows changes.
+  const busy = tree.busy || !tree.canAdd
+  const start = useMemo(
+    () => (
+      <div className={START}>
+        <span className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+          <Icon name="flash" size={14} />
+          {t("approvals.tree.startLabel")}
+        </span>
+        <b className="text-[16px] leading-snug">{t(`approvals.rules.kind.${tree.kind}`)}</b>
+        <span className="text-[12px] leading-snug text-muted-foreground">
+          {t("approvals.tree.first")}: {t(`approvals.tree.firstBy.${tree.kind}`)}
+        </span>
+      </div>
+    ),
+    [t, tree.kind],
   )
-  const fallsThrough = uncaught.length ? (
-    <UncaughtNode
-      items={uncaught}
-      limitText={showLimit}
-      busy={tree.busy || !tree.canAdd}
-      everywhere={tree.everywhere}
-      onAdd={(spaceId) => void tree.add({ spaceId }).catch(() => {})}
-    />
-  ) : null
-  const add = (
-    <button
-      type="button"
-      onClick={() => void tree.add().catch(() => {})}
-      disabled={tree.busy || !tree.canAdd}
-      className={NEW_NODE}
-    >
-      <Icon name="plus" size={16} />
-      {t("approvals.tree.newRule")}
-    </button>
+  const fallsThrough = useMemo(
+    () =>
+      uncaught.length ? (
+        <UncaughtNode items={uncaught} limitText={showLimit} busy={busy} everywhere={tree.everywhere} onAdd={onAddAt} />
+      ) : null,
+    [uncaught, showLimit, busy, tree.everywhere, onAddAt],
+  )
+  const add = useMemo(
+    () => (
+      <button type="button" onClick={() => onAddAt()} disabled={busy} className={NEW_NODE}>
+        <Icon name="plus" size={16} />
+        {t("approvals.tree.newRule")}
+      </button>
+    ),
+    [busy, onAddAt, t],
   )
 
   return (
@@ -123,8 +140,13 @@ export function RulesTree() {
         onDismiss={dismiss}
       />
       <div className="grid items-start gap-4 lg:grid-cols-[210px_minmax(0,1fr)]">
-        <Panel as="nav" className="flex flex-col gap-0.5">
-          <span className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+        {/* Below lg a compact strip that scrolls sideways, so the canvas is not pushed under a column of kinds. */}
+        <Panel
+          as="nav"
+          aria-label={t("approvals.tree.what")}
+          className="flex gap-0.5 overflow-x-auto max-lg:rounded-2xl lg:flex-col"
+        >
+          <span className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground max-lg:hidden">
             {t("approvals.tree.what")}
           </span>
           {RULE_KINDS.map((k) => {
@@ -133,9 +155,9 @@ export function RulesTree() {
               <button
                 key={k}
                 type="button"
-                aria-pressed={tree.kind === k}
+                aria-current={tree.kind === k ? "true" : undefined}
                 onClick={() => tree.setKind(k)}
-                className={cn(RAIL_ROW, "h-auto items-start py-2.5")}
+                className={cn(RAIL_ROW, "h-auto items-start py-2.5 max-lg:w-auto max-lg:max-w-[180px]")}
               >
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate">{kindName(k)}</span>

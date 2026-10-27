@@ -9835,7 +9835,10 @@
       "nothing": "Sie haben keine Freigaben zu übergeben.",
       "covering": "Sie vertreten {{names}} — deren Freigaben stehen in Ihrer Liste.",
       "pickPerson": "Person wählen",
-      "maxDays": "Höchstens {{count}} Tage am Stück."
+      "maxDays": "Höchstens {{count}} Tage am Stück.",
+      "tooLong": "Zu lang — höchstens {{count}} Tage am Stück.",
+      "confirmEnd": "Beenden?",
+      "confirmEndLabel": "Diese Vertretung beenden? Zum Bestätigen noch einmal drücken"
     },
     "step": {
       "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
@@ -9923,11 +9926,13 @@
       "moreThan": "mehr als",
       "any": "beliebig",
       "unit": {
-        "overtime": "Std.",
+        "overtime": "Min.",
         "request": "Arbeitstage",
         "expense": "{{currency}}",
         "hours": "Min. von Hand geändert",
-        "noShow": "Tage in Folge"
+        "noShow": "Tage in Folge",
+        "h": "Std.",
+        "min": "Min."
       },
       "coverShort": "nur wenn Leute fehlen würden",
       "alsoBy": "Dann zusätzlich genehmigt von",
@@ -10007,8 +10012,6 @@
         "fromItemAny": "Eine Regel wie beim geöffneten Antrag: {{where}}, alle.",
         "approver": "Zweite Genehmigung durch {{role}} — im Plan änderbar"
       },
-      "minutes_one": "{{count}} Min.",
-      "minutes_other": "{{count}} Min.",
       "assetKind": "Anlagenart",
       "anyAssetKind": "Jede Anlagenart",
       "urgentOnly": "Nur dringende",
@@ -10016,7 +10019,9 @@
       "doneMore": "Fertig · {{count}} oder mehr Genehmigungen",
       "cannotApprove": "{{role}} — darf das nicht genehmigen",
       "readOnly": "Für alle Arbeitsbereiche — nur die Firma kann das ändern",
-      "confirmRemove": "Löschen?"
+      "confirmRemove": "Löschen?",
+      "confirmRemoveLabel": "{{rule}} löschen? Zum Bestätigen noch einmal drücken",
+      "ruleOff": "Aus"
     }
   },
   "overtimePage": {

@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 import { APPROVAL_KINDS, describeApproval, type ApprovalItem, type ApprovalT } from "@hbcfield/shared/client"
 import { mayOpen, type AccessContext, type AccessUser } from "@/lib/route-access"
+import { tabKeyTarget } from "../_lib/tab-keys"
 
 /*
   The approvals inbox on the web: who is offered it, and that every kind it can
@@ -91,5 +92,15 @@ describe("describeApproval", () => {
   it("a leave request reads its type, other requests their kind", () => {
     expect(describeApproval(base("request", { requestKind: "LEAVE", type: "SICK" }), t, "en").headline).toBe("Sick")
     expect(describeApproval(base("request", { requestKind: "REMOTE" }), t, "en").headline).toBe("Remote day")
+  })
+})
+
+describe("the tab list's keys", () => {
+  it("arrows go round the ends, Home and End to the first and last, other keys nowhere", () => {
+    expect(tabKeyTarget("ArrowRight", 2, 3)).toBe(0)
+    expect(tabKeyTarget("ArrowLeft", 0, 3)).toBe(2)
+    expect(tabKeyTarget("Home", 2, 3)).toBe(0)
+    expect(tabKeyTarget("End", 0, 3)).toBe(2)
+    expect(tabKeyTarget("Enter", 1, 3)).toBeNull()
   })
 })

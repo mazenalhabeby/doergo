@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { DELEGATION_MAX_DAYS, localDateKey, type StandInView } from "@hbcfield/shared/client"
+import { DELEGATION_MAX_DAYS, localDateKey, standInDatesProblem, type StandInView } from "@hbcfield/shared/client"
 
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { GroupLabel, Panel } from "@/components/page/page-kit"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ListTableError } from "@/components/common/list-page"
+import { cn } from "@/lib/utils"
+import { useConfirmPress } from "../_hooks/use-confirm-press"
 
 // Today on this device's calendar (the shared day key).
 const todayKey = () => localDateKey()
@@ -83,7 +85,9 @@ export function StandInsTab() {
   )
 
   const canFill = !!data && (data.mayHandOver || data.mayArrange)
-  const ready = !!toUserId && !!startsOn && !!endsOn && endsOn >= startsOn && !create.isPending
+  // Longer than a stand-in may run: said beside the dates, and never sent (the server refuses it too).
+  const tooLong = standInDatesProblem(startsOn, endsOn, todayKey(), DELEGATION_MAX_DAYS) === "STAND_IN_TOO_LONG"
+  const ready = !!toUserId && !!startsOn && !!endsOn && endsOn >= startsOn && !tooLong && !create.isPending
 
   if (isError) return <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
   if (isLoading)
@@ -108,18 +112,24 @@ export function StandInsTab() {
           <div className="space-y-3">
             {data!.mayArrange && (
               <div className="space-y-1.5">
-                <Label>{t("approvals.standIn.whose")}</Label>
+                <Label htmlFor="stand-in-whose">{t("approvals.standIn.whose")}</Label>
                 <Combobox
+                  id="stand-in-whose"
                   value={fromUserId}
-                  onChange={setFrom}
+                  // Nobody stands in for themselves: a stand-in who is now the one away is cleared.
+                  onChange={(v) => {
+                    setFrom(v)
+                    if (v && v === toUserId) setTo("")
+                  }}
                   options={leaders}
                   placeholder={t("approvals.standIn.me")}
                 />
               </div>
             )}
             <div className="space-y-1.5">
-              <Label>{t("approvals.standIn.who")}</Label>
+              <Label htmlFor="stand-in-who">{t("approvals.standIn.who")}</Label>
               <Combobox
+                id="stand-in-who"
                 value={toUserId}
                 onChange={setTo}
                 options={people}
@@ -145,8 +155,8 @@ export function StandInsTab() {
                 <DatePicker id="stand-in-to" value={endsOn} min={startsOn} onChange={setEnd} />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {t("approvals.standIn.maxDays", { count: DELEGATION_MAX_DAYS })}
+            <p aria-live="polite" className={cn("text-xs", tooLong ? "text-shell-crit" : "text-muted-foreground")}>
+              {t(tooLong ? "approvals.standIn.tooLong" : "approvals.standIn.maxDays", { count: DELEGATION_MAX_DAYS })}
             </p>
             <div className="space-y-1.5">
               <Label htmlFor="stand-in-note">{t("approvals.standIn.note")}</Label>
@@ -229,14 +239,28 @@ function StandInList({
                 {r.note ? ` · ${r.note}` : ""}
               </p>
             </div>
-            {r.canEnd && (
-              <Button variant="outline" size="sm" className="rounded-lg" disabled={busy} onClick={() => onEnd(r.id)}>
-                {t("approvals.standIn.end")}
-              </Button>
-            )}
+            {r.canEnd && <EndButton busy={busy} onEnd={() => onEnd(r.id)} />}
           </li>
         ))}
       </ul>
     </div>
+  )
+}
+
+/** "End" acts on the second press — a stand-in is never ended by one stray tap. */
+function EndButton({ busy, onEnd }: { busy: boolean; onEnd: () => void }) {
+  const { t } = useTranslation()
+  const { asking, press } = useConfirmPress(onEnd)
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className={cn("rounded-lg", asking && "border-shell-crit text-shell-crit")}
+      disabled={busy}
+      onClick={press}
+      aria-label={asking ? t("approvals.standIn.confirmEndLabel") : undefined}
+    >
+      {asking ? t("approvals.standIn.confirmEnd") : t("approvals.standIn.end")}
+    </Button>
   )
 }

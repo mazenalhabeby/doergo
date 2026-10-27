@@ -8,7 +8,15 @@ import { assetsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
-import { limitInput, limitMax, limitPatch, limitText } from "../../_lib/rule-limit"
+import {
+  durationFields,
+  durationValue,
+  isDurationKind,
+  limitInput,
+  limitMax,
+  limitPatch,
+  limitText,
+} from "../../_lib/rule-limit"
 import type { RuleRange } from "../../_lib/rule-range"
 import { ChoiceSelect, FlowNode, LIMIT, NONE } from "./tree-nodes"
 
@@ -31,12 +39,42 @@ export function WhenNode({
   const { t } = useTranslation()
   const stored = limitInput(rule)
   const [limit, setLimit] = useState(stored)
+  // A duration is typed as hours and minutes, each its own field.
+  const duration = isDurationKind(rule.kind)
+  const [hm, setHm] = useState(() => durationFields(stored))
   // Follows the SAVED value only when it changes — a refetch of the same rule never wipes what is being typed.
-  useEffect(() => setLimit(stored), [stored])
+  useEffect(() => {
+    setLimit(stored)
+    setHm(durationFields(stored))
+  }, [stored])
+  const typed = duration ? durationValue(hm.h, hm.m) : limit
   // Saved on Enter, on leaving the field, and when the editor closes (Escape or a click away) — never on unmount,
   // which is also what a DELETED rule does.
-  const commit = () => limit !== stored && onChange(limitPatch(rule.kind, limit))
+  const commit = () => typed !== stored && onChange(limitPatch(rule.kind, typed))
   const hasLimit = !!RULE_LIMITS[rule.kind]
+  const field = (
+    value: string,
+    set: (v: string) => void,
+    label: string,
+    max?: number,
+    empty = t("approvals.tree.any"),
+  ) => (
+    <input
+      type="number"
+      min={0}
+      max={max}
+      inputMode={duration ? "numeric" : "decimal"}
+      value={value}
+      placeholder={empty}
+      onChange={(e) => set(e.target.value)}
+      // Hours → minutes is one value being typed: saved when focus leaves the PAIR, or the half-typed hours would
+      // be saved and the saved value would wipe the minutes being typed.
+      onBlur={(e) => !(duration && e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) && commit()}
+      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+      aria-label={label}
+      className={cn(LIMIT, duration ? "w-16" : "w-24", "text-center")}
+    />
+  )
   // Asset kinds are read only for an asset-papers rule, and once for every such rule (shared cache).
   const { data: kinds } = useQuery({
     queryKey: keys.assets.categories(null),
@@ -74,21 +112,28 @@ export function WhenNode({
       }
     >
       {hasLimit && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-[13px] text-muted-foreground">{t("approvals.tree.moreThan")}</span>
-          <input
-            type="number"
-            min={0}
-            max={limitMax(rule.kind)}
-            inputMode="decimal"
-            value={limit}
-            placeholder={t("approvals.tree.any")}
-            onChange={(e) => setLimit(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-            aria-label={t("approvals.tree.moreThan")}
-            className={cn(LIMIT, "w-24 text-center")}
-          />
+          {duration ? (
+            <>
+              {field(
+                hm.h,
+                (h) => setHm((v) => ({ ...v, h })),
+                `${t("approvals.tree.moreThan")} · ${t("approvals.tree.unit.h")}`,
+                Math.floor((limitMax(rule.kind) ?? 0) / 60),
+              )}
+              <span className="text-[13px] text-muted-foreground">{t("approvals.tree.unit.h")}</span>
+              {field(
+                hm.m,
+                (m) => setHm((v) => ({ ...v, m })),
+                `${t("approvals.tree.moreThan")} · ${t("approvals.tree.unit.min")}`,
+                59,
+                "0",
+              )}
+            </>
+          ) : (
+            field(limit, setLimit, t("approvals.tree.moreThan"), limitMax(rule.kind))
+          )}
           <span className="text-[13px] text-muted-foreground">
             {t(`approvals.tree.unit.${rule.kind}`, { currency })}
           </span>

@@ -41,6 +41,8 @@ interface ComboboxProps {
   className?: string
   contentClassName?: string
   disabled?: boolean
+  /** The trigger's id — a `<Label htmlFor>` names the field for a screen reader. */
+  id?: string
 }
 
 /**
@@ -61,6 +63,7 @@ export function Combobox({
   className,
   contentClassName,
   disabled,
+  id,
 }: ComboboxProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -102,6 +105,7 @@ export function Combobox({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
           role="combobox"
           aria-expanded={open}

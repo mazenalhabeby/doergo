@@ -149,13 +149,32 @@ export function useRulesTree(enabled: boolean) {
     onSuccess: refresh,
     onError: fail,
   })
+  /*
+    Delete: the rule leaves the screen at once (and with it any save still queued for it — the queue finds it gone);
+    a refused delete puts it back where it was. No re-read lands while it is in flight, or it would bring it back.
+  */
   const remove = useMutation({
     mutationFn: (id: string) => approvalsApi.deleteRule(id),
-    onSuccess: () => {
-      notify.success(t("approvals.tree.removed"))
+    onMutate: async (id: string) => {
+      pending.current += 1
+      await qc.cancelQueries({ queryKey: keys.approvals.rules() })
+      const list = qc.getQueryData<ApprovalRuleView[]>(keys.approvals.rules()) ?? []
+      const at = list.findIndex((x) => x.id === id)
+      qc.setQueryData<ApprovalRuleView[]>(keys.approvals.rules(), (old) => (old ?? []).filter((x) => x.id !== id))
+      return { rule: at >= 0 ? list[at] : undefined, at }
+    },
+    onSuccess: () => notify.success(t("approvals.tree.removed")),
+    onError: (e: Error, _id, back) => {
+      if (back?.rule)
+        qc.setQueryData<ApprovalRuleView[]>(keys.approvals.rules(), (old = []) =>
+          old.some((x) => x.id === back.rule!.id) ? old : [...old.slice(0, back.at), back.rule!, ...old.slice(back.at)],
+        )
+      fail(e)
+    },
+    onSettled: () => {
+      pending.current -= 1
       refresh()
     },
-    onError: fail,
   })
 
   /*
@@ -197,7 +216,8 @@ export function useRulesTree(enabled: boolean) {
     return create.mutateAsync({ kind, spaceId, ...limitFields(kind, limit), secondRoleId: role.id, isActive: true })
   }
 
-  const ofKind = (rules ?? []).filter((r) => r.kind === kind)
+  // One list per change of the rules or the kind — every memo on the page reads it.
+  const ofKind = useMemo(() => (rules ?? []).filter((r) => r.kind === kind), [rules, kind])
   return {
     kind,
     setKind,
@@ -215,6 +235,8 @@ export function useRulesTree(enabled: boolean) {
     change,
     add,
     remove,
+    /** The rule whose delete is in flight (its bin is not pressed twice). */
+    removing: remove.isPending ? (remove.variables ?? null) : null,
     busy: create.isPending,
     // A manager of some workspaces only adds a rule for one of them — never before the list has loaded.
     canAdd: !scope || workspaces.length > 0,

@@ -9835,7 +9835,10 @@
       "nothing": "No tiene aprobaciones que pasar.",
       "covering": "Sustituye a {{names}} — sus aprobaciones están en su lista.",
       "pickPerson": "Elija una persona",
-      "maxDays": "Como máximo {{count}} días seguidos."
+      "maxDays": "Como máximo {{count}} días seguidos.",
+      "tooLong": "Demasiado largo: como máximo {{count}} días seguidos.",
+      "confirmEnd": "¿Terminar?",
+      "confirmEndLabel": "¿Terminar esta sustitución? Pulsa otra vez para confirmar"
     },
     "step": {
       "firstDone": "Aprobado — ahora espera a {{role}}.",
@@ -9923,11 +9926,13 @@
       "moreThan": "más de",
       "any": "cualquiera",
       "unit": {
-        "overtime": "h",
+        "overtime": "min",
         "request": "días laborables",
         "expense": "{{currency}}",
         "hours": "min cambiados a mano",
-        "noShow": "días seguidos"
+        "noShow": "días seguidos",
+        "h": "h",
+        "min": "min"
       },
       "coverShort": "solo si faltaría gente",
       "alsoBy": "Luego también lo aprueba",
@@ -10007,8 +10012,6 @@
         "fromItemAny": "Una regla como la de la solicitud abierta: {{where}}, todas.",
         "approver": "Segunda aprobación de {{role}} — se cambia en el lienzo"
       },
-      "minutes_one": "{{count}} min",
-      "minutes_other": "{{count}} min",
       "assetKind": "Tipo de activo",
       "anyAssetKind": "Cualquier tipo de activo",
       "urgentOnly": "Solo urgentes",
@@ -10016,7 +10019,9 @@
       "doneMore": "Listo · {{count}} o más aprobaciones",
       "cannotApprove": "{{role}} — no puede aprobar esto",
       "readOnly": "Para todos los espacios — solo la empresa puede cambiarla",
-      "confirmRemove": "¿Borrar?"
+      "confirmRemove": "¿Borrar?",
+      "confirmRemoveLabel": "¿Borrar {{rule}}? Pulsa otra vez para confirmar",
+      "ruleOff": "Desactivada"
     }
   },
   "overtimePage": {

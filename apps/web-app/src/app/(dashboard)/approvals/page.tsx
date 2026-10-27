@@ -17,9 +17,9 @@ import { KindRailItem } from "./_components/kind-rail-item"
 import { ApprovalRow } from "./_components/approval-row"
 import { DayRow } from "./_components/day-row"
 import { DayPanel } from "./_components/day-panel"
+import { tabKeyTarget } from "./_lib/tab-keys"
 
-// Its own tab: never part of the inbox's first load.
-// The tab's own shape while its code arrives — never a blank panel.
+// Its own tab: never part of the inbox's first load; the tab's own shape while its code arrives, never a blank panel.
 const TabLoading = () => <Skeleton className="h-[420px] w-full rounded-[22px]" />
 const RulesTree = dynamic(() => import("./_components/rules-tree/rules-tree").then((m) => m.RulesTree), {
   ssr: false,
@@ -84,23 +84,26 @@ export default function ApprovalsPage() {
         tour="page-approvals"
         title={t("approvals.title")}
         subtitle={t("approvals.subtitle")}
+        // Refresh and "Updated …" are about the inbox: only on its tab (the other tabs keep themselves current).
         actions={
-          <>
-            {dataUpdatedAt > 0 && (
-              <span className="hidden text-sm text-muted-foreground sm:inline">
-                {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
-              </span>
-            )}
-            <Button
-              variant="outline"
-              size="pillIcon"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              aria-label={t("approvals.refresh")}
-            >
-              <RefreshCw className={cn(isFetching && "animate-spin")} />
-            </Button>
-          </>
+          shown === "decide" && (
+            <>
+              {dataUpdatedAt > 0 && (
+                <span className="hidden text-sm text-muted-foreground sm:inline">
+                  {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
+                </span>
+              )}
+              <Button
+                variant="outline"
+                size="pillIcon"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                aria-label={t("approvals.refresh")}
+              >
+                <RefreshCw className={cn(isFetching && "animate-spin")} />
+              </Button>
+            </>
+          )
         }
       />
 
@@ -123,12 +126,12 @@ export default function ApprovalsPage() {
           role="tablist"
           aria-label={t("approvals.title")}
           className="mb-4 flex gap-1 border-b border-border"
-          // ← / → move between the tabs (the focus follows), as a tab list does.
+          // ← / → move between the tabs, Home / End to the first and last (the focus follows), as a tab list does.
           onKeyDown={(e) => {
-            if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
+            const to = tabKeyTarget(e.key, tabs.indexOf(shown), tabs.length)
+            if (to == null) return
             e.preventDefault()
-            const at = tabs.indexOf(shown)
-            const next = tabs[(at + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]!
+            const next = tabs[to]!
             setTab(next)
             document.getElementById(`approvals-tab-${next}`)?.focus()
           }}

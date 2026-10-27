@@ -9835,7 +9835,10 @@
       "nothing": "You have no approvals to hand over.",
       "covering": "You're covering for {{names}} — their approvals are in your list.",
       "pickPerson": "Choose a person",
-      "maxDays": "At most {{count}} days at a time."
+      "maxDays": "At most {{count}} days at a time.",
+      "tooLong": "Too long — at most {{count}} days at a time.",
+      "confirmEnd": "End?",
+      "confirmEndLabel": "End this stand-in? Press again to confirm"
     },
     "step": {
       "firstDone": "Approved — now waiting for {{role}}.",
@@ -9923,11 +9926,13 @@
       "moreThan": "more than",
       "any": "any",
       "unit": {
-        "overtime": "h",
+        "overtime": "min",
         "request": "working days",
         "expense": "{{currency}}",
         "hours": "min changed by hand",
-        "noShow": "days in a row"
+        "noShow": "days in a row",
+        "h": "h",
+        "min": "min"
       },
       "coverShort": "only when people would be short",
       "alsoBy": "Then also approved by",
@@ -10007,8 +10012,6 @@
         "fromItemAny": "A rule like the one you came from: {{where}}, every one.",
         "approver": "Second approval by {{role}} — change it on the canvas"
       },
-      "minutes_one": "{{count}} min",
-      "minutes_other": "{{count}} min",
       "assetKind": "Asset kind",
       "anyAssetKind": "Any asset kind",
       "urgentOnly": "Urgent only",
@@ -10016,7 +10019,9 @@
       "doneMore": "Done · {{count}} or more approvals",
       "cannotApprove": "{{role}} — cannot approve this",
       "readOnly": "For every workspace — only the company can change it",
-      "confirmRemove": "Delete?"
+      "confirmRemove": "Delete?",
+      "confirmRemoveLabel": "Delete {{rule}}? Press again to confirm",
+      "ruleOff": "Off"
     }
   },
   "overtimePage": {
