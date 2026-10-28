@@ -3,6 +3,7 @@ import {
   APPROVAL_KIND_SPECS,
   accessAllowsAnywhere,
   isAdmin,
+  JOIN_REQUEST_MAX_PENDING_PER_ORG,
   orgFlagFields,
   ownAccess,
   spacesGranting,
@@ -17,6 +18,10 @@ import type { SessionUser } from '../../common/request.types';
 import type { ResolvedAccess } from '@hbcfield/shared';
 /** One existing list may take this long; past it, its kind is "unavailable" and the rest still shows. */
 const SOURCE_TIMEOUT_MS = 8_000;
+/** One page of a long list (hours, expenses) — the most a list endpoint returns. */
+const INBOX_PAGE = 200;
+/** Every join request an organization can have waiting. */
+const JOINS_PENDING = `/join-requests?status=PENDING&limit=${JOIN_REQUEST_MAX_PENDING_PER_ORG}`;
 
 /** The badge is asked often (every page, every focus): answered from a short per-person cache. */
 const COUNT_TTL_MS = 20_000;
@@ -50,6 +55,27 @@ function rows(body: unknown): Row[] {
   if (Array.isArray(b?.data)) return b.data;
   if (Array.isArray(b?.data?.data)) return b.data.data;
   return [];
+}
+
+/**
+ * How many wait beyond the rows returned — a list that says its total (`meta.total` when paginated,
+ * `total` beside the rows). 0 when it does not say, or nothing is left out.
+ */
+function leftOut(body: unknown, shown: number): number {
+  const b = body as any;
+  const total = b?.meta?.total ?? b?.data?.meta?.total ?? b?.data?.total ?? b?.total;
+  return typeof total === 'number' && total > shown ? total - shown : 0;
+}
+
+/** One page of a long list, OLDEST first and never the caller's own, with how many more wait. */
+async function oldestPage(
+  get: (path: string) => Promise<unknown>,
+  path: string,
+  pick: (body: unknown) => Row[],
+): Promise<{ list: Row[]; left: number }> {
+  const body = await get(`${path}?limit=${INBOX_PAGE}&order=oldest`);
+  const list = pick(body);
+  return { list, left: leftOut(body, list.length) };
 }
 
 function entries(body: unknown, key: string): Row[] {
@@ -111,6 +137,8 @@ export {
   MAX_SHARED_SPACES,
   Row,
   rows,
+  oldestPage,
+  JOINS_PENDING,
   entries,
   holdsAnywhere,
   scopeForOwn,

@@ -17,7 +17,7 @@ import {
   standInsAround,
   PrismaService,
 } from '@hbcfield/shared';
-import type { Decided, GateVerdict, RuleGateInput } from './rule-gate-types';
+import { ADMIN_WORDS, type Decided, type GateVerdict, type RuleGateInput } from './rule-gate-types';
 import { consumeStep, joinRoleNames, openStep, stepCreateData, stepRules, storedFacts } from './approval-steps';
 import { BatchNotices, tellNextApprovers } from './approval-step-notices';
 
@@ -142,14 +142,14 @@ export class ApprovalRulesService {
     const leftNames = turn.samePerson || !turn.waitsForYou ? await this.roleLabel(left.length ? left : required) : '';
     if (turn.samePerson) {
       throw new ConflictException({
-        message: `This needs another approval by ${leftNames}.`,
+        message: `This needs another approval by ${leftNames || ADMIN_WORDS}.`,
         code: 'SECOND_STEP_SAME_PERSON',
         params: { role: leftNames },
       });
     }
     if (!turn.waitsForYou) {
       throw new ForbiddenException({
-        message: `The next approval is for ${leftNames}.`,
+        message: `The next approval is for ${leftNames || ADMIN_WORDS}.`,
         code: 'SECOND_STEP_REQUIRED',
         params: { role: leftNames },
       });
@@ -278,10 +278,10 @@ export class ApprovalRulesService {
 
   // ── telling the next approvers ─────────────────────────────────────────
 
-  /** The roles still needed, in words ("HR + Finance"). */
+  /** The roles still needed, in words; '' = none can be named — each app says "an administrator" (`roleOrAdministrator`). */
   private async roleLabel(roleIds: string[]): Promise<string> {
     const roles = await roleNames(this.prisma, roleIds);
-    return joinRoleNames(roleIds, new Map(roles.map((r) => [r.id, r.name]))) || 'an administrator';
+    return joinRoleNames(roleIds, new Map(roles.map((r) => [r.id, r.name])));
   }
 
   /** The holders of the next role needed are told (approval-step-notices.ts) — in a batch, collected until it ends. */

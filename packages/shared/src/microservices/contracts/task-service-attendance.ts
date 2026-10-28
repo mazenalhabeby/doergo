@@ -74,6 +74,10 @@ export const getPendingApprovals = rpc<{
   page?: number;
   limit?: number;
   summary?: boolean;
+  /** The approvals inbox reads the OLDEST first, so a backlog is never hidden behind newer days. */
+  oldestFirst?: boolean;
+  /** Leave out this person's own entries (the inbox never lists them, so the total must not count them). */
+  exceptUserId?: string;
 }>('get_pending_approvals');
 
 export const approveEntry = rpc<{

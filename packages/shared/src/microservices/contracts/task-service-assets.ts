@@ -166,7 +166,14 @@ export const assetExpenseSubmit = rpc<
   } & AssetActorMessage
 >('asset_expense_submit');
 export const assetExpenseMine = rpc<{ userId: string; organizationId: string; limit?: number }>('asset_expense_mine');
-export const assetExpensePending = rpc<{ limit?: number } & AssetActorMessage>('asset_expense_pending');
+export const assetExpensePending = rpc<
+  {
+    limit?: number;
+    /** The approvals inbox: oldest first, never the caller's own slips (it never lists them). */
+    oldestFirst?: boolean;
+    exceptAuthorId?: string;
+  } & AssetActorMessage
+>('asset_expense_pending');
 export const assetExpenseReview = rpc<
   AssetActorMessage & { entryId: string; decision: 'accept' | 'reject'; note?: string }
 >('asset_expense_review');

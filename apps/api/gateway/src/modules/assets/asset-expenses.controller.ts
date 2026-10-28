@@ -14,9 +14,7 @@ import { ReviewExpenseDto } from './dto/decision-bodies.dto';
 @RequireModule('assets')
 @Controller('assets')
 export class AssetExpensesController {
-  constructor(
-    private readonly assetsService: AssetsService,
-  ) {}
+  constructor(private readonly assetsService: AssetsService) {}
 
   /*
     The office's queue: everything waiting on a decision — of the records the
@@ -26,9 +24,15 @@ export class AssetExpensesController {
   @Get('expenses/pending')
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'Expenses waiting for a decision' })
-  async pendingExpenses(@Query('limit') limit: number, @Request() req: AuthedRequest) {
+  async pendingExpenses(
+    @Query('limit') limit: number,
+    @Request() req: AuthedRequest,
+    /** `oldest` → oldest first and never the caller's own (the approvals inbox). */
+    @Query('order') order?: string,
+  ) {
     return this.assetsService.expensePending({
       limit,
+      ...(order === 'oldest' ? { oldestFirst: true, exceptAuthorId: req.user.id } : {}),
       ...assetActor(req),
     });
   }

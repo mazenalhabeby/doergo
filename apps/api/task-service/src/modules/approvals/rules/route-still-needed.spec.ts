@@ -17,19 +17,17 @@ describe('stillNeededBy', () => {
     return {
       approvalStep: { findMany: jest.fn().mockResolvedValue(step ? [step] : []) },
       approvalRule: {
-        findMany: jest
-          .fn()
-          .mockResolvedValue([
-            {
-              id: 'r1',
-              kind: 'overtime',
-              spaceId: null,
-              minMinutes: 60,
-              secondRoleId: 'payroll',
-              isActive: true,
-              createdAt: new Date(0),
-            },
-          ]),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'r1',
+            kind: 'overtime',
+            spaceId: null,
+            minMinutes: 60,
+            secondRoleId: 'payroll',
+            isActive: true,
+            createdAt: new Date(0),
+          },
+        ]),
       },
       approvalDelegation: { findMany: jest.fn().mockResolvedValue(standIns) },
     } as never;

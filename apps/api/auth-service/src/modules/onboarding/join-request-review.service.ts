@@ -1,5 +1,5 @@
 import type { Prisma, JoinRequestStatus } from '@prisma/client';
-import { clampListLimit } from '@hbcfield/shared';
+import { clampListLimit, JOIN_REQUEST_MAX_PENDING_PER_ORG } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 import { BillingService } from '../billing/billing.service';
@@ -28,7 +28,8 @@ export class JoinRequestReviewService {
    */
   async listJoinRequests(data: { organizationId: string; status?: string; page?: number; limit?: number }) {
     const page = data.page || 1;
-    const limit = clampListLimit(data.limit, 10, 50);
+    // Up to every request an organization can have waiting (the approvals inbox reads them all).
+    const limit = clampListLimit(data.limit, 10, JOIN_REQUEST_MAX_PENDING_PER_ORG);
     const skip = (page - 1) * limit;
 
     const where: Prisma.JoinRequestWhereInput = { organizationId: data.organizationId };

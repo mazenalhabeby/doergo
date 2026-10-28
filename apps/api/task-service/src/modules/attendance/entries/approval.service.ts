@@ -36,6 +36,8 @@ export class ApprovalService {
     limit?: number;
     /** Just the counts — how many, and how many per workspace (the home's Crew card). */
     summary?: boolean;
+    oldestFirst?: boolean;
+    exceptUserId?: string;
   }) {
     const page = clampListPage(data.page);
     const limit = clampListLimit(data.limit, 20);
@@ -47,6 +49,7 @@ export class ApprovalService {
       // 'not found', which is also the right thing to tell them.
       ...scopeWhere(data.scopeSpaceIds),
       approvalStatus: ApprovalStatus.PENDING,
+      ...(data.exceptUserId ? { userId: { not: data.exceptUserId } } : {}),
       status: { not: 'CLOCKED_IN' as TimeEntryStatus }, // Only completed entries
     };
 
@@ -80,7 +83,7 @@ export class ApprovalService {
           },
           breaks: true,
         },
-        orderBy: { clockInAt: 'desc' },
+        orderBy: { clockInAt: data.oldestFirst ? 'asc' : 'desc' },
       }),
       this.prisma.timeEntry.count({ where }),
     ]);

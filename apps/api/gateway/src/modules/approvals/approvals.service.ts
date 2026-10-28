@@ -30,6 +30,8 @@ import {
   firstStepOf,
   rows,
   entries,
+  oldestPage,
+  JOINS_PENDING,
   holdsAnywhere,
   mayDecide,
   whyCallerDecides,
@@ -87,9 +89,12 @@ export class ApprovalsService {
     const add = (kind: ApprovalKind, read: () => Promise<ApprovalItem[]>) => {
       if (holds(kind)) sources.push([kind, read]);
     };
-    add('hours', async () =>
-      rows(await get('/attendance/approvals/pending?limit=100')).map((r) => toApproval.hours(r, ctx)),
-    );
+    const more: Partial<Record<ApprovalKind, number>> = {}; // a backlog: read OLDEST first, the rest counted
+    add('hours', async () => {
+      const page = await oldestPage(get, '/attendance/approvals/pending', rows);
+      more.hours = page.left;
+      return page.list.map((r) => toApproval.hours(r, ctx));
+    });
     add('away', async () =>
       rows(await get('/attendance/excursions?status=pending')).map((r) => toApproval.away(r, ctx)),
     );
@@ -117,18 +122,18 @@ export class ApprovalsService {
       const names = new Map((await spaces()).map((s) => [String(s.id), String(s.name ?? '')]));
       return issues.map((r) => toApproval.issue(r, ctx, names));
     });
-    add('expense', async () =>
-      entries(await get('/assets/expenses/pending?limit=100'), 'entries').map((r) => toApproval.expense(r, ctx)),
-    );
+    add('expense', async () => {
+      const page = await oldestPage(get, '/assets/expenses/pending', (body) => entries(body, 'entries'));
+      more.expense = page.left;
+      return page.list.map((r) => toApproval.expense(r, ctx));
+    });
     add('assetProposal', async () =>
       entries(await get('/assets/proposals/pending'), 'proposals').map((r) => toApproval.assetProposal(r, ctx)),
     );
     add('document', async () =>
       rows(await get('/documents/awaiting-verification')).map((r) => toApproval.document(r, ctx)),
     );
-    add('join', async () =>
-      rows(await get('/join-requests?status=PENDING&limit=50')).map((r) => toApproval.join(r, ctx)),
-    );
+    add('join', async () => rows(await get(JOINS_PENDING)).map((r) => toApproval.join(r, ctx)));
     // One read across the caller's portals (portal by portal, newest first), through the portal
     // route's own gate and scope — it used to be one read per portal.
     add('clientRequest', async () =>
@@ -171,11 +176,12 @@ export class ApprovalsService {
     );
     for (const i of decidable) i.why = whyCallerDecides(user, i);
     await this.attachSteps(user, decidable);
-    this.counts.set(user.id, { at: Date.now(), value: countApprovals(decidable) });
+    this.counts.set(user.id, { at: Date.now(), value: countApprovals(decidable, more) });
     if (this.known.size > 2000) this.known.clear();
     this.known.set(user.id, { at: Date.now(), items: new Map(decidable.map((i) => [`${i.kind}:${i.id}`, i])) });
     const generatedAt = ctx.now.toISOString();
-    return { items: decidable, days: approvalDays(decidable), unavailable: [...new Set(unavailable)], generatedAt };
+    const days = approvalDays(decidable);
+    return { items: decidable, days, unavailable: [...new Set(unavailable)], more, generatedAt };
   }
 
   /** Items half-way through an office rule's two approvals: who went first, who must finish. */
@@ -263,7 +269,7 @@ export class ApprovalsService {
       return {
         ok: true as const,
         status: res.status,
-        ...(step ? { stage: 'FIRST_STEP' as const, waitingFor: step } : {}),
+        ...(step !== null ? { stage: 'FIRST_STEP' as const, waitingFor: step } : {}),
       };
     }
     return {

@@ -57,10 +57,13 @@ export { RULE_MESSAGES };
  * The reply when a decision is one of several approvals and still waits: the item, the stage, whom it waits for,
  * and one sentence ("Approved — waiting for HR"). ONE shape for every approve path.
  */
+/** The server's English for a role nobody can name — the apps use their own word (`roleOrAdministrator`). */
+export const ADMIN_WORDS = 'an administrator';
+
 export function waitingReply<T extends object>(
   item: T,
   waiting: { stage: 'FIRST_STEP'; waitingFor: string },
   said = 'Approved',
 ) {
-  return success({ ...item, ...waiting }, `${said} — waiting for ${waiting.waitingFor}`);
+  return success({ ...item, ...waiting }, `${said} — waiting for ${waiting.waitingFor || ADMIN_WORDS}`);
 }

@@ -58,38 +58,44 @@ export class AssetExpenseReviewService {
   // ── The office's queue ─────────────────────────────────────────────────────
 
   /** Everything waiting on a decision. */
-  async pending(data: { limit?: number } & AssetActor) {
+  async pending(data: { limit?: number; oldestFirst?: boolean; exceptAuthorId?: string } & AssetActor) {
     this.access.assertMay(data, 'view');
     const take = clampListLimit(data.limit, 100, 200);
     // Only records in the caller's workspaces — the same reach as each record's Money tab.
     const kind = this.access.spaceFilter(data, 'view');
 
-    const entries = await this.prisma.assetMoney.findMany({
-      where: {
-        organizationId: data.organizationId,
-        status: EXPENSE_STATUS.SUBMITTED,
-        ...(kind ? { asset: { category: kind } } : {}),
-      },
-      orderBy: [{ occurredAt: 'desc' }],
-      take,
-      select: {
-        id: true,
-        assetId: true,
-        category: true,
-        direction: true,
-        amountCents: true,
-        note: true,
-        occurredAt: true,
-        authorId: true,
-        receiptKey: true,
-        createdAt: true,
-        // A logbook entry waiting for a decision is in the same queue; the screen names its type.
-        logType: true,
-        values: true,
-        asset: { select: { id: true, name: true } },
-      },
-    });
-    if (entries.length === 0) return success({ entries: [], totalCents: 0 });
+    const where = {
+      organizationId: data.organizationId,
+      status: EXPENSE_STATUS.SUBMITTED,
+      ...(kind ? { asset: { category: kind } } : {}),
+      ...(data.exceptAuthorId ? { NOT: { authorId: data.exceptAuthorId } } : {}),
+    };
+    // `total` is how many wait, however many are returned — the inbox counts the rest.
+    const [entries, total] = await Promise.all([
+      this.prisma.assetMoney.findMany({
+        where,
+        orderBy: [{ occurredAt: data.oldestFirst ? 'asc' : 'desc' }],
+        take,
+        select: {
+          id: true,
+          assetId: true,
+          category: true,
+          direction: true,
+          amountCents: true,
+          note: true,
+          occurredAt: true,
+          authorId: true,
+          receiptKey: true,
+          createdAt: true,
+          // A logbook entry waiting for a decision is in the same queue; the screen names its type.
+          logType: true,
+          values: true,
+          asset: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.assetMoney.count({ where }),
+    ]);
+    if (entries.length === 0) return success({ entries: [], totalCents: 0, total });
 
     const authorIds = [...new Set(entries.map((e) => e.authorId).filter((v): v is string => !!v))];
     const authors = authorIds.length
@@ -104,6 +110,7 @@ export class AssetExpenseReviewService {
         author: e.authorId ? (byId.get(e.authorId) ?? null) : null,
       })),
       totalCents: entries.reduce((n, e) => n + (e.direction === 'IN' ? 0 : e.amountCents), 0),
+      total,
     });
   }
 

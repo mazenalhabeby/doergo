@@ -32,6 +32,8 @@ export class AttendanceApprovalsController {
     @Request() req: AuthedRequest,
     /** `true` → `{ total, bySpace }` only, no rows (the home's Crew card). */
     @Query('summary') summary?: string,
+    /** `oldest` → oldest first and never the caller's own (the approvals inbox). */
+    @Query('order') order?: string,
   ) {
     return this.entryDecisions.getPendingApprovals({
       organizationId: callerOrgId(req.user),
@@ -39,6 +41,7 @@ export class AttendanceApprovalsController {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       summary: summary === 'true',
+      ...(order === 'oldest' ? { oldestFirst: true, exceptUserId: req.user.id } : {}),
     });
   }
 

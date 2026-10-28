@@ -188,8 +188,16 @@ export function stepNoticeVars(
   return {
     name: words.joinNames ? words.joinNames(list) : list.join(', '),
     count: Math.max(1, step.approverCount ?? list.length),
-    role: step.roleName || words.anAdministrator,
+    role: roleOrAdministrator(step.roleName, words.anAdministrator),
   };
+}
+
+/**
+ * A role the server names in an answer ("waiting for HR", a refusal's `role`) — '' when nobody can be named, and
+ * then only an administrator can finish it: said in the reader's language.
+ */
+export function roleOrAdministrator(role: string | null | undefined, anAdministrator: string): string {
+  return role || anAdministrator;
 }
 
 /** Names joined the reader's way ("A, B and C" / "A, B und C") where the platform knows how; else with commas. */

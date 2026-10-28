@@ -61,6 +61,11 @@ export interface ApprovalsResponse {
   items: ApprovalItem[];
   /** Kinds whose list could not be read just now — the rest is still shown. */
   unavailable: ApprovalKind[];
+  /**
+   * Waiting beyond what the inbox lists, per kind — a long backlog is read OLDEST first in pages
+   * (hours, expenses); the rest show as these are decided. Counted in `ApprovalsCount`.
+   */
+  more?: Partial<Record<ApprovalKind, number>>;
   generatedAt: string;
 }
 
@@ -200,7 +205,10 @@ export function sortApprovals(items: ApprovalItem[]): ApprovalItem[] {
   );
 }
 
-export function countApprovals(items: readonly ApprovalItem[]): ApprovalsCount {
+export function countApprovals(
+  items: readonly ApprovalItem[],
+  more: Partial<Record<ApprovalKind, number>> = {},
+): ApprovalsCount {
   const byKind: Partial<Record<ApprovalKind, number>> = {};
   let now = 0;
   let waitsForYou = 0;
@@ -211,5 +219,12 @@ export function countApprovals(items: readonly ApprovalItem[]): ApprovalsCount {
     if (i.step?.waitsForYou) waitsForYou++;
     if (!i.step || i.step.waitsForYou) actionable++;
   }
-  return { total: items.length, now, byKind, waitsForYou, actionable };
+  // Not listed yet, but waiting all the same: plain items nobody has approved — each is the caller's to act on.
+  let extra = 0;
+  for (const [kind, n] of Object.entries(more) as Array<[ApprovalKind, number]>) {
+    if (!(n > 0)) continue;
+    byKind[kind] = (byKind[kind] ?? 0) + n;
+    extra += n;
+  }
+  return { total: items.length + extra, now, byKind, waitsForYou, actionable: actionable + extra };
 }

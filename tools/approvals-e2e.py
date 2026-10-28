@@ -193,7 +193,10 @@ def main():
         else:
             print('SKIP deciding about the leader (the leader has no pending hours of their own)')
 
-        status, body = call('GET', f"/approvals/route?kind=hours&id={hours[0]['id']}", leader_tok) if hours and any(h['id'] == hours[0]['id'] for h in inbox(leader_tok)) else (None, None)
+        # A plain item (not half-way through an office rule — then only who can give the missing approval is listed).
+        plain = {i['id'] for i in inbox(leader_tok) if i['kind'] == 'hours' and not i.get('step')}
+        pick = next((h for h in hours if h['id'] in plain), None)
+        status, body = call('GET', f"/approvals/route?kind=hours&id={pick['id']}", leader_tok) if pick else (None, None)
         if status == 200:
             check('who-else lists the deputy as covering', any(d['id'] == deputy['id'] and d['via'] == 'DELEGATED' for d in data(body)['deciders']), data(body)['deciders'][:4])
 
