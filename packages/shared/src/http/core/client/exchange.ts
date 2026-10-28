@@ -4,6 +4,7 @@ import { ApiError, TRANSPORT_CODES } from '../api-error';
 import { readBody } from '../envelope';
 import { IDEMPOTENT, hasHeader, isPassThroughBody, isRetryableStatus, retryAfterMs, type Exchange } from './retry';
 import type { RequestOptions, RetryPolicy } from './types';
+import { IDEMPOTENCY_HEADER, isMutating, outcomeUnknownStatus } from './request-id';
 import type { ClientContext } from './context';
 
 /** Headers and body for one attempt — the token is read again on every attempt. */
@@ -74,10 +75,30 @@ function statusRetryWait(ctx: ClientContext, res: ResponseLike, retries: RetryPo
 /** The whole exchange: token, 401 → refresh → retry once, the retry policy. Resolves only on 2xx. */
 export function createExchange(ctx: ClientContext) {
   const { config } = ctx;
-  return async (method: HttpMethod, p: string, opts: RequestOptions, defaultTimeout: number): Promise<Exchange> => {
+  return async (method: HttpMethod, p: string, given: RequestOptions, defaultTimeout: number): Promise<Exchange> => {
+    const { opts, sig, key } = withRequestId(ctx, method, p, given);
+    try {
+      const done = await run(method, p, opts, defaultTimeout, key !== null);
+      ctx.requestIds.forget(sig);
+      return done;
+    } catch (err) {
+      if (key !== null && outcomeUnknown(err as ApiError)) ctx.requestIds.keep(sig, key);
+      else ctx.requestIds.forget(sig);
+      throw err;
+    }
+  };
+
+  async function run(
+    method: HttpMethod,
+    p: string,
+    opts: RequestOptions,
+    defaultTimeout: number,
+    keyed: boolean,
+  ): Promise<Exchange> {
     const auth = opts.auth !== false;
     const retries: RetryPolicy | null = opts.retry === false ? null : { ...ctx.policy, ...(opts.retry ?? {}) };
-    const idempotent = IDEMPOTENT.has(method);
+    // A write with a key is safe to send again: the server answers a repeat with the first answer.
+    const idempotent = IDEMPOTENT.has(method) || keyed;
     const url = `${config.baseUrl().replace(/\/+$/, '')}${p}`;
     let refreshed = false;
     let statusRetries = 0;
@@ -122,7 +143,8 @@ export function createExchange(ctx: ClientContext) {
         }
       }
 
-      if (!res.ok && retries && statusRetries < retries.maxRetries && isRetryableStatus(res.status, method)) {
+      const retryable = isRetryableStatus(res.status, method) || (keyed && outcomeUnknownStatus(res.status));
+      if (!res.ok && retries && statusRetries < retries.maxRetries && retryable) {
         const wait = statusRetryWait(ctx, res, retries, statusRetries);
         statusRetries++;
         await ctx.sleep(wait, opts.signal).catch(() => {
@@ -146,5 +168,22 @@ export function createExchange(ctx: ClientContext) {
       }
       return { status: res.status, body: parsed, headers: res.headers };
     }
-  };
+  }
+}
+
+/** The key this write carries, on every attempt — the remembered one when the same request's outcome is unknown. */
+function withRequestId(ctx: ClientContext, method: HttpMethod, p: string, opts: RequestOptions) {
+  const own = Object.entries(opts.headers ?? {}).find(([h]) => h.toLowerCase() === 'idempotency-key')?.[1];
+  if (!isMutating(method) || opts.auth === false || opts.idempotencyKey === false) {
+    return { opts, sig: null, key: own ?? null };
+  }
+  const sig = ctx.requestIds.signature(method, p, opts.body, ctx.sessionKey());
+  const key = own ?? opts.idempotencyKey ?? ctx.requestIds.recall(sig) ?? ctx.newRequestId();
+  return { opts: own ? opts : { ...opts, headers: { ...(opts.headers ?? {}), [IDEMPOTENCY_HEADER]: key } }, sig, key };
+}
+
+/** Nothing says whether the server did it: no answer, our timeout or cancel, or a gateway/proxy timeout. */
+function outcomeUnknown(err: ApiError): boolean {
+  if (err?.kind === 'network' || err?.kind === 'timeout' || err?.kind === 'aborted') return true;
+  return err?.kind === 'http' && outcomeUnknownStatus(err.status);
 }

@@ -14,15 +14,19 @@
  *       – 429 for ANY method: the gateway's rate limiter refuses before any
  *         handler runs, so nothing was written and asking again is safe.
  *         Retry-After (and the limiter's `Retry-After-<window>`) is honoured;
- *       – 502 / 503 / 504 for GET and HEAD only — a POST that timed out at the
- *         proxy may still have been carried out;
- *       – one more try for a GET/HEAD that reached nothing: the first request
+ *       – 502 / 503 / 504 (and 408) for GET and HEAD, and for a write with its
+ *         key — the server runs a repeated key once;
+ *       – one more try for a GET/HEAD (or keyed write) that reached nothing: the first request
  *         after an app is reopened often fails on a stale connection pool;
  *   • GET de-duplication keyed by WHO is asking (`sessionKey`) and the path —
  *     keyed by path alone, an answer in flight when one member signed out was
  *     handed to the next member who asked for it;
  *   • an optional response cache (the phone's offline answers) consulted only
  *     when nothing answered — a refusal from the server is never masked;
+ *   • every signed-in write carries an `Idempotency-Key` (client/request-id.ts):
+ *     a write that got no answer is sent again under the same key, and the
+ *     person tapping again after "no connection" sends the same key too — the
+ *     server answers a repeat with the first answer, so it happens once;
  *   • failures as an `ApiError` with a `kind`, never a fake 500.
  *
  * ⚠️ The core never logs. Bodies, tokens and query strings stay out of every
@@ -50,3 +54,4 @@ export {
 } from './client/types';
 export { isRetryableStatus, retryAfterMs } from './client/retry';
 export { createApiClient } from './client/create';
+export { IDEMPOTENCY_HEADER, newRequestId, stableStringify } from './client/request-id';

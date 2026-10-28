@@ -71,11 +71,22 @@ describe('a request that never reached the server', () => {
     expect(seen.filter((o) => o.kind === 'network-error')).toHaveLength(1);
   });
 
-  it('is NOT retried for a write', async () => {
+  it('a write is retried once, under the SAME Idempotency-Key (the server runs it once)', async () => {
     const fetchMock = jest.fn().mockImplementation(dead);
     (global as { fetch?: unknown }).fetch = fetchMock;
 
     await expect(api.post('/attendance/clock-in', {})).rejects.toMatchObject({ statusCode: 0, code: 'NETWORK' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const keys = fetchMock.mock.calls.map(([, init]) => init.headers['Idempotency-Key']);
+    expect(keys[0]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(keys[1]).toBe(keys[0]);
+  });
+
+  it('a write without its key is still never sent twice', async () => {
+    const fetchMock = jest.fn().mockImplementation(dead);
+    (global as { fetch?: unknown }).fetch = fetchMock;
+
+    await expect(api.post('/attendance/clock-in', {}, { idempotencyKey: false })).rejects.toMatchObject({ code: 'NETWORK' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

@@ -43,7 +43,10 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       if (def.upload) return client.upload<R>(built, opts?.body, base);
       return request<R>(def.method, built, base);
     },
-    clearInflight: () => inflight.clear(),
+    clearInflight: () => {
+      inflight.clear();
+      ctx.requestIds.clear();
+    },
   };
   return client;
 }

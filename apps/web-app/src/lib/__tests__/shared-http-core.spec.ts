@@ -345,11 +345,14 @@ describe('retries', () => {
     expect(sleeps).toEqual([5000])
   })
 
-  it('503 is retried for a GET, never for a POST', async () => {
+  it('503 is retried for a GET, never for a POST without its Idempotency-Key', async () => {
     const get = scripted([res(503), ok('later')])
     await expect(client(get.fetch).c.get('/x')).resolves.toBe('later')
     const post = scripted([res(503), ok('never')])
-    await expect(client(post.fetch).c.post('/x', {})).rejects.toMatchObject({ status: 503, retryable: true })
+    await expect(client(post.fetch).c.post('/x', {}, { idempotencyKey: false })).rejects.toMatchObject({
+      status: 503,
+      retryable: true,
+    })
     expect(post.fetch).toHaveBeenCalledTimes(1)
   })
 
@@ -389,10 +392,10 @@ describe('network, timeout, abort', () => {
     expect(networkError).not.toHaveBeenCalled()
   })
 
-  it('a write is never sent twice on a guess', async () => {
+  it('a write without its Idempotency-Key is never sent twice on a guess', async () => {
     const { fetch } = scripted([new TypeError('offline')])
     const { c } = client(fetch)
-    await expect(c.post('/x', {})).rejects.toMatchObject({ kind: 'network' })
+    await expect(c.post('/x', {}, { idempotencyKey: false })).rejects.toMatchObject({ kind: 'network' })
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 

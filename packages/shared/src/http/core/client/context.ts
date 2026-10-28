@@ -3,6 +3,7 @@ import type { AbortSignalLike, FetchInit, FetchLike, HttpMethod, ResponseLike } 
 import { ApiError, DEFAULT_TRANSPORT_MESSAGES, TRANSPORT_CODES, toApiError } from '../api-error';
 import { readBody } from '../envelope';
 import { defaultSleep, globalValue } from './retry';
+import { createRequestIdMemory, newRequestId, type RequestIdMemory } from './request-id';
 import { DEFAULT_RETRY_POLICY, type ApiClientConfig, type RefreshResult, type RetryPolicy } from './types';
 
 export type TransportKind = 'network' | 'timeout' | 'aborted';
@@ -22,6 +23,9 @@ export interface ClientContext {
   attempt: (url: string, init: FetchInit, ms: number, callerSignal?: AbortSignalLike) => Promise<ResponseLike>;
   observeResponse: (method: HttpMethod, p: string, res: ResponseLike) => void;
   readError: (res: ResponseLike) => Promise<ApiError>;
+  /** A new Idempotency-Key, and the keys of writes whose outcome is unknown. */
+  newRequestId: () => string;
+  requestIds: RequestIdMemory;
 }
 
 export function createClientContext(config: ApiClientConfig): ClientContext {
@@ -72,14 +76,16 @@ export function createClientContext(config: ApiClientConfig): ClientContext {
     return toApiError(body, res.status);
   };
 
+  const now = config.now ?? (() => Date.now());
+  const random = config.random ?? Math.random;
   return {
     config,
     policy: { ...DEFAULT_RETRY_POLICY, ...(config.retry ?? {}) },
     timeoutMs: config.timeoutMs ?? 30_000,
     uploadTimeoutMs: config.uploadTimeoutMs ?? 120_000,
     sleep: config.sleep ?? defaultSleep,
-    random: config.random ?? Math.random,
-    now: config.now ?? (() => Date.now()),
+    random,
+    now,
     message,
     transportError,
     sessionKey,
@@ -87,6 +93,8 @@ export function createClientContext(config: ApiClientConfig): ClientContext {
     attempt: createAttempt(fetchImpl, transportError),
     observeResponse,
     readError,
+    newRequestId: config.requestId ?? (() => newRequestId(random)),
+    requestIds: createRequestIdMemory(now),
   };
 }
 

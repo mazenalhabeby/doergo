@@ -48,6 +48,7 @@ step "4. live (local API)"
 curl -sf -o /dev/null http://localhost:4000/api/v1/health || { echo "the local API is not running (pnpm dev:api)"; FAILED+=("local API"); }
 run "sign-in and sessions attacked" python3 tools/layer0-auth-e2e.py ${QUICK:+--quick}
 run "gateway layer attacked" python3 tools/layer0-gateway-e2e.py
+run "a write sent twice happens once" python3 tools/request-repeat-e2e.py
 run "speed and 200 at once" python3 tools/layer0-load.py
 run "comes back by itself after Redis restarts" python3 tools/layer0-redis-blip.py
 

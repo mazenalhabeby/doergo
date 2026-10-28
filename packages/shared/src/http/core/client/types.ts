@@ -113,6 +113,8 @@ export interface ApiClientConfig {
   credentials?: FetchInit['credentials'];
   /** `fetch`'s cache mode (the admin console asks `no-store`). */
   fetchCache?: FetchInit['cache'];
+  /** A new `Idempotency-Key` for a write (request-id.ts). Default: 32 characters from `crypto.getRandomValues`. */
+  requestId?: () => string;
   /** The sentences for failures that never reached a server — the phone passes translated ones. */
   messages?: Partial<Record<'network' | 'timeout' | 'aborted' | 'parse', MessageSource>>;
   /** @internal tests: make waits instant. */
@@ -154,6 +156,11 @@ export interface RequestOptions {
   /** Merge with an identical GET in flight. Default: the client's `dedupeGets` (never with a `signal`). */
   dedupe?: boolean;
   unwrap?: UnwrapMode;
+  /**
+   * A signed-in write carries an `Idempotency-Key` (request-id.ts) — made per call, or this one when given (an
+   * action that must survive a reload keeps its own). `false` sends none.
+   */
+  idempotencyKey?: string | false;
 }
 
 /** Options for an endpoint call: the body travels here, typed by the endpoint. */

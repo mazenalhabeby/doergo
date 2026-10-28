@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { from, Observable, of, throwError } from 'rxjs';
-import { requestIdempotency } from '@hbcfield/shared';
+import { requestIdempotency, stableStringify } from '@hbcfield/shared';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
 import { IdempotencyStore } from './idempotency.store';
 
@@ -96,12 +96,13 @@ export class IdempotencyInterceptor implements NestInterceptor {
         // The key travels with the handler (AsyncLocalStorage) so a queued job
         // takes its id from it — see idempotency-context.ts.
         return new Observable<unknown>((subscriber) =>
-          requestIdempotency.run({ key, userId }, () => next.handle().subscribe(subscriber)),
+          requestIdempotency.run({ key, userId, jobs: { n: 0 } }, () => next.handle().subscribe(subscriber)),
         ).pipe(
           tap((body) => {
             const status = res.statusCode ?? 200;
             const size = safeSize(body);
-            if (size === null || size > MAX_STORED_BYTES) {
+            // A handler that wrote the answer itself (@Res — a file, a stream) leaves no body to hand back.
+            if (body === undefined || res.headersSent || size === null || size > MAX_STORED_BYTES) {
               void this.store.release(userId, key);
               return;
             }
@@ -126,18 +127,6 @@ export function requestHash(method: string, url: string, body: unknown): string 
     .update('\n')
     .update(stableStringify(body ?? null))
     .digest('hex');
-}
-
-/** JSON with sorted keys, so `{a,b}` and `{b,a}` hash alike. */
-export function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
-  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
-  const obj = value as Record<string, unknown>;
-  return `{${Object.keys(obj)
-    .sort()
-    .filter((k) => obj[k] !== undefined)
-    .map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`)
-    .join(',')}}`;
 }
 
 function safeSize(body: unknown): number | null {

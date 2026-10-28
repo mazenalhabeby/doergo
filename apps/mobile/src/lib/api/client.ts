@@ -14,6 +14,7 @@ import { networkErrorText } from './network-error';
 import type { User } from './types';
 import { jwtExpiry, jwtSubject } from './session-owner';
 import { getApiUrl, APP_VERSION, APP_PLATFORM } from './client-build';
+import { uuidv7 } from '@/offline/ids';
 import { notifyObservers } from './response-observers';
 import { type RefreshOutcome, refreshRefusedSession, phoneFetch, phoneMessage, cacheHooks } from './phone-transport';
 export { type RefreshOutcome, refreshRefusedSession, phoneFetch } from './phone-transport';
@@ -266,13 +267,10 @@ export const api: ApiClient = createApiClient({
   onSessionEnded: () => {
     onAuthFailure?.();
   },
-  headers: () => ({
-    'X-Client-Platform': 'mobile',
-    'X-App-Version': APP_VERSION,
-    'X-App-Platform': APP_PLATFORM,
-  }),
+  headers: () => ({ 'X-Client-Platform': 'mobile', 'X-App-Version': APP_VERSION, 'X-App-Platform': APP_PLATFORM }),
   fetch: phoneFetch,
   timeoutMs: 15_000,
+  requestId: () => uuidv7(), // a write's Idempotency-Key, from the native random source (Hermes has no crypto global)
   /*
     ⚠️ MERGED BY PERSON AND ENDPOINT, AND EMPTIED WHEN THE TOKENS GO. Keyed by
     the endpoint alone, a `/attendance/status` still in flight when one member

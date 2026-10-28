@@ -13,6 +13,12 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 export interface RequestIdempotency {
   key: string;
   userId: string;
+  /**
+   * Jobs this request has added so far. Every signed-in write carries a key now, and one request may add two jobs of
+   * the same type — without the count the second would be handed the first one's answer. A retry runs the same
+   * handler in the same order, so job N of the retry joins job N of the first attempt.
+   */
+  jobs?: { n: number };
 }
 
 export const requestIdempotency = new AsyncLocalStorage<RequestIdempotency>();
@@ -22,5 +28,8 @@ export function idempotentJobId(jobType: string): string | null {
   const ctx = requestIdempotency.getStore();
   if (!ctx) return null;
   // BullMQ refuses ':' in custom ids — keys and user ids are [A-Za-z0-9_-].
-  return `${jobType.replace(/[^A-Za-z0-9_.-]/g, '_')}__${ctx.userId}__${ctx.key}`;
+  const base = `${jobType.replace(/[^A-Za-z0-9_.-]/g, '_')}__${ctx.userId}__${ctx.key}`;
+  if (!ctx.jobs) return base;
+  ctx.jobs.n++;
+  return ctx.jobs.n === 1 ? base : `${base}__${ctx.jobs.n}`;
 }

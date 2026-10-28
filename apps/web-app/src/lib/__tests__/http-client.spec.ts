@@ -150,14 +150,17 @@ describe("retries", () => {
     expect(global.fetch).toHaveBeenCalledTimes(3)
   })
 
-  it("retries GET on 502/503/504 but never a POST", async () => {
+  it("retries GET on 502/503/504, and a POST only under its one Idempotency-Key", async () => {
     global.fetch = jest.fn().mockResolvedValueOnce(response(503, {})).mockResolvedValueOnce(response(200, {})) as never
     expect((await raw(webClient().get("/x"))).status).toBe(200)
 
     global.fetch = jest.fn().mockResolvedValue(response(503, { message: "down" })) as never
     const post = await raw(webClient().post("/x", {}))
     expect(post.status).toBe(503)
-    expect(global.fetch).toHaveBeenCalledTimes(1)
+    const keys = (global.fetch as jest.Mock).mock.calls.map(([, init]) => init.headers["Idempotency-Key"])
+    expect(keys.length).toBeGreaterThan(1)
+    expect(new Set(keys).size).toBe(1)
+    expect(keys[0]).toMatch(/^[A-Za-z0-9_-]{32}$/)
   })
 
   it("never retries a 4xx", async () => {

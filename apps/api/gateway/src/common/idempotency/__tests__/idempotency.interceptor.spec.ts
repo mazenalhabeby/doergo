@@ -1,5 +1,6 @@
 import { lastValueFrom, of, throwError } from 'rxjs';
-import { IdempotencyInterceptor, requestHash, stableStringify } from '../idempotency.interceptor';
+import { stableStringify } from '@hbcfield/shared';
+import { IdempotencyInterceptor, requestHash } from '../idempotency.interceptor';
 import type { IdempotencyEntry } from '../idempotency.store';
 
 /** An in-memory store with the Redis semantics that matter: NX claim, TTL-free. */
