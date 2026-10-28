@@ -9841,12 +9841,15 @@
     },
     "step": {
       "firstDone": "Validé — en attente de {{role}}.",
-      "mine": "Vous avez validé. Il faut maintenant {{role}}.",
+      "youApproved": "Vous avez validé. Il faut maintenant {{role}}.",
       "waiting": "{{name}} a validé. Il faut aussi {{role}}.",
-      "badge": "Étape 2 sur 2 · {{role}}",
+      "badge": "Nécessite {{role}}",
       "youFinish": "{{name}} a validé. Votre validation le termine.",
-      "waitingYou": "{{name}} a validé. Il faut aussi {{role}} — vous pouvez en donner une.",
-      "agreed": "{{name}} a accordé {{time}} — une durée plus courte ici compte à la place."
+      "youCanGive": "{{name}} a validé. Il faut encore {{role}} — votre validation en fait partie.",
+      "agreedBy": "{{name}} a accordé {{time}}.",
+      "agreedByCounts": "{{name}} a accordé {{time}} — une durée plus courte ici compte à la place.",
+      "agreedSoFar": "Accordé jusqu'ici : {{time}}.",
+      "agreedSoFarCounts": "Accordé jusqu'ici : {{time}} — une durée plus courte ici compte à la place."
     },
     "rules": {
       "kind": {
@@ -10035,7 +10038,7 @@
       "unreadable": "Nombre illisible — la limite reste inchangée."
     },
     "pressAgain": "Appuyez à nouveau pour confirmer",
-    "yours": "En attente de vous",
+    "waitsForYou": "Vous attend",
     "datesPassed": "Dates déjà passées"
   },
   "overtimePage": {

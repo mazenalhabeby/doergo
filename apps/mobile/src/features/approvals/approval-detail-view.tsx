@@ -13,7 +13,7 @@ import { ISO_DAY } from './approval-detail-helpers';
 import type { useApprovalDetail } from './use-approval-detail';
 import { minutesText } from './approval-minutes-text';
 
-/** What ApprovalDetail works out after its early returns, moved here unchanged; called from the same place. */
+/** What the detail shows and allows for one item: its words, its facts, its buttons, and whether the form can send. */
 export function ApprovalDetailView({
   t,
   i18n,

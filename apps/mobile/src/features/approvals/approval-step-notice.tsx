@@ -1,13 +1,12 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { ApprovalItem } from '@hbcfield/shared/client';
+import { agreedLine, approvalTags, stepNoticeKind, type ApprovalItem } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { AText, Pill } from '@/components/amazen';
 import { minutesText } from './approval-minutes-text';
-import { approvalTags, stepNoticeText } from './approval-step-words';
 
-/** The detail's step notice, on a tint. */
+/** The detail's step notice, on a tint: which sentence is the shared `stepNoticeKind`, the words are the phone's. */
 export function StepNotice({ step }: { step: NonNullable<ApprovalItem['step']> }) {
   const { t } = useTranslation();
   const { amazen } = useTheme();
@@ -16,27 +15,37 @@ export function StepNotice({ step }: { step: NonNullable<ApprovalItem['step']> }
       style={{ backgroundColor: amazen.color.accentTint, borderRadius: amazen.radius.panel, padding: amazen.space(3) }}
     >
       <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>
-        {stepNoticeText(step, t)}
+        {t(`approvals.step.${stepNoticeKind(step)}`, { name: step.firstByName, role: step.roleName })}
       </AText>
     </View>
   );
 }
 
 /**
- * Above the time field: what an earlier approver already agreed. The smallest agreed time counts, so the field
- * starts from it and says that typing less cuts it.
+ * Above the time field: what was agreed so far (shared `agreedLine`). Named when one person agreed; "a smaller
+ * time here counts instead" only when it does — never for an administrator, whose decision stands as given.
  */
 export function AgreedTimeLine({ item }: { item: ApprovalItem }) {
   const { t } = useTranslation();
-  const agreed = item.step?.agreedMinutes;
-  if (!item.step || item.step.mine || typeof agreed !== 'number' || agreed <= 0) return null;
+  const line = agreedLine(item.step);
+  if (!line) return null;
+  const time = minutesText(line.minutes, t);
+  const said = line.who
+    ? t('approvals.step.agreed', { name: line.who, time })
+    : t('approvals.step.agreedSoFar', { time });
   return (
     <AText variant="caption" tone="warn">
-      {t('approvals.step.agreed', { name: item.step.firstByName, time: minutesText(agreed, t) })}
+      {line.smallerCounts ? `${said}${t('approvals.step.smallerCounts')}` : said}
     </AText>
   );
 }
 
+/** The words of an item's marks (shared `approvalTags`), in their order — the pills and the screen reader's label. */
+export function approvalTagWords(item: ApprovalItem, t: (k: string) => string): string[] {
+  return approvalTags(item).map((k) => t(`approvals.tag.${k}`));
+}
+
+/** The marks as pills — the caller's row lays them out (they wrap beside other pills). */
 export function ApprovalTags({ item }: { item: ApprovalItem }) {
   const { t } = useTranslation();
   const tags = approvalTags(item);

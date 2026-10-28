@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { APPROVAL_GROUPS, APPROVAL_KINDS } from "@hbcfield/shared/client"
+import { APPROVAL_GROUPS, APPROVAL_KINDS, WAITS_FOR_YOU_FILTER } from "@hbcfield/shared/client"
 
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -65,7 +65,7 @@ export default function ApprovalsPage() {
     dataUpdatedAt,
     items,
     counts,
-    yours,
+    waitsForYou,
     visible,
     current,
     decide,
@@ -168,13 +168,13 @@ export default function ApprovalsPage() {
                 current && "max-lg:hidden",
               )}
             >
-              {yours.length > 0 && (
+              {waitsForYou.length > 0 && (
                 <KindRailItem
-                  active={filter === "yours"}
-                  label={t("approvals.yours")}
-                  count={yours.length}
-                  urgent={yours.some((i) => i.group === "NOW")}
-                  onClick={() => setFilter("yours")}
+                  active={filter === WAITS_FOR_YOU_FILTER}
+                  label={t("approvals.waitsForYou")}
+                  count={waitsForYou.length}
+                  urgent={waitsForYou.some((i) => i.group === "NOW")}
+                  onClick={() => setFilter(WAITS_FOR_YOU_FILTER)}
                 />
               )}
               <KindRailItem

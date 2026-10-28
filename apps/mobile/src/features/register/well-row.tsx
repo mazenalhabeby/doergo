@@ -10,7 +10,7 @@ import { AText } from '@/components/amazen';
  * equipment register and the client requests, which carry no avatar.
  */
 export const WellRow = memo(function WellRow({
-  first, last, leading, title, detail, trailing, onPress, a11yLabel,
+  first, last, leading, title, detail, below, trailing, onPress, a11yLabel,
 }: {
   first: boolean;
   last: boolean;
@@ -18,6 +18,8 @@ export const WellRow = memo(function WellRow({
   leading?: ReactNode;
   title: string;
   detail?: string;
+  /** Under the detail line, its own row (marks that must not squeeze the title). */
+  below?: ReactNode;
   /** A pill or a state; a chevron when nothing is given. */
   trailing?: ReactNode;
   onPress: () => void;
@@ -46,6 +48,7 @@ export const WellRow = memo(function WellRow({
         <View style={{ flex: 1, minWidth: 0 }}>
           <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{title}</AText>
           {detail ? <AText variant="caption" numberOfLines={1} style={{ color: c.inkMuted }}>{detail}</AText> : null}
+          {below}
         </View>
         {trailing ?? <AText variant="body" tone="muted">›</AText>}
       </Pressable>

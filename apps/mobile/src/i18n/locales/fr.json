@@ -5374,12 +5374,14 @@
     },
     "step": {
       "firstDone": "Validé — en attente de {{role}}.",
-      "mine": "Vous avez validé. Il faut maintenant {{role}}.",
+      "youApproved": "Vous avez validé. Il faut maintenant {{role}}.",
       "waiting": "{{name}} a validé. Il faut aussi {{role}}.",
       "short": "attend {{role}}",
       "youFinish": "{{name}} a validé. Votre validation le termine.",
-      "youCanGive": "{{name}} a validé. Il faut aussi {{role}} — vous pouvez en donner une.",
-      "agreed": "{{name}} a accordé {{time}} — une durée plus courte ici compte à la place."
+      "youCanGive": "{{name}} a validé. Il faut encore {{role}} — votre validation en fait partie.",
+      "agreed": "{{name}} a accordé {{time}}",
+      "agreedSoFar": "Accordé jusqu’ici : {{time}}",
+      "smallerCounts": " — une durée plus courte ici compte à la place."
     },
     "decideInApprovals": "Décider dans Validations",
     "noShow": {

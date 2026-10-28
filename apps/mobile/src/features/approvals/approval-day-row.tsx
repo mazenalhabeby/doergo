@@ -41,6 +41,8 @@ export function ApprovalDayRow({
   const [busy, setBusy] = useState(false);
   const tt = t as unknown as ApprovalT;
   const toast = useToast();
+  // Any of the day's items half-way and waiting for the caller: the same mark as an item row.
+  const waitsForYou = members.some((m) => m.step?.waitsForYou);
 
   // One send at a time: a second tap while the first is on its way does nothing.
   const sending = useRef(false);
@@ -88,6 +90,16 @@ export function ApprovalDayRow({
         onPress={() => setOpen((o) => !o)}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
+        accessibilityLabel={[
+          day.subject.name || t('approvals.someone'),
+          formatDay(`${day.localDate}T12:00:00Z`, i18n.language),
+          t('approvals.day.label'),
+          t('approvals.day.count', { count: members.length }),
+          day.space?.name,
+          waitsForYou ? t('approvals.tag.waitsForYou') : null,
+        ]
+          .filter(Boolean)
+          .join(', ')}
         style={{ padding: amazen.space(3.5), gap: amazen.space(1.5) }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: amazen.space(2) }}>
@@ -104,6 +116,7 @@ export function ApprovalDayRow({
             .join(' · ')}
         </AText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(1) }}>
+          {waitsForYou ? <Chip label={t('approvals.tag.waitsForYou')} tone="accent" /> : null}
           {day.labels.map((code) => (
             <Chip key={code} label={labelWord(code, i18n.language)} tone="warn" />
           ))}

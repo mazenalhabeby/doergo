@@ -1,21 +1,20 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, SectionList, View } from 'react-native';
 import { router, useFocusEffect, type Href, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   APPROVAL_GROUPS,
   APPROVAL_KINDS,
-  describeApproval,
+  matchesApprovalFilter,
   memberKey,
+  WAITS_FOR_YOU_FILTER,
   type ApprovalDay,
   type ApprovalItem,
   type ApprovalKind,
-  type ApprovalT,
 } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { useAuth } from '@/contexts/auth-context';
 import { isExternalMember } from '@/lib/member-reach';
-import { formatDay } from '@/lib/money';
 import { useResponsive } from '@/lib/responsive';
 import {
   AText,
@@ -28,19 +27,17 @@ import {
   SectionLabel,
 } from '@/components/amazen';
 import { centeredContent } from '@/components/screen-container';
-import { WellRow } from '../register/well-row';
 import { approvalKey, loadApprovals } from './approvals-store';
 import { StandInSheet } from './stand-in-sheet';
 import { refreshControl } from '@/components/pull-refresh';
 import { ApprovalDayRow } from './approval-day-row';
-import { minutesText } from './approval-minutes-text';
-import { ApprovalTags } from './approval-step-notice';
+import { ApprovalItemRow } from './approval-item-row';
 
 /** A list row: one item, or a person's working day that groups several. */
 type Row = { day: ApprovalDay; item?: undefined } | { item: ApprovalItem; day?: undefined };
 
 /** A kind, everything, or only what waits for the caller's own approval. */
-type Filter = ApprovalKind | 'all' | 'forYou';
+type Filter = ApprovalKind | 'all' | typeof WAITS_FOR_YOU_FILTER;
 
 /**
  * APPROVALS — everything waiting for this member to decide, in one list: what
@@ -51,7 +48,7 @@ type Filter = ApprovalKind | 'all' | 'forYou';
 export function ApprovalsScreen() {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const r = useResponsive();
   const wide = r.isTablet ? centeredContent(720) : null;
 
@@ -62,7 +59,7 @@ export function ApprovalsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   // Arriving with ?kind= (a notification, or a screen that used to decide it): open on that kind.
   const { kind } = useLocalSearchParams<{ kind?: string }>();
-  const [filter, setFilter] = useState<Filter>(() =>
+  const [chosen, setFilter] = useState<Filter>(() =>
     kind && (APPROVAL_KINDS as readonly string[]).includes(kind) ? (kind as ApprovalKind) : 'all',
   );
   const [standIn, setStandIn] = useState(false);
@@ -106,8 +103,12 @@ export function ApprovalsScreen() {
     return n;
   }, [items]);
   const forYou = useMemo(() => (items ?? []).filter((i) => i.step?.waitsForYou).length, [items]);
-  const fits = (i: ApprovalItem) =>
-    filter === 'all' || i.kind === filter || (filter === 'forYou' && !!i.step?.waitsForYou);
+  // Nothing left waiting for you (the last one just decided): back to everything, as on the web — from this render.
+  const filter: Filter = items && chosen === WAITS_FOR_YOU_FILTER && forYou === 0 ? 'all' : chosen;
+  useEffect(() => {
+    if (filter !== chosen) setFilter(filter);
+  }, [filter, chosen]);
+  const fits = (i: ApprovalItem) => matchesApprovalFilter(i, filter);
   const membersOf = (d: ApprovalDay) =>
     (items ?? []).filter((i) => d.members.some((m) => memberKey(m) === approvalKey(i)));
   // A person's working day is one row; the items it holds are opened from it.
@@ -119,7 +120,9 @@ export function ApprovalsScreen() {
   const shownDays = useMemo(
     () =>
       days.filter((d) =>
-        filter === 'forYou' ? membersOf(d).some(fits) : filter === 'all' || d.members.some((m) => m.kind === filter),
+        filter === WAITS_FOR_YOU_FILTER
+          ? membersOf(d).some(fits)
+          : filter === 'all' || d.members.some((m) => m.kind === filter),
       ),
     [days, filter, items], // eslint-disable-line react-hooks/exhaustive-deps
   );
@@ -135,7 +138,6 @@ export function ApprovalsScreen() {
     [shown, shownDays],
   );
 
-  const tt = t as unknown as ApprovalT;
   // Whose decisions this member covers today — from the items themselves.
   const covering = useMemo(
     () => [
@@ -152,11 +154,11 @@ export function ApprovalsScreen() {
       {/* Filtered (often from a notification): the pills stay, so "All" is always one tap away. */}
       {counts.size > 1 || filter !== 'all' || forYou > 0 ? (
         <FilterRow>
-          {forYou > 0 || filter === 'forYou' ? (
+          {forYou > 0 ? (
             <FilterPill
               label={`${t('approvals.tag.waitsForYou')} ${forYou}`}
-              on={filter === 'forYou'}
-              onPress={() => setFilter('forYou')}
+              on={filter === WAITS_FOR_YOU_FILTER}
+              onPress={() => setFilter(WAITS_FOR_YOU_FILTER)}
             />
           ) : null}
           <FilterPill
@@ -235,9 +237,7 @@ export function ApprovalsScreen() {
             ) : filter !== 'all' && items.length > 0 ? (
               <>
                 <AText variant="body" tone="strong" style={{ textAlign: 'center' }}>
-                  {t('approvals.emptyKind', {
-                    kind: t(filter === 'forYou' ? 'approvals.tag.waitsForYou' : `approvals.kinds.${filter}`),
-                  })}
+                  {t('approvals.emptyKind', { kind: t(`approvals.kinds.${filter}`) })}
                 </AText>
                 <GhostButton label={t('approvals.showAll')} onPress={() => setFilter('all')} />
               </>
@@ -256,33 +256,11 @@ export function ApprovalsScreen() {
         renderItem={({ item: row, index, section }) => {
           if (row.day)
             return <ApprovalDayRow day={row.day} members={membersOf(row.day)} onDone={() => void load('refresh')} />;
-          const item = row.item;
-          const text = describeApproval(item, tt, i18n.language, undefined, (n) => minutesText(n, tt));
-          const lead = text.facts[0]?.value;
           return (
-            <WellRow
+            <ApprovalItemRow
+              item={row.item}
               first={index === 0 || !!section.data[index - 1]?.day}
               last={index === section.data.length - 1}
-              title={item.subject.name || t('approvals.someone')}
-              detail={[
-                text.headline,
-                lead,
-                item.space?.name,
-                item.step ? t('approvals.step.short', { role: item.step.roleName }) : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-              trailing={
-                <View style={{ alignItems: 'flex-end', gap: amazen.space(1) }}>
-                  <ApprovalTags item={item} />
-                  <AText variant="caption" tone="muted" numeric>
-                    {item.raisedAt ? formatDay(item.raisedAt, i18n.language) : ''}
-                  </AText>
-                </View>
-              }
-              onPress={() =>
-                router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(item) } } as never)
-              }
             />
           );
         }}

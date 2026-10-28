@@ -62,6 +62,11 @@ interface DocumentRequirementsValue {
    * settles, and immediately when there is nothing to fetch.
    */
   ready: boolean;
+  /**
+   * The first read is over, answered OR failed — what a screen waits on so it does not change shape under the
+   * thumb, without hiding something else (the home strip's approvals) when only this read failed.
+   */
+  settled: boolean;
   /** At least one outstanding requirement stops the member being given work. */
   blocksWork: boolean;
   /** `force` skips the throttle — for a caller that knows the answer changed. */
@@ -75,6 +80,7 @@ const EMPTY: DocumentRequirementsValue = {
   rejected: [],
   total: 0,
   ready: true,
+  settled: true,
   blocksWork: false,
   refresh: async () => {},
 };
@@ -100,6 +106,7 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
   const [expiringSoon, setExpiringSoon] = useState<DocumentRequirementsValue['expiringSoon']>([]);
   const [rejected, setRejected] = useState<DocumentRequirementsValue['rejected']>([]);
   const [ready, setReady] = useState(false);
+  const [settled, setSettled] = useState(false);
   // A refresh already in flight, so a foreground event during the first load
   // does not fire a second identical request.
   const inFlight = useRef<Promise<void> | null>(null);
@@ -127,7 +134,7 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
 
   const refresh = useCallback(async (opts?: { force?: boolean }) => {
     // Nothing to wait for — the answer is "none", and it is already here.
-    if (!enabled) { clear(); setReady(true); return; }
+    if (!enabled) { clear(); setReady(true); setSettled(true); return; }
     if (inFlight.current) return inFlight.current;
     // A caller that knows the answer changed — a submission — always gets a
     // fresh one; a foreground tick does not.
@@ -169,6 +176,7 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
         */
       } finally {
         inFlight.current = null;
+        setSettled(true);
       }
     })();
 
@@ -197,9 +205,10 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
     rejected,
     total: toUpload.length + toSign.length + rejected.length,
     ready,
+    settled,
     blocksWork: toUpload.some((r) => r.blocksWork) || rejected.some((r) => r.blocksWork),
     refresh,
-  }), [toUpload, toSign, expiringSoon, rejected, ready, refresh]);
+  }), [toUpload, toSign, expiringSoon, rejected, ready, settled, refresh]);
 
   return (
     <DocumentRequirementsContext.Provider value={value}>

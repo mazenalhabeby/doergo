@@ -1,13 +1,12 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { type ApprovalItem } from "@hbcfield/shared/client"
+import { approvalTags, type ApprovalItem } from "@hbcfield/shared/client"
 import { formatTimeAgo } from "@/lib/format-date"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { Chip, ROW } from "@/components/page/page-kit"
 import { nameParts } from "./name-parts"
 import { describeItem } from "../_lib/describe"
-import { DatesPassedTag } from "./dates-passed-tag"
 
 /** One decision in the inbox list: who, which kind (coral when it cannot wait), the headline, how long it waited. */
 export function ApprovalRow({
@@ -59,10 +58,14 @@ export function ApprovalRow({
           </span>
           <span className="flex flex-wrap items-center gap-1.5 pt-0.5">
             <Chip tone={item.group === "NOW" ? "crit" : "soft"}>{t(`approvals.kinds.${item.kind}`)}</Chip>
-            {/* An office rule: one approval is in, the item waits for a second person holding the role. */}
+            {/* An office rule: an approval is in, the item still needs somebody holding this role. */}
             {item.step && <Chip tone="warn">{t("approvals.step.badge", { role: item.step.roleName })}</Chip>}
-            {item.step?.waitsForYou && <Chip tone="crit">{t("approvals.yours")}</Chip>}
-            <DatesPassedTag item={item} />
+            {/* Its marks (shared, the phone's order): "Waiting for you" in the accent — coral is for what cannot wait. */}
+            {approvalTags(item).map((tag) => (
+              <Chip key={tag} tone={tag === "waitsForYou" ? "accent" : "soft"}>
+                {t(tag === "waitsForYou" ? "approvals.waitsForYou" : "approvals.datesPassed")}
+              </Chip>
+            ))}
           </span>
         </span>
       </button>

@@ -11,7 +11,9 @@ import { BlurSheet } from '@/components/blur-sheet';
 import { SheetPanel } from '@/components/sheet-panel';
 import { SupplyDocumentSheet } from '../supply-document/supply-document-sheet';
 import { SignGlyph } from '@/components/glyphs/tile-glyphs';
-import { CountersignGlyph, DocBlockedGlyph, DocExpiringGlyph, DocNeededGlyph, DocSentBackGlyph } from '@/components/glyphs/doc-glyphs';
+import {
+  CountersignGlyph, DocBlockedGlyph, DocExpiringGlyph, DocNeededGlyph, DocSentBackGlyph,
+} from '@/components/glyphs/doc-glyphs';
 import { itemLines, stripCount, stripItems, stripLines, stripTone, type StripItem, type StripTone } from './action-strip-state';
 import { useApprovalsWaiting } from './use-approvals-waiting';
 import { ApprovalsGlyph } from '@/components/glyphs/queue-glyphs';
@@ -48,11 +50,12 @@ export function ActionStrip() {
   const router = useRouter();
   const reqs = useDocumentRequirements();
   const say = usePhrase();
-  const approvals = useApprovalsWaiting();
+  const { count: approvals, ready: approvalsReady } = useApprovalsWaiting();
 
   const items = useMemo(
     () => stripItems({
-      toUpload: reqs.toUpload, rejected: reqs.rejected, toSign: reqs.toSign, expiringSoon: reqs.expiringSoon, approvals,
+      toUpload: reqs.toUpload, rejected: reqs.rejected, toSign: reqs.toSign,
+      expiringSoon: reqs.expiringSoon, approvals,
     }),
     [reqs.toUpload, reqs.rejected, reqs.toSign, reqs.expiringSoon, approvals],
   );
@@ -60,8 +63,9 @@ export function ActionStrip() {
   const [supply, setSupply] = useState<{ typeId: string } | null>(null);
   const [types, setTypes] = useState<DocumentType[] | null>(null);
 
-  // Approvals are read on their own: they show even before the documents have answered.
-  const shown = items.length > 0 && (reqs.ready || items.every((i) => i.kind === 'approvals'));
+  // Both reads answer (or fail) first: drawn earlier, the strip would change shape under the thumb. A failed
+  // documents read never hides the approvals — `settled`, not `ready`.
+  const shown = items.length > 0 && reqs.settled && approvalsReady;
 
   /* The upload sheet needs the catalogue; fetched only once somebody goes there. */
   const loadTypes = async () => {
@@ -181,7 +185,9 @@ function FadingList({ items, tone, onPick, say, surface }: {
         bounces={scrolls}>
         {items.map((item, i) => {
           const l = itemLines(item);
-          const ink = item.blocksWork ? c.critical : item.kind === 'expiring' ? c.inkMuted : item.kind === 'approvals' ? c.accent : c.warn;
+          const ink = item.blocksWork
+            ? c.critical
+            : item.kind === 'expiring' ? c.inkMuted : item.kind === 'approvals' ? c.accent : c.warn;
           return (
             <Pressable
               key={item.key}

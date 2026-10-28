@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { APPROVAL_KINDS, type ApprovalDecision, type ApprovalKind, type ApprovalInbox } from "@hbcfield/shared/client"
+import {
+  matchesApprovalFilter,
+  type ApprovalDecision,
+  type ApprovalKind,
+  type ApprovalInbox,
+} from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
@@ -16,7 +21,7 @@ import { useApprovalDays } from "./use-approval-days"
 import { listOrder } from "../_lib/list-order"
 import { useArrowWalk, type ReturnTo } from "./use-arrow-walk"
 import { useNarrowFocus } from "./use-narrow-focus"
-import { matchesFilter } from "../_lib/step-notice"
+import { filterAfterRead, filterFromQuery } from "../_lib/inbox-filter"
 
 export type ApprovalsTab = "decide" | "rules" | "stand"
 
@@ -31,14 +36,12 @@ export function useApprovalsPage() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
     const kind = q.get("kind")
-    // "?kind=yours": only what waits for the reader's approval.
-    if (kind === "yours") setFilter("yours")
-    else if (kind && (APPROVAL_KINDS as readonly string[]).includes(kind)) {
-      setFilter(kind as Filter)
-      // One item asked for by name (a page's "Decide in Approvals"): open it.
-      const id = q.get("id")
-      if (id) setSelected(`${kind}:${id}`)
-    }
+    const wanted = filterFromQuery(kind)
+    if (!wanted) return
+    setFilter(wanted)
+    // One item asked for by name (a page's "Decide in Approvals"): open it.
+    const id = q.get("id")
+    if (id && wanted === kind) setSelected(`${kind}:${id}`)
   }, [])
   // "Who approves" — the office's rules — is a tab of its own (?tab=rules opens it).
   const [tab, setTabState] = useState<ApprovalsTab>("decide")
@@ -90,14 +93,15 @@ export function useApprovalsPage() {
     return c
   }, [items])
   /** Items half-way through an office rule that now wait for the reader — the rail's first entry when any. */
-  const yours = useMemo(() => items.filter((i) => i.step?.waitsForYou), [items])
+  const waitsForYou = useMemo(() => items.filter((i) => i.step?.waitsForYou), [items])
   // The last one waiting for the reader decided: the entry leaves the rail, and the list goes back to everything.
   useEffect(() => {
-    if (filter === "yours" && data && yours.length === 0) setFilter("all")
-  }, [filter, data, yours.length])
+    const next = filterAfterRead(filter, data?.items)
+    if (next !== filter) setFilter(next)
+  }, [filter, data])
   const dayState = useApprovalDays(data, filter, (key) => setSelected((s) => (s === key ? null : s)))
   const visible = useMemo(
-    () => items.filter((i) => matchesFilter(i, filter) && !dayState.grouped.has(itemKey(i))),
+    () => items.filter((i) => matchesApprovalFilter(i, filter) && !dayState.grouped.has(itemKey(i))),
     [items, filter, dayState.grouped],
   )
   const currentDay = dayState.visibleDays.find((d) => d.key === selected) ?? null
@@ -237,7 +241,7 @@ export function useApprovalsPage() {
     dataUpdatedAt,
     items,
     counts,
-    yours,
+    waitsForYou,
     visible,
     current,
     decide,

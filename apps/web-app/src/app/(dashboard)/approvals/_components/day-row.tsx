@@ -63,7 +63,7 @@ export function DayChips({ day, locale, yourTurn }: { day: ApprovalDay; locale: 
   const { t } = useTranslation()
   return (
     <div className="mt-1 flex flex-wrap gap-1">
-      {yourTurn && <Chip tone="crit">{t("approvals.yours")}</Chip>}
+      {yourTurn && <Chip tone="accent">{t("approvals.waitsForYou")}</Chip>}
       {day.labels.map((code) => (
         <Chip key={code} tone="warn" dot>
           {labelWord(code, locale)}

@@ -75,7 +75,7 @@ export function DayPanel({
                 >
                   <span className="shrink-0 text-xs text-muted-foreground">{t(`approvals.kinds.${m.kind}`)}</span>
                   <span className="min-w-0 flex-1 truncate text-foreground">{text.headline}</span>
-                  {m.step?.waitsForYou && <Chip tone="crit">{t("approvals.yours")}</Chip>}
+                  {m.step?.waitsForYou && <Chip tone="accent">{t("approvals.waitsForYou")}</Chip>}
                   <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 </button>
               </li>

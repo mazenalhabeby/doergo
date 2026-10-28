@@ -9841,12 +9841,15 @@
     },
     "step": {
       "firstDone": "Approvato — ora attende {{role}}.",
-      "mine": "Lei ha approvato. Ora serve {{role}}.",
+      "youApproved": "Lei ha approvato. Ora serve {{role}}.",
       "waiting": "{{name}} ha approvato. Serve anche {{role}}.",
-      "badge": "Passo 2 di 2 · {{role}}",
+      "badge": "Serve {{role}}",
       "youFinish": "{{name}} ha approvato. La Sua approvazione lo conclude.",
-      "waitingYou": "{{name}} ha approvato. Serve anche {{role}}: Lei può darne una.",
-      "agreed": "{{name}} ha concordato {{time}}: un tempo minore qui conta al suo posto."
+      "youCanGive": "{{name}} ha approvato. Serve ancora {{role}}: la Sua approvazione è una di queste.",
+      "agreedBy": "{{name}} ha concordato {{time}}.",
+      "agreedByCounts": "{{name}} ha concordato {{time}}: un tempo minore qui conta al suo posto.",
+      "agreedSoFar": "Concordato finora: {{time}}.",
+      "agreedSoFarCounts": "Concordato finora: {{time}}: un tempo minore qui conta al suo posto."
     },
     "rules": {
       "kind": {
@@ -10035,7 +10038,7 @@
       "unreadable": "Numero non leggibile — il limite resta com'era."
     },
     "pressAgain": "Prema di nuovo per confermare",
-    "yours": "In attesa di Lei",
+    "waitsForYou": "Attende Lei",
     "datesPassed": "Date già passate"
   },
   "overtimePage": {

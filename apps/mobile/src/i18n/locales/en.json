@@ -5374,12 +5374,14 @@
     },
     "step": {
       "firstDone": "Approved — now waiting for {{role}}.",
-      "mine": "You approved. It now needs {{role}}.",
+      "youApproved": "You approved. It now needs {{role}}.",
       "waiting": "{{name}} approved. It needs {{role}} too.",
       "short": "needs {{role}}",
       "youFinish": "{{name}} approved. Your approval finishes it.",
-      "youCanGive": "{{name}} approved. It needs {{role}} too — you can give one of them.",
-      "agreed": "{{name}} agreed {{time}} — a smaller time here counts instead."
+      "youCanGive": "{{name}} approved. It still needs {{role}} — your approval is one of those.",
+      "agreed": "{{name}} agreed {{time}}",
+      "agreedSoFar": "Agreed so far: {{time}}",
+      "smallerCounts": " — a smaller time here counts instead."
     },
     "decideInApprovals": "Decide in Approvals",
     "noShow": {

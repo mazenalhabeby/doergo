@@ -9841,12 +9841,15 @@
     },
     "step": {
       "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
-      "mine": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
+      "youApproved": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
       "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
-      "badge": "Schritt 2 von 2 · {{role}}",
+      "badge": "Braucht {{role}}",
       "youFinish": "{{name}} hat freigegeben. Ihre Freigabe schließt es ab.",
-      "waitingYou": "{{name}} hat freigegeben. Es braucht auch {{role}} – Sie können eine davon geben.",
-      "agreed": "{{name}} hat {{time}} zugestimmt – eine kürzere Zeit hier zählt stattdessen."
+      "youCanGive": "{{name}} hat freigegeben. Es braucht noch {{role}} – Ihre Freigabe ist eine davon.",
+      "agreedBy": "{{name}} hat {{time}} zugestimmt.",
+      "agreedByCounts": "{{name}} hat {{time}} zugestimmt – eine kürzere Zeit hier zählt stattdessen.",
+      "agreedSoFar": "Bisher zugestimmt: {{time}}.",
+      "agreedSoFarCounts": "Bisher zugestimmt: {{time}} – eine kürzere Zeit hier zählt stattdessen."
     },
     "rules": {
       "kind": {
@@ -10035,8 +10038,8 @@
       "unreadable": "Diese Zahl ist nicht lesbar — die Grenze bleibt, wie sie war."
     },
     "pressAgain": "Zum Bestätigen noch einmal drücken",
-    "yours": "Wartet auf Sie",
-    "datesPassed": "Tage bereits vorbei"
+    "waitsForYou": "Wartet auf Sie",
+    "datesPassed": "Zeitraum schon vorbei"
   },
   "overtimePage": {
     "title": "Überstunden",

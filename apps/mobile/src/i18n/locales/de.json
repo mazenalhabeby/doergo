@@ -5374,12 +5374,14 @@
     },
     "step": {
       "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
-      "mine": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
+      "youApproved": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
       "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
       "short": "braucht {{role}}",
       "youFinish": "{{name}} hat freigegeben. Ihre Freigabe schließt es ab.",
-      "youCanGive": "{{name}} hat freigegeben. Es braucht auch {{role}} — Sie können eine davon erteilen.",
-      "agreed": "{{name}} hat {{time}} zugestimmt — eine kürzere Zeit hier zählt stattdessen."
+      "youCanGive": "{{name}} hat freigegeben. Es braucht noch {{role}} — Ihre Freigabe ist eine davon.",
+      "agreed": "{{name}} hat {{time}} zugestimmt",
+      "agreedSoFar": "Bisher zugestimmt: {{time}}",
+      "smallerCounts": " — eine kürzere Zeit hier zählt stattdessen."
     },
     "decideInApprovals": "In Genehmigungen entscheiden",
     "noShow": {

@@ -5,8 +5,11 @@ import { useEffect, useId, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ArrowUpRight, Check, Loader2, X } from "lucide-react"
 import {
+  agreedLine,
   approvalActionsFor,
   approvalWebPath,
+  initialDecisionMinutes,
+  stepNoticeKind,
   durationInRange,
   APPROVAL_KIND_SPECS,
   type ApprovalActionSpec,
@@ -31,7 +34,6 @@ import { nameParts } from "./name-parts"
 import { ConfirmHint } from "./confirm-hint"
 import { useTick } from "../_hooks/use-tick"
 import { ruleLinkForItem } from "../_lib/rule-link"
-import { initialDecisionMinutes, stepNoticeKey } from "../_lib/step-notice"
 import { formatRequestMinutes } from "@/lib/requests"
 import { DatesPassedTag } from "./dates-passed-tag"
 import { Icon } from "@/components/ui/icon"
@@ -63,7 +65,7 @@ export function DecisionPanel({
   const actions = approvalActionsFor(item)
   const ruleLink = onMakeRule ? ruleLinkForItem(item) : null
   const initialMinutes = initialDecisionMinutes(item)
-  const agreed = item.step?.agreedMinutes
+  const agreed = agreedLine(item.step)
   const [armed, setArmed] = useState<ApprovalActionSpec | null>(null)
   const [reason, setReason] = useState("")
   const [minutes, setMinutes] = useState<number | null>(30)
@@ -143,7 +145,7 @@ export function DecisionPanel({
 
       {item.step && (
         <p className="rounded-2xl bg-shell-accent-soft px-4 py-3 text-sm text-foreground">
-          {t(stepNoticeKey(item.step), { name: item.step.firstByName, role: item.step.roleName })}
+          {t(`approvals.step.${stepNoticeKind(item.step)}`, { name: item.step.firstByName, role: item.step.roleName })}
         </p>
       )}
 
@@ -163,15 +165,8 @@ export function DecisionPanel({
 
       {armed && (
         <div className="space-y-3">
-          {/* An earlier approver agreed a time: the field starts on it, and the smaller of the two is what counts. */}
-          {armed.input === "minutes" && typeof agreed === "number" && item.step && (
-            <p className="text-[13px] text-muted-foreground">
-              {t("approvals.step.agreed", {
-                name: item.step.firstByName,
-                time: formatRequestMinutes(agreed, (k, o) => t(k, o)),
-              })}
-            </p>
-          )}
+          {/* Time already agreed: the field starts on it, and (unless an administrator decides) the smaller counts. */}
+          {armed.input === "minutes" && agreed && <AgreedLine agreed={agreed} />}
           {armed.input === "minutes" && (
             <DurationField
               key={`${item.kind}:${item.id}`}
@@ -269,4 +264,18 @@ export function DecisionPanel({
       )}
     </div>
   )
+}
+
+/** Who agreed what so far, above the time field — named only when one person did (shared `agreedLine`). */
+function AgreedLine({ agreed }: { agreed: NonNullable<ReturnType<typeof agreedLine>> }) {
+  const { t } = useTranslation()
+  const vars = { name: agreed.who ?? "", time: formatRequestMinutes(agreed.minutes, (k, o) => t(k, o)) }
+  const key = agreed.who
+    ? agreed.smallerCounts
+      ? "approvals.step.agreedByCounts"
+      : "approvals.step.agreedBy"
+    : agreed.smallerCounts
+      ? "approvals.step.agreedSoFarCounts"
+      : "approvals.step.agreedSoFar"
+  return <p className="text-[13px] text-muted-foreground">{t(key, vars)}</p>
 }

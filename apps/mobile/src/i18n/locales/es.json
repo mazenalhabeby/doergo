@@ -5374,12 +5374,14 @@
     },
     "step": {
       "firstDone": "Aprobado — ahora espera a {{role}}.",
-      "mine": "Usted aprobó. Ahora necesita a {{role}}.",
+      "youApproved": "Usted aprobó. Ahora necesita a {{role}}.",
       "waiting": "{{name}} aprobó. También necesita a {{role}}.",
       "short": "necesita a {{role}}",
       "youFinish": "{{name}} aprobó. Su aprobación lo completa.",
-      "youCanGive": "{{name}} aprobó. También necesita a {{role}} — usted puede dar una de ellas.",
-      "agreed": "{{name}} acordó {{time}} — un tiempo menor aquí cuenta en su lugar."
+      "youCanGive": "{{name}} aprobó. Aún necesita a {{role}} — su aprobación es una de ellas.",
+      "agreed": "{{name}} acordó {{time}}",
+      "agreedSoFar": "Acordado hasta ahora: {{time}}",
+      "smallerCounts": " — un tiempo menor aquí cuenta en su lugar."
     },
     "decideInApprovals": "Decidir en Aprobaciones",
     "noShow": {

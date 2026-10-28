@@ -6,6 +6,8 @@ import {
   approvalWebPath,
   durationFieldsOf,
   durationMinutes,
+  initialDecisionMinutes,
+  DEFAULT_DECISION_MINUTES,
   type ApprovalActionSpec,
   type ApprovalItem,
   type DurationFields,
@@ -42,7 +44,7 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
   const [armed, setArmed] = useState<ApprovalActionSpec | null>(null);
   const [reason, setReason] = useState('');
   // The time a decision counts, as the two fields hold it (hours + minutes).
-  const [duration, setDuration] = useState<DurationFields>(durationFieldsOf(30));
+  const [duration, setDuration] = useState<DurationFields>(durationFieldsOf(DEFAULT_DECISION_MINUTES));
   const [expiresOn, setExpiresOn] = useState('');
   // A missed shift: what happened, and whether the answer covers its whole run of days.
   const [reasonCode, setReasonCode] = useState<NoShowExcuseReason>('SICK');
@@ -66,10 +68,8 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
   // The form starts from the item's own values — on load, and every time a decision sheet opens.
   const resetInputs = useCallback((it: ApprovalItem | null) => {
     const d = (it?.data ?? {}) as Record<string, unknown>;
-    // An earlier approver's agreed time comes first: the smallest agreed time counts, so a default would cut it.
-    const agreed = it?.step?.agreedMinutes;
-    const start = typeof agreed === 'number' && agreed > 0 ? agreed : d.requestedMinutes;
-    setDuration(durationFieldsOf(typeof start === 'number' ? start : 30));
+    // The time agreed so far, else what was asked, else 30 min (shared: the web starts from the same place).
+    setDuration(durationFieldsOf(it ? initialDecisionMinutes(it) : DEFAULT_DECISION_MINUTES));
     setExpiresOn(typeof d.expiresOn === 'string' ? d.expiresOn.slice(0, 10) : '');
   }, []);
   useEffect(() => resetInputs(item), [item, resetInputs]);
