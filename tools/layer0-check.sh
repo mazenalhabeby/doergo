@@ -9,7 +9,8 @@
 # 2. ratchets: size and structure (no import loops, no server code in the client bundle)
 # 3. unit tests of the foundation: shared core (time zones, money, access), the gateway's guards and error filter,
 #    sign-in and sessions in auth-service
-# 4. live: sign-in and sessions attacked, the gateway layer attacked, speed and 200-at-once
+# 4. live: sign-in and sessions attacked, the gateway layer attacked, speed and 200-at-once, a Redis restart
+#    (restarts the LOCAL Redis container)
 #
 # Production is NOT touched. Its own checks (TLS, ports, restore test) are listed in docs/plans/layer0-checks.md.
 set -uo pipefail
@@ -48,6 +49,7 @@ curl -sf -o /dev/null http://localhost:4000/api/v1/health || { echo "the local A
 run "sign-in and sessions attacked" python3 tools/layer0-auth-e2e.py ${QUICK:+--quick}
 run "gateway layer attacked" python3 tools/layer0-gateway-e2e.py
 run "speed and 200 at once" python3 tools/layer0-load.py
+run "comes back by itself after Redis restarts" python3 tools/layer0-redis-blip.py
 
 printf '\n'
 if [ ${#FAILED[@]} -eq 0 ]; then printf '\033[32m■ LAYER 0 GREEN\033[0m\n'; else printf '\033[31m■ LAYER 0 RED:\033[0m %s\n' "${FAILED[*]}"; exit 1; fi

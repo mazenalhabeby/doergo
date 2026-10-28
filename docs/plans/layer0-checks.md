@@ -3,7 +3,8 @@
 `pnpm layer0:check` (tools/layer0-check.sh) runs everything that can run locally: a fresh database against the
 schema (with the reviewed SQL-only list in `tools/layer0-known-drift.txt`), the size/structure ratchets, the
 foundation's unit tests, and three live scripts — `layer0-auth-e2e.py` (sign-in and sessions attacked),
-`layer0-gateway-e2e.py` (the gateway's common layer attacked), `layer0-load.py` (speed, 200 at once; `--soak 30`).
+`layer0-gateway-e2e.py` (the gateway's common layer attacked), `layer0-load.py` (speed, 200 at once; `--soak 30`), `layer0-redis-blip.py` (Redis restarted mid-traffic — the
+system must come back by itself).
 
 ## Production — run by hand, read-only (first run 2026-10-28)
 
