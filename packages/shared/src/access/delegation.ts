@@ -230,6 +230,25 @@ export async function standInsOf(
 }
 export type StandInRow = { fromUserId: string; toUserId: string; startsOn: Date; endsOn: Date; revokedAt: Date | null };
 
+/** Every stand-in (either way round) touching any of `userIds` that could matter since `since` — ONE query. */
+export async function standInsAround(
+  prisma: { approvalDelegation: { findMany(args: unknown): Promise<StandInRow[]> } },
+  organizationId: string,
+  userIds: string[],
+  since: Date,
+): Promise<StandInRow[]> {
+  if (!userIds.length) return [];
+  const DAY = 86_400_000;
+  return prisma.approvalDelegation.findMany({
+    where: {
+      organizationId,
+      endsOn: { gte: new Date(since.getTime() - DAY) },
+      OR: [{ fromUserId: { in: userIds } }, { toUserId: { in: userIds } }],
+    },
+    select: { fromUserId: true, toUserId: true, startsOn: true, endsOn: true, revokedAt: true },
+  });
+}
+
 /** The rule of `standInBetween`, over rows already read: is `userId` a stand-in of one of `others` (or the other way). */
 export function standInCovers(
   rows: StandInRow[],

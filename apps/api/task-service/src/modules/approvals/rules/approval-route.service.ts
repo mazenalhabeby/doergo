@@ -20,6 +20,7 @@ import { NotificationRoutingService } from '../../notification-routing/notificat
 import type { ApprovalRouteInput as SharedApprovalRouteInput } from '@hbcfield/shared/microservices';
 import { decidersAbout, type WorkspaceDecider } from './workspace-deciders';
 import { awayOn, leaveDay } from './away-today';
+import { stillNeededBy } from './route-still-needed';
 
 /** "Who else can decide" is a hint, not a directory: the first few, and how many more. */
 const MAX_DECIDERS = 8;
@@ -60,9 +61,14 @@ export class ApprovalRouteService {
             .catch(() => ({ ids: [] as string[], emails: [] }))
         : Promise.resolve({ ids: [] as string[], emails: [] }),
     ]);
-    const deciders: ApprovalDecider[] = decidersAbout(all, input.subjectUserId)
-      .filter((d) => d.id !== input.callerId)
-      .map(({ covers: _c, ...d }) => d);
+    // Half-way through office rules: only who can still give a missing approval.
+    const still = await stillNeededBy(
+      this.prisma,
+      input.organizationId,
+      input.step,
+      decidersAbout(all, input.subjectUserId),
+    );
+    const deciders: ApprovalDecider[] = still.filter((d) => d.id !== input.callerId).map(({ covers: _c, ...d }) => d);
 
     const sorted = sortDeciders(deciders);
     const deciderIds = new Set(deciders.map((d) => d.id));

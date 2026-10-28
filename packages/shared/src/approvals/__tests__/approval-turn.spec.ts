@@ -92,3 +92,11 @@ describe('what the screens show', () => {
     expect(matchesApprovalFilter({ kind: 'hours' }, 'waitsForYou')).toBe(false);
   });
 });
+
+describe('approvedByNames', () => {
+  it('everybody who approved, never only the first of several', () => {
+    const { approvedByNames } = jest.requireActual('../approval-turn');
+    expect(approvedByNames({ firstByName: 'Anna', approverNames: ['Anna', 'David'] })).toBe('Anna, David');
+    expect(approvedByNames({ firstByName: 'Anna' })).toBe('Anna');
+  });
+});

@@ -64,8 +64,9 @@ export interface ApprovalItem {
     youApproved?: boolean;
     /** The caller finishes it as an administrator — their own time stands as given. */
     adminFinishes?: boolean;
-    /** How many have approved so far. */
+    /** How many have approved so far, and who (first approver first). */
     approverCount?: number;
+    approverNames?: string[];
   };
   /**
    * Kind-specific facts, flat and serialisable — rendered by each app's own

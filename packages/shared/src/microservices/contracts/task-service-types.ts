@@ -2,6 +2,7 @@
 import type { ApprovalKind } from '../../approvals/kinds/kind-specs';
 import type { SyncPullScope } from '../../sync/protocol';
 import type { AttendanceScope } from '../../access/space-scope';
+import type { RuleKind } from '../../approvals/approval-rules';
 
 /** The caller, as the gateway resolved it from the token — never from the body. */
 export interface CalendarCaller {
@@ -116,6 +117,11 @@ export interface ApprovalRouteInput {
   kind: ApprovalKind;
   spaceId: string | null;
   subjectUserId: string | null;
+  /**
+   * The item as office rules know it (`ruleKindOf` + `ruleStepItemId`): when it is half-way through its approvals,
+   * "who else can decide" is only who can still give one that is missing.
+   */
+  step?: { kind: RuleKind; itemId: string } | null;
 }
 
 export interface BreakRuleInput {

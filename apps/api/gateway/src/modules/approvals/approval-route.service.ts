@@ -4,6 +4,8 @@ import {
   APPROVAL_KIND_SPECS,
   BaseGatewayService,
   SERVICE_NAMES,
+  ruleKindOf,
+  ruleStepItemId,
   type ApprovalKind,
   type ApprovalRouting,
 } from '@hbcfield/shared';
@@ -41,6 +43,14 @@ export class ApprovalRouteService extends BaseGatewayService {
       spaceId: item.space?.id ?? null,
       // A client or a joiner is not a member: nobody is "told" about them through member routing.
       subjectUserId: kind === 'clientRequest' || kind === 'guestRequest' || kind === 'join' ? null : item.subject.id,
+      // Half-way through office rules: "who else" narrows to who can still give a missing approval.
+      step: stepOf(kind, item),
     } satisfies RpcRequest<typeof approvalRouteRpc>);
   }
+}
+
+/** The item as office rules know it, when it is half-way through its approvals. */
+function stepOf(kind: ApprovalKind, item: { id: string; data: Record<string, unknown>; step?: unknown }) {
+  const ruleKind = ruleKindOf(kind);
+  return item.step && ruleKind ? { kind: ruleKind, itemId: ruleStepItemId(kind, item.id, item.data) } : null;
 }

@@ -207,6 +207,7 @@ export class ApprovalsService {
             mine: s.firstById === user.id,
             agreedMinutes: s.agreedMinutes,
             approverCount: s.approverCount,
+            approverNames: s.approverNames,
             // The caller's turn, by the approval's own rule (shared `approvalTurn`).
             waitsForYou: s.turn?.waitsForYou ?? false,
             youFinish: s.turn?.youFinish ?? false,

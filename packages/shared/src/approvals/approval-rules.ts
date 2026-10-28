@@ -238,8 +238,9 @@ export interface ApprovalStepView {
   roleName: string;
   /** The smallest time any approver agreed so far (overtime), null when none was given or the kind takes no time. */
   agreedMinutes: number | null;
-  /** How many have approved so far. */
+  /** How many have approved so far, and who (first approver first). */
   approverCount: number;
+  approverNames: string[];
   /** Asked for a caller (`approvalTurn`): the caller's turn, as the approval itself would judge it. */
   turn?: Pick<Turn, 'waitsForYou' | 'youFinish' | 'youApproved' | 'adminFinishes'>;
 }

@@ -68,7 +68,7 @@ export class ApprovalStepsReader {
     const leftOf = new Map(rows.map((r) => [r, left(r)]));
     const since = new Date(Math.min(...rows.map((r) => r.firstAt.getTime())));
     const [people, roles, caller, standIns] = await Promise.all([
-      peopleNames(this.prisma, [...new Set(rows.map((r) => r.firstById))]),
+      peopleNames(this.prisma, [...new Set(rows.flatMap((r) => [r.firstById, ...r.approverIds]))]),
       roleNames(this.prisma, [...new Set([...leftOf.values()].flat())]),
       callerId ? memberRolesNow(this.prisma, organizationId, callerId, new Date()) : null,
       // The gate refuses a leader and the stand-in deciding with their authority as two approvals — so does the hint.
@@ -87,6 +87,9 @@ export class ApprovalStepsReader {
         // Only overtime is agreed in minutes; another kind's stored number is a fact, not an agreed time.
         agreedMinutes: r.kind === 'overtime' ? (r.minutes ?? null) : null,
         approverCount: new Set([r.firstById, ...r.approverIds]).size,
+        approverNames: [...new Set([r.firstById, ...r.approverIds])]
+          .map((id) => personById.get(id) ?? '')
+          .filter(Boolean),
         ...(caller ? { turn: callerTurn(caller, standIns, r, leftOf.get(r)!) } : {}),
       }));
   }

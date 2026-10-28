@@ -58,6 +58,7 @@ describe('ApprovalStepsReader.steps', () => {
         roleName: 'HR',
         agreedMinutes: 90,
         approverCount: 1,
+        approverNames: ['Anna M'],
       },
     ]);
   });

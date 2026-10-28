@@ -52,6 +52,7 @@ type StepView = {
   youApproved?: boolean;
   adminFinishes?: boolean;
   approverCount?: number;
+  approverNames?: string[];
 };
 type ItemView = { kind: string; data: Record<string, unknown>; step?: StepView };
 
@@ -110,4 +111,10 @@ export function matchesApprovalFilter(item: Pick<ItemView, 'kind' | 'step'>, fil
   if (filter === 'all') return true;
   if (filter === WAITS_FOR_YOU_FILTER) return !!item.step?.waitsForYou;
   return item.kind === filter;
+}
+
+/** Who has approved so far, as one name list ("Anna Müller, David Koller") — never just the first of several. */
+export function approvedByNames(step: Pick<StepView, 'firstByName' | 'approverNames'>): string {
+  const names = (step.approverNames ?? []).filter(Boolean);
+  return names.length ? names.join(', ') : step.firstByName;
 }
