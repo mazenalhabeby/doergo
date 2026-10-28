@@ -40,16 +40,12 @@ export function ApprovalRow({
           seed={item.subject.id ?? item.subject.name}
           size="md"
         />
+        {/* The name comes first and is never pushed out: the tags wrap on their own line under the headline. */}
         <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
           <span className="flex min-w-0 items-center gap-2">
-            <b className="truncate text-sm font-semibold text-foreground">
+            <b className="min-w-0 truncate text-sm font-semibold text-foreground">
               {item.subject.name || t("approvals.someone")}
             </b>
-            <Chip tone={item.group === "NOW" ? "crit" : "soft"}>{t(`approvals.kinds.${item.kind}`)}</Chip>
-            {/* An office rule: one approval is in, the item waits for a second person holding the role. */}
-            {item.step && <Chip tone="warn">{t("approvals.step.badge", { role: item.step.roleName })}</Chip>}
-            {item.step?.waitsForYou && <Chip tone="crit">{t("approvals.yours")}</Chip>}
-            <DatesPassedTag item={item} />
             {item.raisedAt && (
               <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
                 {formatTimeAgo(item.raisedAt)}
@@ -60,6 +56,13 @@ export function ApprovalRow({
             {text.headline}
             {lead ? ` · ${lead.value}` : ""}
             {item.space ? ` · ${item.space.name}` : ""}
+          </span>
+          <span className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <Chip tone={item.group === "NOW" ? "crit" : "soft"}>{t(`approvals.kinds.${item.kind}`)}</Chip>
+            {/* An office rule: one approval is in, the item waits for a second person holding the role. */}
+            {item.step && <Chip tone="warn">{t("approvals.step.badge", { role: item.step.roleName })}</Chip>}
+            {item.step?.waitsForYou && <Chip tone="crit">{t("approvals.yours")}</Chip>}
+            <DatesPassedTag item={item} />
           </span>
         </span>
       </button>
