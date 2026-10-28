@@ -66,6 +66,7 @@ function fakePrisma() {
     assetCustody: { findMany: jest.fn(async () => []) },
     assetMoney: {
       findMany: jest.fn(async () => []),
+      count: jest.fn(async () => 0),
       findFirst: jest.fn(async () => null),
       create: jest.fn(async ({ data }: any) => ({ id: 'm1', ...data })),
       updateMany: jest.fn(async () => ({ count: 1 })),
