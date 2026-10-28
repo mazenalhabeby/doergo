@@ -1,11 +1,4 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { redactUrlForLog } from '@hbcfield/shared';
 
@@ -20,7 +13,6 @@ interface ErrorResponse {
   timestamp: string;
   path: string;
 }
-
 
 /**
  * An error that came back from a microservice.
@@ -43,9 +35,7 @@ function rpcError(exception: unknown): {
   if (!exception || typeof exception !== 'object' || exception instanceof Error) return null;
   const e = exception as Record<string, unknown>;
 
-  const raw = typeof e.statusCode === 'number' ? e.statusCode
-    : typeof e.status === 'number' ? e.status
-    : null;
+  const raw = typeof e.statusCode === 'number' ? e.statusCode : typeof e.status === 'number' ? e.status : null;
   // A status we did not send is not a status we trust.
   if (raw === null || raw < 400 || raw > 599) return null;
 
@@ -59,7 +49,8 @@ function rpcError(exception: unknown): {
   */
   if (raw >= 500) return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Internal server error' };
 
-  const message = typeof e.message === 'string' || Array.isArray(e.message) ? (e.message as string | string[]) : 'Request failed';
+  const message =
+    typeof e.message === 'string' || Array.isArray(e.message) ? (e.message as string | string[]) : 'Request failed';
   /*
     A machine-readable code, when the service sent one.
 
@@ -70,6 +61,13 @@ function rpcError(exception: unknown): {
   const code = typeof e.code === 'string' ? e.code : undefined;
   const params = e.params && typeof e.params === 'object' ? (e.params as Record<string, unknown>) : undefined;
   return { statusCode: raw, message, ...(code ? { code } : {}), ...(params ? { params } : {}) };
+}
+
+/** A 4xx that a request-reading library (body-parser) marked as safe to tell the client — its status, else null. */
+function clientError(exception: unknown): number | null {
+  const e = exception as { status?: unknown; statusCode?: unknown; expose?: unknown; type?: unknown };
+  const status = typeof e?.status === 'number' ? e.status : typeof e?.statusCode === 'number' ? e.statusCode : null;
+  return status !== null && status >= 400 && status < 500 && e.expose === true ? status : null;
 }
 
 @Catch()
@@ -114,12 +112,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       code = rpc.code;
       params = rpc.params;
       error = this.getErrorNameFromStatus(statusCode);
+    } else if (clientError(exception)) {
+      // The body parser's own refusal (too large, malformed, wrong charset): its 4xx, never a 500.
+      statusCode = clientError(exception)!;
+      message = statusCode === 413 ? 'The request is too large.' : 'The request could not be read.';
+      error = this.getErrorNameFromStatus(statusCode);
     } else if (exception instanceof Error) {
       // Log unexpected errors with stack trace
-      this.logger.error(
-        `Unexpected error: ${exception.message}`,
-        exception.stack,
-      );
+      this.logger.error(`Unexpected error: ${exception.message}`, exception.stack);
       // Don't expose internal error details to client
       message = 'An unexpected error occurred';
     }

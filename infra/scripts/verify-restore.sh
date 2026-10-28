@@ -23,8 +23,11 @@ die() { printf '\n\033[31mFAILED: %s\033[0m\n' "$*" >&2; exit 1; }
 step() { printf '\n\033[1m→ %s\033[0m\n' "$*"; }
 
 [ -f "$ENV_FILE" ] || die "$ENV_FILE not found (override with ENV_FILE=…)"
-# shellcheck disable=SC1090
-set -a; . "$ENV_FILE"; set +a
+# Read ONLY the two values needed. Sourcing the whole file ran every secret as shell: a password with a `#` or a
+# space broke the script and printed part of the secret to the terminal (found 2026-10-28).
+env_value() { grep -E "^$1=" "$ENV_FILE" | tail -1 | cut -d= -f2- | sed -E 's/^"(.*)"$/\1/; s/^'"'"'(.*)'"'"'$/\1/'; }
+POSTGRES_USER="$(env_value POSTGRES_USER)"
+POSTGRES_DB="$(env_value POSTGRES_DB)"
 : "${POSTGRES_USER:?missing from $ENV_FILE}"
 : "${POSTGRES_DB:?missing from $ENV_FILE}"
 
@@ -34,7 +37,12 @@ docker inspect "$PG" >/dev/null 2>&1 || die "container $PG not running (override
 psql_scratch() { docker exec -i "$PG" psql -U "$POSTGRES_USER" -d "$SCRATCH_DB" "$@"; }
 psql_admin()   { docker exec -i "$PG" psql -U "$POSTGRES_USER" -d postgres "$@"; }
 
-cleanup() { psql_admin -qc "DROP DATABASE IF EXISTS $SCRATCH_DB;" >/dev/null 2>&1 || true; }
+# A backup this script took itself is a full copy of the data in /tmp — removed with the scratch database.
+MADE_BACKUP=""
+cleanup() {
+  psql_admin -qc "DROP DATABASE IF EXISTS $SCRATCH_DB;" >/dev/null 2>&1 || true
+  [ -n "$MADE_BACKUP" ] && rm -f "$MADE_BACKUP" "${MADE_BACKUP%.sql.gz}"
+}
 trap cleanup EXIT
 
 # ── 1. Obtain a backup ──────────────────────────────────────────────────────
@@ -43,7 +51,8 @@ if [ $# -ge 1 ]; then
   [ -f "$BACKUP" ] || die "no such file: $BACKUP"
   step "Using existing backup: $BACKUP"
 else
-  BACKUP="$(mktemp -t verify-restore).sql.gz"
+  BACKUP="$(mktemp "${TMPDIR:-/tmp}/verify-restore.XXXXXX").sql.gz"
+  MADE_BACKUP="$BACKUP"
   step "Taking a fresh backup"
   docker exec "$PG" pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > "$BACKUP"
 fi

@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { VALIDATION_PIPE_OPTIONS } from './common/validation-options';
 import { GlobalExceptionFilter } from './common/filters';
+import { refuseNulBytes } from './common/null-bytes';
 import { spacesGranting, safeEqual, redactUrlForLog } from '@hbcfield/shared';
 import type { NextFunction, Request, Response } from 'express';
 import type { MaybeAuthedRequest } from './common/request.types';
@@ -67,6 +68,9 @@ async function bootstrap() {
   app.use((req: Request, res: Response, next: NextFunction) =>
     (needsLargeBody(req.path) ? formLarge : formSmall)(req, res, next),
   );
+
+  // A NUL character cannot be stored — refused here rather than as a 500 from the database.
+  app.use(refuseNulBytes);
 
   // Parse cookies (for httpOnly refresh token)
   app.use(cookieParser());
