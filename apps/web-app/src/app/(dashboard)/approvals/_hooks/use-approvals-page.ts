@@ -4,8 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  APPROVAL_KINDS,
+  filterAfterRead,
+  filterFromQuery,
   matchesApprovalFilter,
   type ApprovalDecision,
+  type ApprovalFilter,
   type ApprovalKind,
   type ApprovalInbox,
 } from "@hbcfield/shared/client"
@@ -16,12 +20,11 @@ import { useAuth } from "@/contexts/auth-context"
 import { useRouteAccess } from "@/hooks/use-route-access"
 
 export { itemKey } from "../_lib/approval-keys"
-import { KIND_KEYS, itemKey, type Filter } from "../_lib/approval-keys"
+import { KIND_KEYS, itemKey } from "../_lib/approval-keys"
 import { useApprovalDays } from "./use-approval-days"
 import { listOrder } from "../_lib/list-order"
 import { useArrowWalk, type ReturnTo } from "./use-arrow-walk"
 import { useNarrowFocus } from "./use-narrow-focus"
-import { filterAfterRead, filterFromQuery } from "../_lib/inbox-filter"
 
 export type ApprovalsTab = "decide" | "rules" | "stand"
 
@@ -30,18 +33,18 @@ export function useApprovalsPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const { user } = useAuth()
-  const [filter, setFilter] = useState<Filter>("all")
+  const [filter, setFilter] = useState<ApprovalFilter>("all")
   const [selected, setSelected] = useState<string | null>(null)
   // Arriving from a page's "decide in Approvals" line: open on that kind.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
     const kind = q.get("kind")
-    const wanted = filterFromQuery(kind)
+    const wanted = filterFromQuery(kind, APPROVAL_KINDS)
     if (!wanted) return
     setFilter(wanted)
-    // One item asked for by name (a page's "Decide in Approvals"): open it.
+    // One item asked for by name (a page's "Decide in Approvals"): open it — only a real kind names an item.
     const id = q.get("id")
-    if (id && wanted === kind) setSelected(`${kind}:${id}`)
+    if (id && (APPROVAL_KINDS as readonly string[]).includes(wanted)) setSelected(`${wanted}:${id}`)
   }, [])
   // "Who approves" — the office's rules — is a tab of its own (?tab=rules opens it).
   const [tab, setTabState] = useState<ApprovalsTab>("decide")

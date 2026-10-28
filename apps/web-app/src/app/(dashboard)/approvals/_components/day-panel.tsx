@@ -6,10 +6,10 @@ import { CheckCheck, ChevronRight } from "lucide-react"
 import { kindNeedsMinutes, type ApprovalDay, type ApprovalItem } from "@hbcfield/shared/client"
 import { formatMediumDate } from "@/lib/format-date"
 import { Button } from "@/components/ui/button"
-import { Chip } from "@/components/page/page-kit"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { nameParts } from "./name-parts"
 import { DayChips } from "./day-row"
+import { ApprovalTagChips } from "./approval-tags"
 import { describeItem } from "../_lib/describe"
 
 /**
@@ -75,7 +75,7 @@ export function DayPanel({
                 >
                   <span className="shrink-0 text-xs text-muted-foreground">{t(`approvals.kinds.${m.kind}`)}</span>
                   <span className="min-w-0 flex-1 truncate text-foreground">{text.headline}</span>
-                  {m.step?.waitsForYou && <Chip tone="accent">{t("approvals.waitsForYou")}</Chip>}
+                  <ApprovalTagChips item={m} />
                   <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 </button>
               </li>

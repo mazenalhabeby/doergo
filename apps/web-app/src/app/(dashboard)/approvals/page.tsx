@@ -171,7 +171,7 @@ export default function ApprovalsPage() {
               {waitsForYou.length > 0 && (
                 <KindRailItem
                   active={filter === WAITS_FOR_YOU_FILTER}
-                  label={t("approvals.waitsForYou")}
+                  label={t("approvals.tag.waitsForYou")}
                   count={waitsForYou.length}
                   urgent={waitsForYou.some((i) => i.group === "NOW")}
                   onClick={() => setFilter(WAITS_FOR_YOU_FILTER)}
@@ -223,7 +223,7 @@ export default function ApprovalsPage() {
                             day={d}
                             active={d.key === selected}
                             onSelect={() => setSelected(d.key)}
-                            yourTurn={membersOf(d).some((i) => i.step?.waitsForYou)}
+                            waitsForYou={membersOf(d).some((i) => i.step?.waitsForYou)}
                           />
                         ))}
                         {rows.map((i) => (

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { approvalWhyText, type ApprovalItem, type ApprovalT } from "@hbcfield/shared/client"
+import { approvalWhyText, stepNoticeVars, type ApprovalItem, type ApprovalT } from "@hbcfield/shared/client"
 
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
@@ -23,6 +23,10 @@ export function WhoElse({ item }: { item: ApprovalItem }) {
     queryFn: () => approvalsApi.route(item.kind, item.id),
     staleTime: 60_000,
   })
+  // Half-way through an office rule: only the missing approval is still to give, so the list is who can give it.
+  const role = item.step
+    ? stepNoticeVars(item.step, { anAdministrator: t("approvals.step.anAdministrator") }).role
+    : null
 
   return (
     <div className="space-y-3 text-sm">
@@ -34,12 +38,14 @@ export function WhoElse({ item }: { item: ApprovalItem }) {
       )}
       <div>
         <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("approvals.route.title")}
+          {role ? t("approvals.route.titleMissing", { role }) : t("approvals.route.title")}
         </p>
         {isLoading ? (
           <p className="text-muted-foreground">{t("approvals.route.loading")}</p>
         ) : !data?.deciders.length ? (
-          <p className="text-muted-foreground">{t("approvals.route.onlyYou")}</p>
+          <p className="text-muted-foreground">
+            {role ? t("approvals.route.nobodyHolds", { role }) : t("approvals.route.onlyYou")}
+          </p>
         ) : (
           <ul className="space-y-1.5">
             {data.deciders.map((d) => (

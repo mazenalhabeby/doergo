@@ -84,6 +84,11 @@ describe('notification routes', () => {
     expect(notificationTarget({ type: 'crm_reminder', customerId: 'k1' }, viewer)).toEqual({ pathname: '/(app)/customer/[id]', params: { id: 'k1', tab: 'reminders' } });
     expect(notificationTarget({ type: 'asset.expense_decided', assetId: 'a1', entryId: 'm1' }, viewer)).toEqual({ pathname: '/(app)/my-assets' });
     expect(notificationTarget({ type: 'asset.handed_over', assetId: 'a1', direction: 'to' }, viewer)).toEqual({ pathname: '/(app)/my-assets' });
+    // A second approval waits for this reader: the inbox opens on "Waiting for you".
+    expect(notificationTarget({ type: 'approval_second_step' }, viewer)).toEqual({
+      pathname: '/(app)/approvals',
+      params: { kind: 'waitsForYou' },
+    });
   });
 
   it('sends a shift issue to whichever screen hosts the thread for this person', () => {

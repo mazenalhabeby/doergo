@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next';
 import {
   APPROVAL_GROUPS,
   APPROVAL_KINDS,
+  dayMatchesFilter,
+  filterAfterRead,
+  filterFromQuery,
   matchesApprovalFilter,
   memberKey,
   WAITS_FOR_YOU_FILTER,
@@ -59,9 +62,13 @@ export function ApprovalsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   // Arriving with ?kind= (a notification, or a screen that used to decide it): open on that kind.
   const { kind } = useLocalSearchParams<{ kind?: string }>();
-  const [chosen, setFilter] = useState<Filter>(() =>
-    kind && (APPROVAL_KINDS as readonly string[]).includes(kind) ? (kind as ApprovalKind) : 'all',
-  );
+  // `?kind=waitsForYou` (and the older `yours`) opens "Waiting for you" — the shared reading of a link.
+  const [chosen, setChosen] = useState<Filter>(() => (filterFromQuery(kind, APPROVAL_KINDS) as Filter | null) ?? 'all');
+  // A second link while the screen is open (a notification tapped here) moves the filter too.
+  useEffect(() => {
+    const next = filterFromQuery(kind, APPROVAL_KINDS) as Filter | null;
+    if (next) setChosen(next);
+  }, [kind]);
   const [standIn, setStandIn] = useState(false);
   // An external member decides only in their workspace and never hands it on (the server refuses STAND_IN_EXTERNAL).
   const { user } = useAuth();
@@ -102,11 +109,11 @@ export function ApprovalsScreen() {
     for (const i of items ?? []) n.set(i.kind, (n.get(i.kind) ?? 0) + 1);
     return n;
   }, [items]);
-  const forYou = useMemo(() => (items ?? []).filter((i) => i.step?.waitsForYou).length, [items]);
+  const waitsForYouCount = useMemo(() => (items ?? []).filter((i) => i.step?.waitsForYou).length, [items]);
   // Nothing left waiting for you (the last one just decided): back to everything, as on the web — from this render.
-  const filter: Filter = items && chosen === WAITS_FOR_YOU_FILTER && forYou === 0 ? 'all' : chosen;
+  const filter = filterAfterRead(chosen, items ?? undefined) as Filter;
   useEffect(() => {
-    if (filter !== chosen) setFilter(filter);
+    if (filter !== chosen) setChosen(filter);
   }, [filter, chosen]);
   const fits = (i: ApprovalItem) => matchesApprovalFilter(i, filter);
   const membersOf = (d: ApprovalDay) =>
@@ -118,12 +125,7 @@ export function ApprovalsScreen() {
     [items, filter, grouped], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const shownDays = useMemo(
-    () =>
-      days.filter((d) =>
-        filter === WAITS_FOR_YOU_FILTER
-          ? membersOf(d).some(fits)
-          : filter === 'all' || d.members.some((m) => m.kind === filter),
-      ),
+    () => days.filter((d) => dayMatchesFilter(membersOf(d), filter)),
     [days, filter, items], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const sections = useMemo(
@@ -152,26 +154,26 @@ export function ApprovalsScreen() {
   const header = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(2) }}>
       {/* Filtered (often from a notification): the pills stay, so "All" is always one tap away. */}
-      {counts.size > 1 || filter !== 'all' || forYou > 0 ? (
+      {counts.size > 1 || filter !== 'all' || waitsForYouCount > 0 ? (
         <FilterRow>
-          {forYou > 0 ? (
+          {waitsForYouCount > 0 ? (
             <FilterPill
-              label={`${t('approvals.tag.waitsForYou')} ${forYou}`}
+              label={`${t('approvals.tag.waitsForYou')} ${waitsForYouCount}`}
               on={filter === WAITS_FOR_YOU_FILTER}
-              onPress={() => setFilter(WAITS_FOR_YOU_FILTER)}
+              onPress={() => setChosen(WAITS_FOR_YOU_FILTER)}
             />
           ) : null}
           <FilterPill
             label={`${t('approvals.all')} ${items?.length ?? 0}`}
             on={filter === 'all'}
-            onPress={() => setFilter('all')}
+            onPress={() => setChosen('all')}
           />
           {APPROVAL_KINDS.filter((k) => counts.has(k) || k === filter).map((k) => (
             <FilterPill
               key={k}
               label={`${t(`approvals.kinds.${k}`)} ${counts.get(k) ?? 0}`}
               on={filter === k}
-              onPress={() => setFilter(k)}
+              onPress={() => setChosen(k)}
             />
           ))}
         </FilterRow>
@@ -239,7 +241,7 @@ export function ApprovalsScreen() {
                 <AText variant="body" tone="strong" style={{ textAlign: 'center' }}>
                   {t('approvals.emptyKind', { kind: t(`approvals.kinds.${filter}`) })}
                 </AText>
-                <GhostButton label={t('approvals.showAll')} onPress={() => setFilter('all')} />
+                <GhostButton label={t('approvals.showAll')} onPress={() => setChosen('all')} />
               </>
             ) : (
               <>

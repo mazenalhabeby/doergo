@@ -9809,7 +9809,9 @@
         "SPACE": "Dieser Arbeitsbereich",
         "ASSIGNED": "Übergeben",
         "DELEGATED": "Vertretung"
-      }
+      },
+      "titleMissing": "Wer die fehlende Freigabe geben kann ({{role}})",
+      "nobodyHolds": "Niemand hat hier {{role}} — ein Administrator kann es abschließen."
     },
     "standIn": {
       "title": "Vertretung",
@@ -9845,14 +9847,15 @@
       "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
       "badge": "Braucht {{role}}",
       "youFinish": "{{name}} hat freigegeben. Ihre Freigabe schließt es ab.",
-      "youCanGive": "{{name}} hat freigegeben. Es braucht noch {{role}} – Ihre Freigabe ist eine davon.",
+      "youCanGive": "{{name}} hat freigegeben. Es braucht noch {{role}} — Ihre Freigabe ist eine davon.",
       "agreedBy": "{{name}} hat {{time}} zugestimmt.",
       "agreedByCounts": "{{name}} hat {{time}} zugestimmt – eine kürzere Zeit hier zählt stattdessen.",
       "agreedSoFar": "Bisher zugestimmt: {{time}}.",
       "agreedSoFarCounts": "Bisher zugestimmt: {{time}} – eine kürzere Zeit hier zählt stattdessen.",
       "youFinish_other": "{{name}} haben freigegeben. Ihre Freigabe schließt es ab.",
-      "youCanGive_other": "{{name}} haben freigegeben. Es braucht noch {{role}} – Ihre Freigabe ist eine davon.",
-      "waiting_other": "{{name}} haben freigegeben. Es braucht auch {{role}}."
+      "youCanGive_other": "{{name}} haben freigegeben. Es braucht noch {{role}} — Ihre Freigabe ist eine davon.",
+      "waiting_other": "{{name}} haben freigegeben. Es braucht auch {{role}}.",
+      "anAdministrator": "einen Administrator"
     },
     "rules": {
       "kind": {
@@ -10041,8 +10044,10 @@
       "unreadable": "Diese Zahl ist nicht lesbar — die Grenze bleibt, wie sie war."
     },
     "pressAgain": "Zum Bestätigen noch einmal drücken",
-    "waitsForYou": "Wartet auf Sie",
-    "datesPassed": "Zeitraum schon vorbei"
+    "tag": {
+      "waitsForYou": "Wartet auf Sie",
+      "datesPassed": "Zeitraum schon vorbei"
+    }
   },
   "overtimePage": {
     "title": "Überstunden",

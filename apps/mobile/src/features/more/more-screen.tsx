@@ -16,6 +16,7 @@ import { TAB_GLYPHS } from '@/components/glyphs/tab-glyphs';
 import { SHORTCUT_GLYPHS } from '../home/shortcut-glyphs';
 import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../time/shift-issue-sheet';
 import { groupManageRows, type MoreGroup } from './more-groups';
+import { actionableOf } from '../home/approvals-waiting-read';
 import { TourTarget, useTourScroll } from '../tour/tour-target';
 
 /**
@@ -60,8 +61,8 @@ export function MoreScreen() {
   const has = (route: string) => rows.some((x) => x.route === route);
   const loadCounts = useCallback(async () => {
     const asks: Array<[string, Promise<unknown[] | number>]> = [];
-    // One number for everything waiting (the server caches it ~20 s).
-    if (has('/(app)/approvals')) asks.push(['/(app)/approvals', approvalsApi.count().then((x) => x.total)]);
+    // What the caller can act on now — the same number as the home card (the server caches it ~20 s).
+    if (has('/(app)/approvals')) asks.push(['/(app)/approvals', approvalsApi.count().then(actionableOf)]);
     const done = await Promise.allSettled(asks.map(([, p]) => p));
     const next: Record<string, number> = {};
     done.forEach((d, i) => {

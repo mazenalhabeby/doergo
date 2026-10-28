@@ -1,7 +1,15 @@
-import { matchesApprovalFilter, type ApprovalItem } from "@hbcfield/shared/client"
-import { filterAfterRead, filterFromQuery } from "../_lib/inbox-filter"
+import {
+  APPROVAL_KINDS,
+  dayMatchesFilter,
+  filterAfterRead,
+  filterFromQuery as fromQuery,
+  matchesApprovalFilter,
+  type ApprovalItem,
+} from "@hbcfield/shared/client"
 
-/* The rail's filter: read from a link, kept or dropped as the list changes, and what it keeps. */
+const filterFromQuery = (kind: string | null) => fromQuery(kind, APPROVAL_KINDS)
+
+/* The rail's filter (shared rules, as the page calls them): read from a link, kept or dropped as the list changes, and what it keeps. */
 
 type Step = NonNullable<ApprovalItem["step"]>
 const waiting = {
@@ -48,5 +56,16 @@ describe("what the filter keeps (shared rule)", () => {
     expect(matchesApprovalFilter(item(plain), "overtime")).toBe(true)
     expect(matchesApprovalFilter(item(plain), "hours")).toBe(false)
     expect(matchesApprovalFilter(item(plain), "all")).toBe(true)
+  })
+})
+
+describe("a working day under the filter (shared rule)", () => {
+  const item = (s: { step?: Step }, kind = "hours") => ({ kind, ...s }) as Pick<ApprovalItem, "kind" | "step">
+  it("shows when any of its items does", () => {
+    expect(dayMatchesFilter([item(plain), item(waiting)], "waitsForYou")).toBe(true)
+    expect(dayMatchesFilter([item(plain), item(halfway)], "waitsForYou")).toBe(false)
+    expect(dayMatchesFilter([item(plain)], "hours")).toBe(true)
+    expect(dayMatchesFilter([item(plain)], "overtime")).toBe(false)
+    expect(dayMatchesFilter([], "all")).toBe(true)
   })
 })

@@ -6,11 +6,14 @@ import { useTranslation } from "react-i18next"
 import { ArrowUpRight, Check, Loader2, X } from "lucide-react"
 import {
   agreedLine,
+  agreedLineKey,
   approvalActionsFor,
+  approvalTags,
   approvalWebPath,
   initialDecisionMinutes,
-  approvedByNames,
+  joinNamesFor,
   stepNoticeKind,
+  stepNoticeVars,
   durationInRange,
   APPROVAL_KIND_SPECS,
   type ApprovalActionSpec,
@@ -36,7 +39,7 @@ import { ConfirmHint } from "./confirm-hint"
 import { useTick } from "../_hooks/use-tick"
 import { ruleLinkForItem } from "../_lib/rule-link"
 import { formatRequestMinutes } from "@/lib/requests"
-import { DatesPassedTag } from "./dates-passed-tag"
+import { ApprovalTagChips } from "./approval-tags"
 import { Icon } from "@/components/ui/icon"
 
 /**
@@ -62,7 +65,7 @@ export function DecisionPanel({
   /** People who may set office rules: "make a rule like this" opens the rules page with one offered. */
   onMakeRule?: (link: string) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const actions = approvalActionsFor(item)
   const ruleLink = onMakeRule ? ruleLinkForItem(item) : null
   const initialMinutes = initialDecisionMinutes(item)
@@ -140,17 +143,23 @@ export function DecisionPanel({
         {item.raisedAt && <FactRow label={t("approvals.fact.raised")} value={formatTimeAgo(item.raisedAt)} />}
       </dl>
 
-      <DatesPassedTag item={item} className="self-start" />
+      {approvalTags(item).length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <ApprovalTagChips item={item} />
+        </div>
+      )}
 
       <ViewFile item={item} />
 
       {item.step && (
         <p className="rounded-2xl bg-shell-accent-soft px-4 py-3 text-sm text-foreground">
-          {t(`approvals.step.${stepNoticeKind(item.step)}`, {
-            name: approvedByNames(item.step),
-            count: item.step.approverNames?.length || 1,
-            role: item.step.roleName,
-          })}
+          {t(
+            `approvals.step.${stepNoticeKind(item.step)}`,
+            stepNoticeVars(item.step, {
+              anAdministrator: t("approvals.step.anAdministrator"),
+              joinNames: joinNamesFor(i18n.language),
+            }),
+          )}
         </p>
       )}
 
@@ -275,12 +284,5 @@ export function DecisionPanel({
 function AgreedLine({ agreed }: { agreed: NonNullable<ReturnType<typeof agreedLine>> }) {
   const { t } = useTranslation()
   const vars = { name: agreed.who ?? "", time: formatRequestMinutes(agreed.minutes, (k, o) => t(k, o)) }
-  const key = agreed.who
-    ? agreed.smallerCounts
-      ? "approvals.step.agreedByCounts"
-      : "approvals.step.agreedBy"
-    : agreed.smallerCounts
-      ? "approvals.step.agreedSoFarCounts"
-      : "approvals.step.agreedSoFar"
-  return <p className="text-[13px] text-muted-foreground">{t(key, vars)}</p>
+  return <p className="text-[13px] text-muted-foreground">{t(`approvals.step.${agreedLineKey(agreed)}`, vars)}</p>
 }

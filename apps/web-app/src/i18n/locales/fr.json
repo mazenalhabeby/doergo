@@ -9809,7 +9809,9 @@
         "SPACE": "Cet espace",
         "ASSIGNED": "Confié",
         "DELEGATED": "Remplaçant"
-      }
+      },
+      "titleMissing": "Qui peut donner la validation manquante ({{role}})",
+      "nobodyHolds": "Personne n’a {{role}} ici — un administrateur peut le terminer."
     },
     "standIn": {
       "title": "Remplaçant",
@@ -9848,11 +9850,12 @@
       "youCanGive": "{{name}} a validé. Il faut encore {{role}} — votre validation en fait partie.",
       "agreedBy": "{{name}} a accordé {{time}}.",
       "agreedByCounts": "{{name}} a accordé {{time}} — une durée plus courte ici compte à la place.",
-      "agreedSoFar": "Accordé jusqu'ici : {{time}}.",
-      "agreedSoFarCounts": "Accordé jusqu'ici : {{time}} — une durée plus courte ici compte à la place.",
+      "agreedSoFar": "Accordé jusqu’ici : {{time}}.",
+      "agreedSoFarCounts": "Accordé jusqu’ici : {{time}} — une durée plus courte ici compte à la place.",
       "youFinish_other": "{{name}} ont validé. Votre validation le termine.",
       "youCanGive_other": "{{name}} ont validé. Il faut encore {{role}} — votre validation en fait partie.",
-      "waiting_other": "{{name}} ont validé. Il faut aussi {{role}}."
+      "waiting_other": "{{name}} ont validé. Il faut aussi {{role}}.",
+      "anAdministrator": "un administrateur"
     },
     "rules": {
       "kind": {
@@ -10041,8 +10044,10 @@
       "unreadable": "Nombre illisible — la limite reste inchangée."
     },
     "pressAgain": "Appuyez à nouveau pour confirmer",
-    "waitsForYou": "Vous attend",
-    "datesPassed": "Dates déjà passées"
+    "tag": {
+      "waitsForYou": "Vous attend",
+      "datesPassed": "Dates déjà passées"
+    }
   },
   "overtimePage": {
     "title": "Heures supplémentaires",

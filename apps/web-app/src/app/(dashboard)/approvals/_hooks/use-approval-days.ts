@@ -4,9 +4,10 @@ import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  matchesApprovalFilter,
+  dayMatchesFilter,
   memberKey,
   type ApprovalDay,
+  type ApprovalFilter,
   type ApprovalInbox,
   type ApprovalItem,
 } from "@hbcfield/shared/client"
@@ -14,14 +15,18 @@ import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { serverErrorMessage } from "@/lib/server-error"
-import { KIND_KEYS, type Filter } from "../_lib/approval-keys"
+import { KIND_KEYS } from "../_lib/approval-keys"
 
 /**
  * The inbox's working days: one row per person and day where they have two or
  * more time items, those items hidden from the list (they are opened from the
  * day). "Approve day" replays each through its own route on the gateway.
  */
-export function useApprovalDays(data: ApprovalInbox | undefined, filter: Filter, onDone: (dayKey: string) => void) {
+export function useApprovalDays(
+  data: ApprovalInbox | undefined,
+  filter: ApprovalFilter,
+  onDone: (dayKey: string) => void,
+) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const days = useMemo(() => data?.days ?? [], [data])
@@ -31,7 +36,10 @@ export function useApprovalDays(data: ApprovalInbox | undefined, filter: Filter,
     if (filter === "all") return days
     const byKey = new Map((data?.items ?? []).map((i) => [memberKey(i), i]))
     return days.filter((d) =>
-      d.members.some((m) => matchesApprovalFilter(byKey.get(memberKey(m)) ?? { kind: m.kind }, filter)),
+      dayMatchesFilter(
+        d.members.map((m) => byKey.get(memberKey(m)) ?? { kind: m.kind }),
+        filter,
+      ),
     )
   }, [days, data, filter])
   /** The items a day holds, read from the list (the day only names them). */

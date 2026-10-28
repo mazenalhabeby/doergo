@@ -9809,7 +9809,9 @@
         "SPACE": "Este espacio",
         "ASSIGNED": "Asignado",
         "DELEGATED": "Sustituye"
-      }
+      },
+      "titleMissing": "Quién puede dar la aprobación que falta ({{role}})",
+      "nobodyHolds": "Nadie tiene {{role}} aquí — un administrador puede completarlo."
     },
     "standIn": {
       "title": "Sustituto",
@@ -9845,14 +9847,15 @@
       "waiting": "{{name}} aprobó. También necesita a {{role}}.",
       "badge": "Necesita a {{role}}",
       "youFinish": "{{name}} aprobó. Su aprobación lo completa.",
-      "youCanGive": "{{name}} aprobó. Aún necesita a {{role}}; su aprobación es una de ellas.",
+      "youCanGive": "{{name}} aprobó. Aún necesita a {{role}} — su aprobación es una de ellas.",
       "agreedBy": "{{name}} acordó {{time}}.",
       "agreedByCounts": "{{name}} acordó {{time}}; un tiempo menor aquí cuenta en su lugar.",
       "agreedSoFar": "Acordado hasta ahora: {{time}}.",
       "agreedSoFarCounts": "Acordado hasta ahora: {{time}}; un tiempo menor aquí cuenta en su lugar.",
       "youFinish_other": "{{name}} aprobaron. Su aprobación lo completa.",
-      "youCanGive_other": "{{name}} aprobaron. Aún necesita a {{role}}; su aprobación es una de ellas.",
-      "waiting_other": "{{name}} aprobaron. También necesita a {{role}}."
+      "youCanGive_other": "{{name}} aprobaron. Aún necesita a {{role}} — su aprobación es una de ellas.",
+      "waiting_other": "{{name}} aprobaron. También necesita a {{role}}.",
+      "anAdministrator": "un administrador"
     },
     "rules": {
       "kind": {
@@ -10041,8 +10044,10 @@
       "unreadable": "No se puede leer ese número — el límite sigue como estaba."
     },
     "pressAgain": "Pulse de nuevo para confirmar",
-    "waitsForYou": "Espera su decisión",
-    "datesPassed": "Fechas ya pasadas"
+    "tag": {
+      "waitsForYou": "Espera su decisión",
+      "datesPassed": "Fechas ya pasadas"
+    }
   },
   "overtimePage": {
     "title": "Horas extra",

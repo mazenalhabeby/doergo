@@ -9809,7 +9809,9 @@
         "SPACE": "This workspace",
         "ASSIGNED": "Given to them",
         "DELEGATED": "Covering"
-      }
+      },
+      "titleMissing": "Who can give the missing approval ({{role}})",
+      "nobodyHolds": "Nobody holds {{role}} here — an administrator can finish it."
     },
     "standIn": {
       "title": "Stand-in",
@@ -9852,7 +9854,8 @@
       "agreedSoFarCounts": "Agreed so far: {{time}} — a smaller time here counts instead.",
       "youFinish_other": "{{name}} approved. Your approval finishes it.",
       "youCanGive_other": "{{name}} approved. It still needs {{role}} — your approval is one of those.",
-      "waiting_other": "{{name}} approved. It needs {{role}} too."
+      "waiting_other": "{{name}} approved. It needs {{role}} too.",
+      "anAdministrator": "an administrator"
     },
     "rules": {
       "kind": {
@@ -10041,8 +10044,10 @@
       "unreadable": "Couldn't read that number — the limit stays as it was."
     },
     "pressAgain": "Press again to confirm",
-    "waitsForYou": "Waiting for you",
-    "datesPassed": "Dates already passed"
+    "tag": {
+      "waitsForYou": "Waiting for you",
+      "datesPassed": "Dates already passed"
+    }
   },
   "overtimePage": {
     "title": "Overtime",

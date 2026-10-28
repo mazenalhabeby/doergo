@@ -1785,7 +1785,7 @@
       "title": "Demandes",
       "steps": {
         "intro": {
-          "title": "Votre année jusqu'ici",
+          "title": "Votre année jusqu’ici",
           "body": "Jours de congé pris et à venir, demandes en attente de réponse et demandes refusées."
         },
         "request": {
@@ -4625,7 +4625,7 @@
     "pausedSub": "Reprenez le travail quand vous y retournez.",
     "more_one": "Et {{count}} autre intervention",
     "more_other": "Et {{count}} autres interventions",
-    "pausedSoFar": "{{time}} jusqu'ici — reprenez quand vous y retournez."
+    "pausedSoFar": "{{time}} jusqu’ici — reprenez quand vous y retournez."
   },
   "roleTasks": {
     "title": "Ouvert à votre rôle",
@@ -5334,8 +5334,10 @@
     },
     "route": {
       "title": "Qui d’autre peut décider",
+      "titleMissing": "Qui peut donner la validation manquante ({{role}})",
       "told": "Également informés au sujet de {{name}}",
       "onlyYou": "Personne d’autre ne peut décider.",
+      "nobodyHolds": "Personne n’a {{role}} ici — un administrateur peut le terminer.",
       "onLeave": "En congé aujourd’hui",
       "more": "+{{count}} autres",
       "loading": "Recherche des autres…",
@@ -5379,9 +5381,11 @@
       "short": "attend {{role}}",
       "youFinish": "{{name}} a validé. Votre validation le termine.",
       "youCanGive": "{{name}} a validé. Il faut encore {{role}} — votre validation en fait partie.",
-      "agreed": "{{name}} a accordé {{time}}",
-      "agreedSoFar": "Accordé jusqu’ici : {{time}}",
-      "smallerCounts": " — une durée plus courte ici compte à la place.",
+      "agreedBy": "{{name}} a accordé {{time}}.",
+      "agreedByCounts": "{{name}} a accordé {{time}} — une durée plus courte ici compte à la place.",
+      "agreedSoFar": "Accordé jusqu’ici : {{time}}.",
+      "agreedSoFarCounts": "Accordé jusqu’ici : {{time}} — une durée plus courte ici compte à la place.",
+      "anAdministrator": "un administrateur",
       "youFinish_other": "{{name}} ont validé. Votre validation le termine.",
       "youCanGive_other": "{{name}} ont validé. Il faut encore {{role}} — votre validation en fait partie.",
       "waiting_other": "{{name}} ont validé. Il faut aussi {{role}}."

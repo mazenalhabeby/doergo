@@ -1,11 +1,8 @@
 "use client"
 
 import type { QueryKey } from "@tanstack/react-query"
-import type { ApprovalItem, ApprovalKind, WAITS_FOR_YOU_FILTER } from "@hbcfield/shared/client"
+import type { ApprovalItem, ApprovalKind } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
-
-/** A kind, everything, or only what waits for the reader under an office rule (shared `WAITS_FOR_YOU_FILTER`). */
-export type Filter = ApprovalKind | "all" | typeof WAITS_FOR_YOU_FILTER
 
 /** The kind's own screen reads these — refreshed after a decision made here. */
 export const KIND_KEYS: Partial<Record<ApprovalKind, QueryKey[]>> = {

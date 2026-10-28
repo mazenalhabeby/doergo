@@ -9626,13 +9626,13 @@
   },
   "approvals": {
     "title": "Approvazioni",
-    "subtitle": "Tutto ciò che attende una sua decisione, in un unico posto.",
+    "subtitle": "Tutto ciò che attende una Sua decisione, in un unico posto.",
     "navLabel": "Approvazioni — {{count}} in attesa",
     "all": "Tutto",
     "refresh": "Aggiorna",
     "updated": "Aggiornato {{time}}",
-    "loadFailed": "Impossibile caricare le sue approvazioni",
-    "refreshFailed": "Impossibile aggiornare le sue approvazioni — questo è l'elenco com'era {{time}}.",
+    "loadFailed": "Impossibile caricare le Sue approvazioni",
+    "refreshFailed": "Impossibile aggiornare le Sue approvazioni — questo è l'elenco com'era {{time}}.",
     "groups": {
       "NOW": "Non può aspettare",
       "TODAY": "Oggi",
@@ -9749,7 +9749,7 @@
     "openPage": "Apri la pagina completa",
     "decided": "Fatto — {{name}}",
     "someone": "Qualcuno",
-    "empty": "Nulla attende una sua decisione",
+    "empty": "Nulla attende una Sua decisione",
     "emptyHint": "Le nuove richieste compaiono qui appena arrivano.",
     "emptyKind": "Niente in attesa di questo tipo",
     "showAll": "Mostra tutto",
@@ -9785,16 +9785,16 @@
       "HIGH": "Alta",
       "URGENT": "Urgente"
     },
-    "gone": "È già stato deciso, oppure non spetta più a lei.",
+    "gone": "È già stato deciso, oppure non spetta più a Lei.",
     "readOnly": "Può vederlo. Per decidere serve un permesso che qui non ha.",
     "why": {
       "title": "Perché lo vede",
       "ADMIN": "È amministratore.",
-      "ORG": "Il suo ruolo le permette di decidere ovunque.",
+      "ORG": "Il Suo ruolo Le permette di decidere ovunque.",
       "SPACE": "Lei decide questo a {{space}}.",
-      "SPACE_any": "Lei decide questo nel suo spazio di lavoro.",
-      "ASSIGNED": "È stato affidato a lei.",
-      "DELEGATED": "{{name}} le ha affidato le sue decisioni."
+      "SPACE_any": "Lei decide questo nel Suo spazio di lavoro.",
+      "ASSIGNED": "È stato affidato a Lei.",
+      "DELEGATED": "{{name}} Le ha affidato le sue decisioni."
     },
     "route": {
       "title": "Chi altro può decidere",
@@ -9809,12 +9809,14 @@
         "SPACE": "Questo spazio",
         "ASSIGNED": "Affidato",
         "DELEGATED": "Sostituto"
-      }
+      },
+      "titleMissing": "Chi può dare l’approvazione mancante ({{role}})",
+      "nobodyHolds": "Nessuno ha {{role}} qui — un amministratore può completarlo."
     },
     "standIn": {
       "title": "Sostituto",
-      "intro": "Va via? Affidi le sue approvazioni a un collega per quei giorni. Decide ore, tempo in più, straordinari, ferie e richieste nei suoi spazi — mai denaro, documenti, nuove persone o clienti, e mai su di lei.",
-      "who": "Chi la sostituisce",
+      "intro": "Va via? Affidi le Sue approvazioni a un collega per quei giorni. Decide ore, tempo in più, straordinari, ferie e richieste nei Suoi spazi — mai denaro, documenti, nuove persone o clienti, e mai su di Lei.",
+      "who": "Chi La sostituisce",
       "whose": "Approvazioni di",
       "me": "Le mie",
       "firstDay": "Primo giorno",
@@ -9831,7 +9833,7 @@
       "created": "{{name}} la sostituisce dal {{from}} al {{to}}.",
       "ended": "Sostituzione terminata.",
       "nothing": "Non ha approvazioni da affidare.",
-      "covering": "Sostituisce {{names}} — le loro approvazioni sono nella sua lista.",
+      "covering": "Sostituisce {{names}} — le loro approvazioni sono nella Sua lista.",
       "pickPerson": "Scelga una persona",
       "maxDays": "Al massimo {{count}} giorni di fila.",
       "tooLong": "Troppo lungo: al massimo {{count}} giorni di fila.",
@@ -9844,15 +9846,16 @@
       "youApproved": "Lei ha approvato. Ora serve {{role}}.",
       "waiting": "{{name}} ha approvato. Serve anche {{role}}.",
       "badge": "Serve {{role}}",
-      "youFinish": "{{name}} ha approvato. La Sua approvazione lo conclude.",
-      "youCanGive": "{{name}} ha approvato. Serve ancora {{role}}: la Sua approvazione è una di queste.",
+      "youFinish": "{{name}} ha approvato. La Sua approvazione lo completa.",
+      "youCanGive": "{{name}} ha approvato. Serve ancora {{role}} — la Sua approvazione è una di queste.",
       "agreedBy": "{{name}} ha concordato {{time}}.",
-      "agreedByCounts": "{{name}} ha concordato {{time}}: un tempo minore qui conta al suo posto.",
+      "agreedByCounts": "{{name}} ha concordato {{time}} — un tempo minore qui conta al suo posto.",
       "agreedSoFar": "Concordato finora: {{time}}.",
-      "agreedSoFarCounts": "Concordato finora: {{time}}: un tempo minore qui conta al suo posto.",
-      "youFinish_other": "{{name}} hanno approvato. La Sua approvazione lo conclude.",
-      "youCanGive_other": "{{name}} hanno approvato. Serve ancora {{role}}: la Sua approvazione è una di queste.",
-      "waiting_other": "{{name}} hanno approvato. Serve anche {{role}}."
+      "agreedSoFarCounts": "Concordato finora: {{time}} — un tempo minore qui conta al suo posto.",
+      "youFinish_other": "{{name}} hanno approvato. La Sua approvazione lo completa.",
+      "youCanGive_other": "{{name}} hanno approvato. Serve ancora {{role}} — la Sua approvazione è una di queste.",
+      "waiting_other": "{{name}} hanno approvato. Serve anche {{role}}.",
+      "anAdministrator": "un amministratore"
     },
     "rules": {
       "kind": {
@@ -10041,8 +10044,10 @@
       "unreadable": "Numero non leggibile — il limite resta com'era."
     },
     "pressAgain": "Prema di nuovo per confermare",
-    "waitsForYou": "Attende Lei",
-    "datesPassed": "Date già passate"
+    "tag": {
+      "waitsForYou": "Attende Lei",
+      "datesPassed": "Date già passate"
+    }
   },
   "overtimePage": {
     "title": "Straordinari",

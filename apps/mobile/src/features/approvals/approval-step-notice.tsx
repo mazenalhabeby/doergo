@@ -1,25 +1,34 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { agreedLine, approvalTags, approvedByNames, stepNoticeKind, type ApprovalItem } from '@hbcfield/shared/client';
+import {
+  agreedLine,
+  agreedLineKey,
+  approvalTags,
+  joinNamesFor,
+  stepNoticeKind,
+  stepNoticeVars,
+  type ApprovalItem,
+} from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { AText, Pill } from '@/components/amazen';
 import { minutesText } from './approval-minutes-text';
 
 /** The detail's step notice, on a tint: which sentence is the shared `stepNoticeKind`, the words are the phone's. */
 export function StepNotice({ step }: { step: NonNullable<ApprovalItem['step']> }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { amazen } = useTheme();
+  // Every approver, joined the reader's way; a role nobody can name → "an administrator" in their language.
+  const vars = stepNoticeVars(step, {
+    anAdministrator: t('approvals.step.anAdministrator'),
+    joinNames: joinNamesFor(i18n.language),
+  });
   return (
     <View
       style={{ backgroundColor: amazen.color.accentTint, borderRadius: amazen.radius.panel, padding: amazen.space(3) }}
     >
       <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>
-        {t(`approvals.step.${stepNoticeKind(step)}`, {
-          name: approvedByNames(step),
-          count: step.approverNames?.length || 1,
-          role: step.roleName,
-        })}
+        {t(`approvals.step.${stepNoticeKind(step)}`, vars)}
       </AText>
     </View>
   );
@@ -33,13 +42,10 @@ export function AgreedTimeLine({ item }: { item: ApprovalItem }) {
   const { t } = useTranslation();
   const line = agreedLine(item.step);
   if (!line) return null;
-  const time = minutesText(line.minutes, t);
-  const said = line.who
-    ? t('approvals.step.agreed', { name: line.who, time })
-    : t('approvals.step.agreedSoFar', { time });
+  // One whole sentence per case (shared `agreedLineKey`) — never two strings glued, word order differs by language.
   return (
-    <AText variant="caption" tone="warn">
-      {line.smallerCounts ? `${said}${t('approvals.step.smallerCounts')}` : said}
+    <AText variant="caption" tone="muted">
+      {t(`approvals.step.${agreedLineKey(line)}`, { name: line.who ?? '', time: minutesText(line.minutes, t) })}
     </AText>
   );
 }

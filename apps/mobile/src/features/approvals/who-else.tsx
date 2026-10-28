@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { approvalWhyText, type ApprovalItem, type ApprovalRouting, type ApprovalT } from '@hbcfield/shared/client';
+import {
+  approvalWhyText,
+  stepNoticeVars,
+  type ApprovalItem,
+  type ApprovalRouting,
+  type ApprovalT,
+} from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { approvalsApi } from '@/lib/api';
 import { AText, SectionLabel } from '@/components/amazen';
@@ -25,6 +31,10 @@ export function WhoElse({ item }: { item: ApprovalItem }) {
   }, [item.kind, item.id]);
 
   const why = approvalWhyText(item, t as unknown as ApprovalT);
+  // Half-way under an office rule: the list is who can give the MISSING approval, so it says which role that is.
+  const role = item.step
+    ? stepNoticeVars(item.step, { anAdministrator: t('approvals.step.anAdministrator') }).role
+    : null;
 
   return (
     <View style={{ gap: amazen.space(2) }}>
@@ -43,11 +53,13 @@ export function WhoElse({ item }: { item: ApprovalItem }) {
             paddingVertical: amazen.space(2.5),
             gap: amazen.space(1.5),
           }}>
-          <SectionLabel>{t('approvals.route.title')}</SectionLabel>
+          <SectionLabel>{role ? t('approvals.route.titleMissing', { role }) : t('approvals.route.title')}</SectionLabel>
           {!route ? (
             <AText variant="caption" tone="muted">{t('approvals.route.loading')}</AText>
           ) : !route.deciders.length ? (
-            <AText variant="caption" tone="muted">{t('approvals.route.onlyYou')}</AText>
+            <AText variant="caption" tone="muted">
+              {role ? t('approvals.route.nobodyHolds', { role }) : t('approvals.route.onlyYou')}
+            </AText>
           ) : (
             <>
               {route.deciders.map((d) => (

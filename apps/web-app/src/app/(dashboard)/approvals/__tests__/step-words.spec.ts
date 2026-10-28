@@ -33,9 +33,14 @@ describe("the words exist in every language", () => {
     stepNoticeKind(step()),
   ]
   const keys = [
-    "waitsForYou",
-    "datesPassed",
+    "tag.waitsForYou",
+    "tag.datesPassed",
     "step.badge",
+    "step.anAdministrator",
+    // The verb's plural when several approved (i18next `_other`, from stepNoticeVars' count).
+    ...["youFinish", "youCanGive", "waiting"].map((k) => `step.${k}_other`),
+    "route.titleMissing",
+    "route.nobodyHolds",
     ...kinds.map((k) => `step.${k}`),
     ...["agreedBy", "agreedByCounts", "agreedSoFar", "agreedSoFarCounts"].map((k) => `step.${k}`),
   ]

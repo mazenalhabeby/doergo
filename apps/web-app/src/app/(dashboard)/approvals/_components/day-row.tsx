@@ -7,19 +7,20 @@ import { formatTimeAgo, formatMediumDate } from "@/lib/format-date"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { Chip, ROW } from "@/components/page/page-kit"
 import { nameParts } from "./name-parts"
+import { ApprovalTagChip } from "./approval-tags"
 
 /** One person's working day in the list: who, which day, and why it waits — as chips. */
 export function DayRow({
   day,
   active,
   onSelect,
-  yourTurn,
+  waitsForYou,
 }: {
   day: ApprovalDay
   active: boolean
   onSelect: () => void
   /** One of the day's items waits for the reader's approval under an office rule. */
-  yourTurn?: boolean
+  waitsForYou?: boolean
 }) {
   const { t, i18n } = useTranslation()
   return (
@@ -48,7 +49,7 @@ export function DayRow({
               {t("approvals.day.label")} · {formatMediumDate(`${day.localDate}T12:00:00Z`)}
             </span>
           </div>
-          <DayChips day={day} locale={i18n.language} yourTurn={yourTurn} />
+          <DayChips day={day} locale={i18n.language} waitsForYou={waitsForYou} />
         </div>
         {day.raisedAt && (
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatTimeAgo(day.raisedAt)}</span>
@@ -59,11 +60,11 @@ export function DayRow({
 }
 
 /** The day's reasons: its review labels (shared words) and the other kinds it holds. */
-export function DayChips({ day, locale, yourTurn }: { day: ApprovalDay; locale: string; yourTurn?: boolean }) {
+export function DayChips({ day, locale, waitsForYou }: { day: ApprovalDay; locale: string; waitsForYou?: boolean }) {
   const { t } = useTranslation()
   return (
     <div className="mt-1 flex flex-wrap gap-1">
-      {yourTurn && <Chip tone="accent">{t("approvals.waitsForYou")}</Chip>}
+      {waitsForYou && <ApprovalTagChip tag="waitsForYou" />}
       {day.labels.map((code) => (
         <Chip key={code} tone="warn" dot>
           {labelWord(code, locale)}

@@ -128,18 +128,32 @@ export function ApprovalDayRow({
       {open ? (
         <View style={{ paddingHorizontal: amazen.space(2), paddingBottom: amazen.space(3), gap: amazen.space(2) }}>
           <View>
-            {members.map((m, i) => (
-              <WellRow
-                key={approvalKey(m)}
-                first={i === 0}
-                last={i === members.length - 1}
-                title={t(`approvals.kinds.${m.kind}`)}
-                detail={describeApproval(m, tt, i18n.language, undefined, (n) => minutesText(n, tt)).headline}
-                onPress={() =>
-                  router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(m) } } as never)
-                }
-              />
-            ))}
+            {members.map((m, i) => {
+              const title = t(`approvals.kinds.${m.kind}`);
+              const detail = describeApproval(m, tt, i18n.language, undefined, (n) => minutesText(n, tt)).headline;
+              // The member that waits for the caller's approval carries the same mark as an item row (as on the web).
+              const mine = !!m.step?.waitsForYou;
+              return (
+                <WellRow
+                  key={approvalKey(m)}
+                  first={i === 0}
+                  last={i === members.length - 1}
+                  title={title}
+                  detail={detail}
+                  below={
+                    mine ? (
+                      <View style={{ flexDirection: 'row', marginTop: amazen.space(1) }}>
+                        <Chip label={t('approvals.tag.waitsForYou')} tone="accent" />
+                      </View>
+                    ) : undefined
+                  }
+                  a11yLabel={[title, detail, mine ? t('approvals.tag.waitsForYou') : null].filter(Boolean).join(', ')}
+                  onPress={() =>
+                    router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(m) } } as never)
+                  }
+                />
+              );
+            })}
           </View>
           {day.kinds.some(kindNeedsMinutes) ? (
             <AText variant="caption" tone="muted">
