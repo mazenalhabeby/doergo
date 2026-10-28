@@ -118,3 +118,11 @@ tools/video/time-explainer/stills/
 tools/video/**/*.wav
 tools/video/**/*.mp3
 tools/video/**/*.m4a
+
+# Never committed (owner's rule): design mockups and reports with their voice-overs, the confidential Fletzberger
+# CRM handover, the partner pitch video, and session notes. Files under docs/design already in git stay tracked.
+docs/design/
+HBC_FIELD_QUELLCODE_FLETZBERGER/
+HBC_FIELD_WEB_APPLICATION/
+tools/video/partner-pitch/
+SESSION_*.md
