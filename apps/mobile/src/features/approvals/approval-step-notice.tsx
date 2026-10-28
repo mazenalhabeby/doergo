@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { agreedLine, approvalTags, stepNoticeKind, type ApprovalItem } from '@hbcfield/shared/client';
+import { agreedLine, approvalTags, approvedByNames, stepNoticeKind, type ApprovalItem } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { AText, Pill } from '@/components/amazen';
 import { minutesText } from './approval-minutes-text';
@@ -15,7 +15,11 @@ export function StepNotice({ step }: { step: NonNullable<ApprovalItem['step']> }
       style={{ backgroundColor: amazen.color.accentTint, borderRadius: amazen.radius.panel, padding: amazen.space(3) }}
     >
       <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>
-        {t(`approvals.step.${stepNoticeKind(step)}`, { name: step.firstByName, role: step.roleName })}
+        {t(`approvals.step.${stepNoticeKind(step)}`, {
+          name: approvedByNames(step),
+          count: step.approverNames?.length || 1,
+          role: step.roleName,
+        })}
       </AText>
     </View>
   );

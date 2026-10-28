@@ -9849,7 +9849,10 @@
       "agreedBy": "{{name}} hat {{time}} zugestimmt.",
       "agreedByCounts": "{{name}} hat {{time}} zugestimmt – eine kürzere Zeit hier zählt stattdessen.",
       "agreedSoFar": "Bisher zugestimmt: {{time}}.",
-      "agreedSoFarCounts": "Bisher zugestimmt: {{time}} – eine kürzere Zeit hier zählt stattdessen."
+      "agreedSoFarCounts": "Bisher zugestimmt: {{time}} – eine kürzere Zeit hier zählt stattdessen.",
+      "youFinish_other": "{{name}} haben freigegeben. Ihre Freigabe schließt es ab.",
+      "youCanGive_other": "{{name}} haben freigegeben. Es braucht noch {{role}} – Ihre Freigabe ist eine davon.",
+      "waiting_other": "{{name}} haben freigegeben. Es braucht auch {{role}}."
     },
     "rules": {
       "kind": {

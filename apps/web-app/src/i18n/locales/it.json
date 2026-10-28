@@ -9849,7 +9849,10 @@
       "agreedBy": "{{name}} ha concordato {{time}}.",
       "agreedByCounts": "{{name}} ha concordato {{time}}: un tempo minore qui conta al suo posto.",
       "agreedSoFar": "Concordato finora: {{time}}.",
-      "agreedSoFarCounts": "Concordato finora: {{time}}: un tempo minore qui conta al suo posto."
+      "agreedSoFarCounts": "Concordato finora: {{time}}: un tempo minore qui conta al suo posto.",
+      "youFinish_other": "{{name}} hanno approvato. La Sua approvazione lo conclude.",
+      "youCanGive_other": "{{name}} hanno approvato. Serve ancora {{role}}: la Sua approvazione è una di queste.",
+      "waiting_other": "{{name}} hanno approvato. Serve anche {{role}}."
     },
     "rules": {
       "kind": {

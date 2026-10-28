@@ -5381,7 +5381,10 @@
       "youCanGive": "{{name}} aprobó. Aún necesita a {{role}} — su aprobación es una de ellas.",
       "agreed": "{{name}} acordó {{time}}",
       "agreedSoFar": "Acordado hasta ahora: {{time}}",
-      "smallerCounts": " — un tiempo menor aquí cuenta en su lugar."
+      "smallerCounts": " — un tiempo menor aquí cuenta en su lugar.",
+      "youFinish_other": "{{name}} aprobaron. Su aprobación lo completa.",
+      "youCanGive_other": "{{name}} aprobaron. Aún necesita a {{role}} — su aprobación es una de ellas.",
+      "waiting_other": "{{name}} aprobaron. También necesita a {{role}}."
     },
     "decideInApprovals": "Decidir en Aprobaciones",
     "noShow": {

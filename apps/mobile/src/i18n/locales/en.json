@@ -5381,7 +5381,10 @@
       "youCanGive": "{{name}} approved. It still needs {{role}} — your approval is one of those.",
       "agreed": "{{name}} agreed {{time}}",
       "agreedSoFar": "Agreed so far: {{time}}",
-      "smallerCounts": " — a smaller time here counts instead."
+      "smallerCounts": " — a smaller time here counts instead.",
+      "youFinish_other": "{{name}} approved. Your approval finishes it.",
+      "youCanGive_other": "{{name}} approved. It still needs {{role}} — your approval is one of those.",
+      "waiting_other": "{{name}} approved. It needs {{role}} too."
     },
     "decideInApprovals": "Decide in Approvals",
     "noShow": {

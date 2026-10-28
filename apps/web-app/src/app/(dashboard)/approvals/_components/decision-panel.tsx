@@ -9,6 +9,7 @@ import {
   approvalActionsFor,
   approvalWebPath,
   initialDecisionMinutes,
+  approvedByNames,
   stepNoticeKind,
   durationInRange,
   APPROVAL_KIND_SPECS,
@@ -145,7 +146,11 @@ export function DecisionPanel({
 
       {item.step && (
         <p className="rounded-2xl bg-shell-accent-soft px-4 py-3 text-sm text-foreground">
-          {t(`approvals.step.${stepNoticeKind(item.step)}`, { name: item.step.firstByName, role: item.step.roleName })}
+          {t(`approvals.step.${stepNoticeKind(item.step)}`, {
+            name: approvedByNames(item.step),
+            count: item.step.approverNames?.length || 1,
+            role: item.step.roleName,
+          })}
         </p>
       )}
 

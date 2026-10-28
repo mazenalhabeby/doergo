@@ -5381,7 +5381,10 @@
       "youCanGive": "{{name}} ha approvato. Serve ancora {{role}} — la Sua approvazione è una di queste.",
       "agreed": "{{name}} ha concordato {{time}}",
       "agreedSoFar": "Concordato finora: {{time}}",
-      "smallerCounts": " — un tempo minore qui conta al suo posto."
+      "smallerCounts": " — un tempo minore qui conta al suo posto.",
+      "youFinish_other": "{{name}} hanno approvato. La Sua approvazione lo completa.",
+      "youCanGive_other": "{{name}} hanno approvato. Serve ancora {{role}} — la Sua approvazione è una di queste.",
+      "waiting_other": "{{name}} hanno approvato. Serve anche {{role}}."
     },
     "decideInApprovals": "Decidi in Approvazioni",
     "noShow": {

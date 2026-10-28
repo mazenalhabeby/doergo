@@ -5381,7 +5381,10 @@
       "youCanGive": "{{name}} a validé. Il faut encore {{role}} — votre validation en fait partie.",
       "agreed": "{{name}} a accordé {{time}}",
       "agreedSoFar": "Accordé jusqu’ici : {{time}}",
-      "smallerCounts": " — une durée plus courte ici compte à la place."
+      "smallerCounts": " — une durée plus courte ici compte à la place.",
+      "youFinish_other": "{{name}} ont validé. Votre validation le termine.",
+      "youCanGive_other": "{{name}} ont validé. Il faut encore {{role}} — votre validation en fait partie.",
+      "waiting_other": "{{name}} ont validé. Il faut aussi {{role}}."
     },
     "decideInApprovals": "Décider dans Validations",
     "noShow": {

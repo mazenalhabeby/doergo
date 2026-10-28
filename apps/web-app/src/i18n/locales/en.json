@@ -9849,7 +9849,10 @@
       "agreedBy": "{{name}} agreed {{time}}.",
       "agreedByCounts": "{{name}} agreed {{time}} — a smaller time here counts instead.",
       "agreedSoFar": "Agreed so far: {{time}}.",
-      "agreedSoFarCounts": "Agreed so far: {{time}} — a smaller time here counts instead."
+      "agreedSoFarCounts": "Agreed so far: {{time}} — a smaller time here counts instead.",
+      "youFinish_other": "{{name}} approved. Your approval finishes it.",
+      "youCanGive_other": "{{name}} approved. It still needs {{role}} — your approval is one of those.",
+      "waiting_other": "{{name}} approved. It needs {{role}} too."
     },
     "rules": {
       "kind": {
