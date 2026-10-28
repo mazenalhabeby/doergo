@@ -16,6 +16,7 @@ import { jwtExpiry, jwtSubject } from './session-owner';
 import { getApiUrl, APP_VERSION, APP_PLATFORM } from './client-build';
 import { uuidv7 } from '@/offline/ids';
 import { notifyObservers } from './response-observers';
+import { meterRequest } from './request-meter';
 import { type RefreshOutcome, refreshRefusedSession, phoneFetch, phoneMessage, cacheHooks } from './phone-transport';
 export { type RefreshOutcome, refreshRefusedSession, phoneFetch } from './phone-transport';
 export { type ResponseObservation, observeResponses } from './response-observers';
@@ -250,9 +251,7 @@ export async function refreshForCore(): Promise<RefreshResult> {
   return outcome.kind;
 }
 
-// ============================================================================
-// The client
-// ============================================================================
+// ── The client ──────────────────────────────────────────────────────────────
 
 export const api: ApiClient = createApiClient({
   baseUrl: getApiUrl,
@@ -280,7 +279,7 @@ export const api: ApiClient = createApiClient({
   sessionKey: () => knownOwner ?? null,
   cache: cacheHooks,
   observe: {
-    response: (o) => notifyObservers({ kind: 'response', status: o.status, serverTime: o.serverTime }),
+    response: (o) => (meterRequest(o), notifyObservers({ kind: 'response', status: o.status, serverTime: o.serverTime })),
     /*
       Only "nothing answered" — and only after the one retry a read gets, so a
       blip the retry survived leaves no trace (the connectivity monitor counts
