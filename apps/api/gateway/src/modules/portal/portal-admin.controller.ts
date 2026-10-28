@@ -26,7 +26,7 @@ import { PortalAdminCalls } from './portal-admin-calls';
 import { portalList, portalCreate, portalGet, portalUpdate, portalDelete } from '@hbcfield/shared/microservices';
 import {
   portalListRequestsByPortal,
-  portalListWaitingRequests,
+  portalListWaitingRequests, portalListAllRequests,
   portalTriageRequest,
   portalListRequests,
 } from '@hbcfield/shared/microservices';
@@ -125,6 +125,17 @@ export class PortalAdminController {
   waitingRequests(@Request() req: AuthedRequest) {
     // The same gate and scope as portals/:id/requests, over every portal the caller reads.
     return this.services.task.ask(portalListWaitingRequests, {
+      organizationId: callerOrgId(req.user),
+      scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+    });
+  }
+
+  @Get('requests/all')
+  @RequirePermissionInSpace('canViewPortal')
+  @ApiOperation({ summary: 'Every request across the portals the caller reads, each with portalId + portalSpaceId' })
+  allRequests(@Request() req: AuthedRequest) {
+    // The same gate and scope as portals/:id/requests — the phone's list in one read instead of one per portal.
+    return this.services.task.ask(portalListAllRequests, {
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
     });

@@ -11,6 +11,9 @@ import { portalRequestShape, portalRequestScope } from './portal-request';
  */
 /** The approvals inbox reads at most this many portals (oldest first). */
 const WAITING_REQUESTS_MAX_PORTALS = 20;
+/** The phone's Client requests: every portal the caller reads, and at most this many requests, newest first. */
+const ALL_REQUESTS_MAX_PORTALS = 100;
+const ALL_REQUESTS_MAX_ROWS = 500;
 
 @Injectable()
 export class TaskPortalService {
@@ -99,11 +102,20 @@ export class TaskPortalService {
    * 20), and each row is what `portal_list_requests_by_portal` answers for it, plus `portalId`.
    */
   async listWaitingPortalRequests(data: { organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
+    return this.requestsAcrossPortals(data, false);
+  }
+
+  /** The same read with every request, triaged or not (the phone's Client requests: one read, not one per portal). */
+  async listAllPortalRequests(data: { organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
+    return this.requestsAcrossPortals(data, true);
+  }
+
+  private async requestsAcrossPortals(data: { organizationId: string; scopeSpaceIds?: SpaceScopeIds }, all: boolean) {
     const portals = await activePortals(
       this.prisma,
       data.organizationId,
       data.scopeSpaceIds,
-      WAITING_REQUESTS_MAX_PORTALS,
+      all ? ALL_REQUESTS_MAX_PORTALS : WAITING_REQUESTS_MAX_PORTALS,
     );
     if (portals.length === 0) return success([]);
     const spaceIds = [...new Set(portals.map((p) => p.spaceId).filter((id): id is string => !!id))];
@@ -118,10 +130,11 @@ export class TaskPortalService {
         where: {
           organizationId: data.organizationId,
           source: 'CUSTOMER_PORTAL',
-          triaged: false,
+          ...(all ? {} : { triaged: false }),
           customer: { portalId: { in: portals.map((p) => p.id) } },
         },
         orderBy: { createdAt: 'desc' },
+        ...(all ? { take: ALL_REQUESTS_MAX_ROWS } : {}),
         include: {
           unit: { select: { id: true, name: true, address: true } },
           customer: { select: { id: true, name: true, portalId: true } },
@@ -147,6 +160,7 @@ export class TaskPortalService {
             suggestedSpaceId: suggested?.id ?? null,
             suggestedSpaceName: suggested?.name ?? null,
             portalId: p.id,
+            portalSpaceId: p.spaceId ?? null,
           }));
       }),
     );

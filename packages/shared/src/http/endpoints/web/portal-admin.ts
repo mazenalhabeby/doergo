@@ -43,6 +43,8 @@ export const portalAdminWebEndpoints = defineEndpoints('portalAdmin', {
     method: 'GET',
     path: (a) => path`/portal/admin/portals/${a.portalId}/requests`,
   }),
+  /** Every request across the portals the caller reads, each with `portalId` + `portalSpaceId` (one read, not one per portal). */
+  allRequests: endpoint<void, unknown>({ method: 'GET', path: () => '/portal/admin/requests/all' }),
   triageRequest: endpoint<{ requestId: string }, unknown, unknown>({
     method: 'POST',
     path: (a) => path`/portal/admin/requests/${a.requestId}/triage`,

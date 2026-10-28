@@ -88,6 +88,7 @@ const ONLINE_ONLY: Record<string, string> = {
   '/spaces/:x/portal/portals': 'the workspace’s portals — read only to reach the request queue, online only',
   '/portal/admin/portals/:x/requests':
     'the answering queue: a kept list would offer a request already turned into a job',
+  '/portal/admin/requests/all': 'the same answering queue in one read — as /portal/admin/portals/:x/requests',
 };
 
 /*

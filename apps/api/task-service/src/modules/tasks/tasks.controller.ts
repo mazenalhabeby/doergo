@@ -37,6 +37,7 @@ import {
   portalListRequests,
   portalListRequestsByPortal,
   portalListWaitingRequests,
+  portalListAllRequests,
   portalGetRequest,
   portalTriageRequest,
   getSubtasks,
@@ -239,6 +240,11 @@ export class TasksController {
   @MessagePattern(pattern(portalListWaitingRequests))
   async listWaitingPortalRequests(@Payload() data: RpcRequest<typeof portalListWaitingRequests>) {
     return this.tasksService.listWaitingPortalRequests(data);
+  }
+
+  @MessagePattern(pattern(portalListAllRequests))
+  async listAllPortalRequests(@Payload() data: RpcRequest<typeof portalListAllRequests>) {
+    return this.tasksService.listAllPortalRequests(data);
   }
 
   @MessagePattern(pattern(portalListRequestsByPortal))

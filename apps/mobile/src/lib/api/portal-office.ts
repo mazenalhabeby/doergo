@@ -53,6 +53,20 @@ export const portalOfficeApi = {
     return Array.isArray(res) ? (res as OfficeRequest[]) : [];
   },
 
+  /**
+   * Every request across the portals the caller reads, in ONE read, each with its portal and the portal's workspace.
+   * `null` when the server has no such route yet (before the 2026-10-28 deploy) — the caller then reads per portal.
+   */
+  allRequests: async (): Promise<(OfficeRequest & { portalId: string; portalSpaceId: string | null })[] | null> => {
+    try {
+      const res = await call(E.portalAdmin.allRequests);
+      return Array.isArray(res) ? (res as (OfficeRequest & { portalId: string; portalSpaceId: string | null })[]) : [];
+    } catch (e) {
+      if ((e as { status?: number })?.status === 404) return null;
+      throw e;
+    }
+  },
+
   /** Turn a waiting request into a job in this workspace. The workflow is the workspace's own. */
   triage: (requestId: string, input: TriageInput): Promise<unknown> =>
     call(E.portalAdmin.triageRequest, { requestId }, { body: input }),

@@ -14,18 +14,30 @@ export function knownRequest(id: string): ListedRequest | null {
   return known.get(id) ?? null;
 }
 
-/** Every request of every portal in these workspaces, waiting ones first, newest first. */
+/**
+ * Every request of every portal in these workspaces, waiting ones first, newest first. ONE read (it was one per
+ * workspace plus one per portal — 11 for six portals, more with every workspace); an older server gets the old reads.
+ */
 export async function requestsOfSpaces(spaceIds: string[]): Promise<ListedRequest[]> {
+  const wanted = new Set(spaceIds);
+  const one = await portalOfficeApi.allRequests();
+  const rows = one
+    ? one.filter((r) => r.portalSpaceId && wanted.has(r.portalSpaceId)).map((r) => ({ ...r, portalSpaceId: r.portalSpaceId! }))
+    : await perPortal(spaceIds);
+  const all = rows.sort((a, b) =>
+    Number(a.triaged) - Number(b.triaged) || (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
+  for (const r of all) known.set(r.id, r);
+  return all;
+}
+
+async function perPortal(spaceIds: string[]): Promise<ListedRequest[]> {
   const perSpace = await Promise.all(spaceIds.map(async (spaceId) => {
     const portals = await portalOfficeApi.portals(spaceId).catch(() => []);
     const lists = await Promise.all(portals.map(async (p) =>
       (await portalOfficeApi.requests(p.id).catch(() => [])).map((r) => ({ ...r, portalId: p.id, portalSpaceId: spaceId }))));
     return lists.flat();
   }));
-  const all = perSpace.flat().sort((a, b) =>
-    Number(a.triaged) - Number(b.triaged) || (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
-  for (const r of all) known.set(r.id, r);
-  return all;
+  return perSpace.flat();
 }
 
 export async function requestsOfPortal(portalId: string, spaceId: string): Promise<ListedRequest[]> {

@@ -156,6 +156,11 @@ export const portalListWaitingRequests = rpc<{ organizationId: string; scopeSpac
   'portal_list_waiting_requests',
 );
 
+/** Every request — waiting or not — across the caller's portals, in ONE read (the phone's Client requests). */
+export const portalListAllRequests = rpc<{ organizationId: string; scopeSpaceIds?: SpaceScopeIds }>(
+  'portal_list_all_requests',
+);
+
 export const portalGetRequest = rpc<{ id: string; organizationId: string; customerId: string }>('portal_get_request');
 
 export const portalTriageRequest = rpc<{
