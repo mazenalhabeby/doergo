@@ -67,7 +67,7 @@ describe('ApprovalRulesService.gate', () => {
       }),
     },
     user: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([{ id: 'mgr' }]) },
-    approvalDelegation: { count: jest.fn() },
+    approvalDelegation: { count: jest.fn(), findMany: jest.fn() },
     accessRole: {
       findUnique: jest.fn().mockResolvedValue({ name: 'Space Manager' }),
       findMany: jest.fn(async ({ where }: any) =>
@@ -87,18 +87,18 @@ describe('ApprovalRulesService.gate', () => {
     prisma.user.findMany.mockResolvedValue([{ id: 'mgr' }]);
     holds = { mgr: { org: 'role-mgr' } };
     prisma.approvalDelegation.count.mockResolvedValue(0);
-    // user.findFirst answers two questions: the decider's role, and which of the roles they hold (`heldRoleIds`).
+    prisma.approvalDelegation.findMany.mockResolvedValue([]);
+    // user.findFirst answers two questions: the decider's role, and the roles they hold now (`memberRolesNow`).
     prisma.user.findFirst.mockImplementation(async ({ where, select }: any) => {
       if (select?.spaceAssignments) {
-        const h = holds[where.id];
-        if (!h) return null;
-        const w = select.spaceAssignments.where;
+        const h = holds[where.id] ?? {};
         return {
+          id: where.id,
+          role: where.id.endsWith('owner') ? 'ADMIN' : 'EMPLOYEE',
+          isActive: where.id !== 'gone-owner',
           memberRoleId: h.org ?? null,
           memberRole: { isActive: true },
-          spaceAssignments: (h.spaces ?? [])
-            .filter(([r, sp]) => w.roleId.in.includes(r) && w.spaceId.in.includes(sp))
-            .map(([roleId]) => ({ roleId })),
+          spaceAssignments: (h.spaces ?? []).map(([roleId, spaceId]) => ({ roleId, spaceId })),
         };
       }
       return {
@@ -257,11 +257,19 @@ describe('ApprovalRulesService.gate', () => {
   });
   it('a leader and the stand-in deciding with their authority are ONE approver, not two', async () => {
     await svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
-    prisma.approvalDelegation.count.mockResolvedValue(1);
+    prisma.approvalDelegation.findMany.mockResolvedValue([
+      {
+        fromUserId: 'leader',
+        toUserId: 'mgr',
+        startsOn: new Date(Date.now() - 86_400_000),
+        endsOn: new Date(Date.now() + 86_400_000),
+        revokedAt: null,
+      },
+    ]);
     await expect(
       svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }),
     ).rejects.toMatchObject({ response: { code: 'SECOND_STEP_SAME_PERSON' } });
-    expect(prisma.approvalDelegation.count).toHaveBeenCalledWith(
+    expect(prisma.approvalDelegation.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ organizationId: 'o' }) }),
     );
   });
@@ -364,9 +372,10 @@ describe('ApprovalRulesService.gate', () => {
   it('the stand-in check covers the whole wait — from the first approval, ended stand-ins included', async () => {
     await svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
     await svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' });
-    const where = prisma.approvalDelegation.count.mock.calls[0][0].where;
+    // Read from the first approval on (ended stand-ins included); the rule itself is shared `standInCovers`.
+    const where = prisma.approvalDelegation.findMany.mock.calls[0][0].where;
     expect(where.endsOn.gte.getTime()).toBeLessThanOrEqual(steps[0].firstAt?.getTime?.() ?? Date.now());
-    expect(where.OR).toEqual([{ revokedAt: null }, { revokedAt: { gte: expect.any(Date) } }]);
+    expect(where).not.toHaveProperty('revokedAt');
   });
 
   it('a batch of new items (days typed in together): judged at once, steps opened together, told once', async () => {
@@ -426,5 +435,24 @@ describe('ApprovalRulesService.gate', () => {
     await expect(
       svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }),
     ).rejects.toMatchObject({ response: { code: 'SECOND_STEP_SAME_PERSON' } });
+  });
+
+  it('the retry of a finished step (every role given, the write failed): an earlier approver may finish it — not alone', async () => {
+    steps.push({
+      id: 'done',
+      itemId: 'entry1',
+      firstById: 'leader',
+      approverIds: ['leader', 'mgr'],
+      requiredRoleIds: ['role-mgr'],
+      doneRoleIds: ['role-mgr'],
+      minutes: 90,
+      consumedAt: null,
+      firstAt: new Date(),
+      facts: { spaceIds: ['s1'], minutes: 180 },
+    } as never);
+    // The second approver presses Approve again: finished (the screens offer it — shared approvalTurn).
+    expect(await svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' })).toMatchObject({
+      finalize: true,
+    });
   });
 });

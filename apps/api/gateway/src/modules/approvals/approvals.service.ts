@@ -193,7 +193,7 @@ export class ApprovalsService {
     try {
       const steps = await this.rules.steps(
         callerOrgId(user),
-        asked.map(({ kind, itemId }) => ({ kind, itemId })),
+        asked.map(({ i, kind, itemId }) => ({ kind, itemId, spaceId: i.space?.id ?? null })),
         user.id,
       );
       const byKey = new Map(steps.map((s) => [`${s.kind}:${s.itemId}`, s]));

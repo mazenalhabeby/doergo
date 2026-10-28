@@ -16,7 +16,7 @@ describe('approvalTurn', () => {
     callerId: 'ben',
     admin: false,
     earlier: ['anna'],
-    standInOfEarlier: false,
+    standInOf: [] as string[],
     left: ['hr'],
     heldLeft: ['hr'],
   };
@@ -25,7 +25,7 @@ describe('approvalTurn', () => {
     expect(approvalTurn(base)).toMatchObject({ waitsForYou: true, youFinish: true, samePerson: false });
   });
   it('a stand-in of the first approver is the same person — never "waiting for you"', () => {
-    expect(approvalTurn({ ...base, standInOfEarlier: true })).toMatchObject({
+    expect(approvalTurn({ ...base, standInOf: ['anna'] })).toMatchObject({
       waitsForYou: false,
       youFinish: false,
       samePerson: true,
@@ -40,6 +40,27 @@ describe('approvalTurn', () => {
   });
   it('two roles still needed: holding one waits for them but does not finish it', () => {
     expect(approvalTurn({ ...base, left: ['hr', 'fin'] })).toMatchObject({ waitsForYou: true, youFinish: false });
+  });
+  it('the retry of a finished step (every role given, the write failed): anybody but the only approver finishes it', () => {
+    expect(approvalTurn({ ...base, earlier: ['anna', 'ben'], left: [], heldLeft: [] })).toMatchObject({
+      waitsForYou: true,
+      youFinish: true,
+    });
+    expect(approvalTurn({ ...base, earlier: ['ben'], left: [], heldLeft: [] })).toMatchObject({
+      samePerson: true,
+      waitsForYou: false,
+    });
+  });
+  it('…and a stand-in of the only approver is that same person', () => {
+    expect(approvalTurn({ ...base, earlier: ['anna'], standInOf: ['anna'], left: [], heldLeft: [] })).toMatchObject({
+      samePerson: true,
+    });
+  });
+  it('an administrator who approved earlier (before becoming one) may still finish it', () => {
+    expect(approvalTurn({ ...base, admin: true, earlier: ['ben'] })).toMatchObject({
+      youApproved: true,
+      waitsForYou: true,
+    });
   });
   it('an administrator finishes it, and their own time stands', () => {
     expect(approvalTurn({ ...base, admin: true, heldLeft: [] })).toMatchObject({
@@ -72,7 +93,14 @@ describe('standInCovers (the stand-in rule over rows already read)', () => {
 });
 
 describe('what the screens show', () => {
-  const step = { firstByName: 'Anna', mine: false, agreedMinutes: 90, approverCount: 1 };
+  const step = {
+    firstById: 'anna',
+    firstByName: 'Anna',
+    roleName: 'HR',
+    mine: false,
+    agreedMinutes: 90,
+    approverCount: 1,
+  };
   it('the time starts at what was agreed; an agreed 0 is none', () => {
     expect(initialDecisionMinutes({ data: { requestedMinutes: 30 }, step })).toBe(90);
     expect(initialDecisionMinutes({ data: { requestedMinutes: 45 }, step: { ...step, agreedMinutes: 0 } })).toBe(45);
@@ -98,5 +126,46 @@ describe('approvedByNames', () => {
     const { approvedByNames } = jest.requireActual('../approval-turn');
     expect(approvedByNames({ firstByName: 'Anna', approverNames: ['Anna', 'David'] })).toBe('Anna, David');
     expect(approvedByNames({ firstByName: 'Anna' })).toBe('Anna');
+  });
+});
+
+describe('Approve follows the turn rule (round 11)', () => {
+  const { approvalActionsFor } = jest.requireActual('../approval-items');
+  const item = (step?: object) => ({ kind: 'extraTime', id: 'e1', canDecide: true, data: {}, step });
+  const ids = (i: object) => approvalActionsFor(i).map((a: { id: string }) => a.id);
+  it('offered when it waits for you, withheld when it does not (a stand-in, no missing role), Reject always', () => {
+    expect(ids(item({ mine: false, waitsForYou: true }))).toContain('approve');
+    expect(ids(item({ mine: false, waitsForYou: false }))).not.toContain('approve');
+    expect(ids(item({ mine: false, waitsForYou: false }))).toContain('reject');
+    expect(ids(item())).toContain('approve');
+  });
+});
+
+describe('the shared screen helpers (round 11)', () => {
+  const t = jest.requireActual('../approval-turn');
+  it('filters: links, the fallback, days', () => {
+    expect(t.filterFromQuery('yours', ['hours'])).toBe('waitsForYou');
+    expect(t.filterFromQuery('hours', ['hours'])).toBe('hours');
+    expect(t.filterFromQuery('nope', ['hours'])).toBeNull();
+    expect(t.filterAfterRead('waitsForYou', [{ step: { waitsForYou: false } }])).toBe('all');
+    expect(t.dayMatchesFilter([{ kind: 'hours', step: { waitsForYou: true } }], 'waitsForYou')).toBe(true);
+  });
+  it('the step sentence values: every approver, one count, a translated "administrator"', () => {
+    const v = t.stepNoticeVars(
+      {
+        firstById: 'a',
+        firstByName: 'Anna',
+        roleName: '',
+        mine: false,
+        approverCount: 2,
+        approverNames: ['Anna', 'David'],
+      },
+      { anAdministrator: 'ein Administrator', joinNames: (n: string[]) => n.join(' und ') },
+    );
+    expect(v).toEqual({ name: 'Anna und David', count: 2, role: 'ein Administrator' });
+  });
+  it('the agreed line key', () => {
+    expect(t.agreedLineKey({ minutes: 90, who: 'Anna', smallerCounts: true })).toBe('agreedByCounts');
+    expect(t.agreedLineKey({ minutes: 90, who: null, smallerCounts: false })).toBe('agreedSoFar');
   });
 });

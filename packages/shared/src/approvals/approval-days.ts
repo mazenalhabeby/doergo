@@ -121,7 +121,13 @@ export function approvalDays(items: readonly ApprovalItem[]): ApprovalDay[] {
       timezone: zoneOf.get(key) ?? null,
       members: list.map((i) => ({ kind: i.kind as WorkDayKind, id: i.id })),
       approvable: list
-        .filter((i) => i.canDecide && (DAY_APPROVABLE_KINDS as readonly string[]).includes(i.kind) && !i.step)
+        // Half-way through office rules: approved with the day only when it is the reader's turn (`approvalTurn`).
+        .filter(
+          (i) =>
+            i.canDecide &&
+            (DAY_APPROVABLE_KINDS as readonly string[]).includes(i.kind) &&
+            (!i.step || i.step.waitsForYou === true),
+        )
         .map((i) => ({ kind: i.kind as WorkDayKind, id: i.id })),
       labels: reviewLabels([...new Set(flags)]).map((l) => l.code),
       kinds,

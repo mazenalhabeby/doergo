@@ -10,9 +10,11 @@ import {
   roleNames,
   personRoleAndName,
   SERVICE_NAMES,
-  heldRoleIds,
+  holdsRoleIn,
+  memberRolesNow,
   approvalTurn,
-  standInBetween,
+  standInCovers,
+  standInsAround,
   PrismaService,
 } from '@hbcfield/shared';
 import type { Decided, GateVerdict, RuleGateInput } from './rule-gate-types';
@@ -120,43 +122,39 @@ export class ApprovalRulesService {
       `approverIds`), and not a leader and the stand-in deciding with the leader's authority.
     */
     const earlier = [...new Set([open.firstById, ...open.approverIds])];
-    // A "finished" step only this person ever approved is no decision by several — never a way to finish alone.
-    const alone = !left.length && earlier.every((id) => id === input.deciderId);
-    const leftNames = left.length || alone ? await this.roleLabel(left.length ? left : required) : '';
-    // The shared turn rule — the same one the inbox shows ("Waiting for you"), so it never promises a refusal.
+    // The caller's roles and stand-ins, read once; the shared turn rule decides — the rule every screen shows, so
+    // "Waiting for you" never promises a refusal and Approve is offered exactly when it would be taken.
+    const [roles, standIns] = await Promise.all([
+      memberRolesNow(this.prisma, input.organizationId, input.deciderId, new Date()),
+      standInsAround(this.prisma, input.organizationId, [input.deciderId], open.firstAt),
+    ]);
+    const heldLeft = roles ? left.filter((r) => holdsRoleIn(roles, r, input.facts.spaceIds)) : [];
     const turn = approvalTurn({
       callerId: input.deciderId,
       admin: false, // an active administrator finished above
       earlier,
-      standInOfEarlier:
-        left.length > 0 &&
-        !earlier.includes(input.deciderId) &&
-        (await standInBetween(this.prisma, input.organizationId, input.deciderId, earlier, open.firstAt)),
+      standInOf: earlier.filter(
+        (id) => id !== input.deciderId && standInCovers(standIns, input.deciderId, [id], open.firstAt),
+      ),
       left,
-      heldLeft: [],
+      heldLeft,
     });
-    if (alone || turn.samePerson) {
+    const leftNames = turn.samePerson || !turn.waitsForYou ? await this.roleLabel(left.length ? left : required) : '';
+    if (turn.samePerson) {
       throw new ConflictException({
         message: `This needs another approval by ${leftNames}.`,
         code: 'SECOND_STEP_SAME_PERSON',
         params: { role: leftNames },
       });
     }
-    const held = await heldRoleIds(this.prisma, {
-      userId: input.deciderId,
-      organizationId: input.organizationId,
-      roleIds: left,
-      spaceIds: input.facts.spaceIds,
-      now: new Date(),
-    });
-    const given = held[0] ?? null;
-    if (left.length && !given) {
+    if (!turn.waitsForYou) {
       throw new ForbiddenException({
         message: `The next approval is for ${leftNames}.`,
         code: 'SECOND_STEP_REQUIRED',
         params: { role: leftNames },
       });
     }
+    const given = heldLeft[0] ?? null;
     const stillLeft = left.filter((r) => r !== given);
     // Overtime: never more than ANY earlier approver agreed to — the step keeps the smallest.
     const agree = input.agreeMinutes ?? input.facts.minutes;
@@ -283,7 +281,7 @@ export class ApprovalRulesService {
   /** The roles still needed, in words ("HR + Finance"). */
   private async roleLabel(roleIds: string[]): Promise<string> {
     const roles = await roleNames(this.prisma, roleIds);
-    return joinRoleNames(roleIds, new Map(roles.map((r) => [r.id, r.name])));
+    return joinRoleNames(roleIds, new Map(roles.map((r) => [r.id, r.name]))) || 'an administrator';
   }
 
   /** The holders of the next role needed are told (approval-step-notices.ts) — in a batch, collected until it ends. */

@@ -3,7 +3,8 @@ import {
   approvalTurn,
   memberRolesNow,
   standInCovers,
-  standInsOf,
+  standInsAround,
+  holdsRoleIn,
   personName,
   peopleNames,
   roleNames,
@@ -19,6 +20,9 @@ import { joinRoleNames, parseStoredFacts, rolesStillNeeded, stepRules } from './
  * never says "waiting for Finance" when the gate would let anybody finish it. A step from before the facts were
  * stored reads the roles active rules still name.
  */
+/** Item ids per step query — well under the database's parameter limit, however long the inbox. */
+const STEP_IDS_PER_QUERY = 1000;
+
 @Injectable()
 export class ApprovalStepsReader {
   constructor(private readonly prisma: PrismaService) {}
@@ -29,13 +33,16 @@ export class ApprovalStepsReader {
    */
   async steps(
     organizationId: string,
-    items: Array<{ kind: RuleKind; itemId: string }>,
+    items: Array<{ kind: RuleKind; itemId: string; spaceId?: string | null }>,
     callerId?: string,
   ): Promise<ApprovalStepView[]> {
     if (!items.length) return [];
     const wanted = new Set(items.map((i) => `${i.kind}:${i.itemId}`));
     const ids = [...new Set(items.map((i) => i.itemId))];
-    const chunks = Array.from({ length: Math.ceil(ids.length / 1000) }, (_, n) => ids.slice(n * 1000, n * 1000 + 1000));
+    const chunks = Array.from({ length: Math.ceil(ids.length / STEP_IDS_PER_QUERY) }, (_, n) =>
+      ids.slice(n * STEP_IDS_PER_QUERY, (n + 1) * STEP_IDS_PER_QUERY),
+    );
+    const spaceOf = new Map(items.map((i) => [`${i.kind}:${i.itemId}`, i.spaceId ?? null]));
     const rows = (
       await Promise.all(
         chunks.map((chunk) =>
@@ -72,7 +79,7 @@ export class ApprovalStepsReader {
       roleNames(this.prisma, [...new Set([...leftOf.values()].flat())]),
       callerId ? memberRolesNow(this.prisma, organizationId, callerId, new Date()) : null,
       // The gate refuses a leader and the stand-in deciding with their authority as two approvals — so does the hint.
-      callerId ? standInsOf(this.prisma, organizationId, callerId, since) : [],
+      callerId ? standInsAround(this.prisma, organizationId, [callerId], since) : [],
     ]);
     const personById = new Map(people.map((p) => [p.id, personName(p)]));
     const roleById = new Map(roles.map((r) => [r.id, r.name]));
@@ -90,7 +97,9 @@ export class ApprovalStepsReader {
         approverNames: [...new Set([r.firstById, ...r.approverIds])]
           .map((id) => personById.get(id) ?? '')
           .filter(Boolean),
-        ...(caller ? { turn: callerTurn(caller, standIns, r, leftOf.get(r)!) } : {}),
+        ...(caller
+          ? { turn: callerTurn(caller, standIns, r, leftOf.get(r)!, spaceOf.get(`${r.kind}:${r.itemId}`) ?? null) }
+          : {}),
       }));
   }
 }
@@ -104,21 +113,21 @@ type CallerRoles = NonNullable<Awaited<ReturnType<typeof memberRolesNow>>>;
  */
 function callerTurn(
   caller: CallerRoles,
-  standIns: Awaited<ReturnType<typeof standInsOf>>,
+  standIns: Awaited<ReturnType<typeof standInsAround>>,
   step: { firstById: string; approverIds: string[]; firstAt: Date; facts: unknown },
   left: string[],
+  itemSpaceId: string | null,
 ) {
   const earlier = [...new Set([step.firstById, ...step.approverIds])];
-  const spaces = new Set(parseStoredFacts(step.facts)?.spaceIds ?? []);
-  const holds = (roleId: string) =>
-    caller.orgRoleId === roleId || caller.spaceRoles.some((a) => a.roleId === roleId && spaces.has(a.spaceId));
+  // A step from before its facts were stored: the item's own workspace.
+  const spaceIds = parseStoredFacts(step.facts)?.spaceIds ?? (itemSpaceId ? [itemSpaceId] : []);
   const { waitsForYou, youFinish, youApproved, adminFinishes } = approvalTurn({
     callerId: caller.id,
     admin: caller.admin,
     earlier,
-    standInOfEarlier: standInCovers(standIns, caller.id, earlier, step.firstAt),
+    standInOf: earlier.filter((id) => id !== caller.id && standInCovers(standIns, caller.id, [id], step.firstAt)),
     left,
-    heldLeft: left.filter(holds),
+    heldLeft: left.filter((r) => holdsRoleIn(caller, r, spaceIds)),
   });
   return { waitsForYou, youFinish, youApproved, adminFinishes };
 }

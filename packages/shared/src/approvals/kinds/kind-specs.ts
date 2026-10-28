@@ -1,5 +1,6 @@
 /** Moved here unchanged from approval-kinds.ts. */
 import type { AccessPermissionKey } from '../../types/permissions';
+import type { ApprovalStepInfo } from '../approval-turn';
 
 export const APPROVAL_KINDS = [
   'hours',
@@ -46,28 +47,9 @@ export interface ApprovalItem {
   canDecide: boolean;
   /** Why the caller may decide it ("you approve hours at Binderholz"). Absent on a read-only item. */
   why?: { via: 'ADMIN' | 'ORG' | 'SPACE' | 'ASSIGNED' | 'DELEGATED'; fromName?: string | null };
-  /** Waiting for a SECOND approval under an office rule (see approval-rules.ts). */
-  /**
-   * Half-way through an office rule: who went first, which roles are still needed, the smallest time agreed so far
-   * (a decision with minutes starts from it — never a default that would cut it), whether it now waits for the
-   * CALLER (they hold a role still needed and have not approved), and whether their approval FINISHES it.
-   */
-  step?: {
-    firstById: string;
-    firstByName: string;
-    roleName: string;
-    mine: boolean;
-    agreedMinutes?: number | null;
-    waitsForYou?: boolean;
-    youFinish?: boolean;
-    /** The caller already gave one of its approvals (Approve is not offered again). */
-    youApproved?: boolean;
-    /** The caller finishes it as an administrator — their own time stands as given. */
-    adminFinishes?: boolean;
-    /** How many have approved so far, and who (first approver first). */
-    approverCount?: number;
-    approverNames?: string[];
-  };
+  /** Half-way through office rules: who approved, what is still needed, and the caller's turn (approval-turn.ts). */
+  step?: ApprovalStepInfo;
+
   /**
    * Kind-specific facts, flat and serialisable — rendered by each app's own
    * words for the kind (see `approvalFacts`). Never a sentence.

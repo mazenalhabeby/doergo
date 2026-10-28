@@ -154,7 +154,11 @@ export function dedupeApprovals(items: ApprovalItem[]): ApprovalItem[] {
 export function approvalActionsFor(item: ApprovalItem) {
   const spec = APPROVAL_KIND_SPECS[item.kind];
   if (!item.canDecide || spec.needsPage?.(item)) return [];
-  // One of its approvals is already theirs (the first or a later one): the next person approves; anybody may reject.
-  if (item.step?.mine || item.step?.youApproved) return spec.actions.filter((a) => a.id !== 'approve');
+  // Half-way through office rules: Approve exactly when it is the caller's turn (shared `approvalTurn` — the rule the
+  // approval itself refuses by); anybody who may decide can still reject. No turn answer (an older server) → the
+  // first approver at least is never offered it again.
+  const step = item.step;
+  const myTurn = step ? (step.waitsForYou ?? !step.mine) : true;
+  if (!myTurn) return spec.actions.filter((a) => a.id !== 'approve');
   return spec.actions;
 }

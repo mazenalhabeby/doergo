@@ -50,15 +50,14 @@ export function parseStoredFacts(value: unknown): RuleFacts | null {
 
 /**
  * The roles still needed, in words ("HR + Finance"). A role deleted since cannot be named, and nobody holds it:
- * only an administrator can finish such an item, so that is what it says — never "waiting for ".
+ * only an administrator can finish such an item — '' here, and each reader says it in their own language
+ * (`stepNoticeVars`); the server's own English sentences add "an administrator" (`roleLabel`).
  */
 export function joinRoleNames(roleIds: string[], names: ReadonlyMap<string, string>): string {
-  return (
-    roleIds
-      .map((id) => names.get(id) ?? '')
-      .filter(Boolean)
-      .join(' + ') || 'an administrator'
-  );
+  return roleIds
+    .map((id) => names.get(id) ?? '')
+    .filter(Boolean)
+    .join(' + ');
 }
 
 /** A new step: the first approval given, the roles every rule that applies still needs, and the facts judged on. */

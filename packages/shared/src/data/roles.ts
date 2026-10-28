@@ -20,51 +20,19 @@ export function sharedRoleInOrg(db: On<'accessRole', 'findFirst'>, roleId: strin
 }
 
 /**
- * Which of these roles an active member holds — organization-wide, or as a workspace role in one of these
- * workspaces today (an active role, an assignment in its window). One query; the order of `roleIds` is kept.
- */
-export async function heldRoleIds(
-  db: On<'user', 'findFirst'>,
-  input: { userId: string; organizationId: string; roleIds: string[]; spaceIds: string[]; now: Date },
-): Promise<string[]> {
-  const { userId, organizationId, roleIds, spaceIds, now } = input;
-  if (!roleIds.length) return [];
-  const user = await db.user.findFirst({
-    where: { id: userId, organizationId, isActive: true },
-    select: {
-      memberRoleId: true,
-      memberRole: { select: { isActive: true } },
-      spaceAssignments: {
-        where: {
-          roleId: { in: roleIds },
-          spaceId: { in: spaceIds },
-          role: { isActive: true },
-          ...activeWindowWhere(now),
-        },
-        select: { roleId: true },
-      },
-    },
-  });
-  if (!user) return [];
-  const held = new Set((user.spaceAssignments ?? []).map((a) => a.roleId));
-  if (user.memberRoleId && user.memberRole?.isActive) held.add(user.memberRoleId);
-  return roleIds.filter((id) => held.has(id));
-}
-
-/**
  * Up to 50 active members holding this role — organization-wide, or as a workspace role in one of these
- * workspaces today — except the given ids.
+ * workspaces today — except the given ids. `only` asks about these people alone (no cap: a list already in hand).
  */
 export async function roleHolderIds(
   db: On<'user', 'findMany'>,
-  input: { organizationId: string; roleId: string; spaceIds: string[]; exclude: string[]; now: Date },
+  input: { organizationId: string; roleId: string; spaceIds: string[]; exclude: string[]; now: Date; only?: string[] },
 ): Promise<string[]> {
-  const { organizationId, roleId, spaceIds, exclude, now } = input;
+  const { organizationId, roleId, spaceIds, exclude, now, only } = input;
   const holders = await db.user.findMany({
     where: {
       organizationId,
       isActive: true,
-      id: { notIn: exclude },
+      id: only ? { in: only.filter((id) => !exclude.includes(id)) } : { notIn: exclude },
       OR: [
         { memberRoleId: roleId, memberRole: { isActive: true } },
         ...(spaceIds.length
@@ -79,7 +47,7 @@ export async function roleHolderIds(
       ],
     },
     select: { id: true },
-    take: 50,
+    ...(only ? {} : { take: 50 }),
   });
   return holders.map((h) => h.id);
 }
@@ -90,7 +58,6 @@ export async function roleHolderIds(
  */
 export async function memberRolesNow(db: On<'user', 'findFirst'>, organizationId: string, userId: string, now: Date) {
   const u = await db.user.findFirst({
-    // An inactive member holds nothing — the gate's `heldRoleIds` asks the same.
     where: { id: userId, organizationId },
     select: {
       id: true,
@@ -105,6 +72,7 @@ export async function memberRolesNow(db: On<'user', 'findFirst'>, organizationId
     },
   });
   if (!u) return null;
+  // An inactive member holds nothing: no administrator powers, no role.
   return {
     id: u.id,
     admin: u.role === 'ADMIN' && u.isActive,
@@ -113,6 +81,20 @@ export async function memberRolesNow(db: On<'user', 'findFirst'>, organizationId
       ? (u.spaceAssignments ?? []).flatMap((a) => (a.roleId ? [{ roleId: a.roleId, spaceId: a.spaceId }] : []))
       : [],
   };
+}
+
+/**
+ * Does this member hold the role HERE — organization-wide, or as a workspace role in one of these workspaces? ONE
+ * rule, read by the approval and by every screen that says whose turn it is.
+ */
+export function holdsRoleIn(
+  roles: NonNullable<Awaited<ReturnType<typeof memberRolesNow>>>,
+  roleId: string,
+  spaceIds: readonly string[],
+): boolean {
+  return (
+    roles.orgRoleId === roleId || roles.spaceRoles.some((a) => a.roleId === roleId && spaceIds.includes(a.spaceId))
+  );
 }
 
 /** The organization's active internal administrators (oldest first, ≤ 50), except one person. */

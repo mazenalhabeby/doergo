@@ -174,60 +174,11 @@ export async function standInFor(
 }
 
 /**
- * Was one of these people standing in for the other — either way round — at any time from `since` (the first
- * approval of an item) to `until` (now), a day either side like `STAND_IN_FOR_SUBJECT`? A stand-in ENDED in the
- * meantime counts too: approvals given by a leader and the person deciding with their authority are ONE.
+ * A leader and the stand-in deciding with their authority are ONE approver: the margin a stand-in's days are read
+ * with (a day either side, as STAND_IN_FOR_SUBJECT), and the rows of `standInCovers` are read by `standInsAround`.
  */
-export async function standInBetween(
-  prisma: { approvalDelegation: { count(args: unknown): Promise<number> } },
-  organizationId: string,
-  userId: string,
-  others: string[],
-  since: Date,
-  until: Date = new Date(),
-): Promise<boolean> {
-  if (!others.length) return false;
-  const DAY = 86_400_000;
-  const n = await prisma.approvalDelegation.count({
-    where: {
-      organizationId,
-      startsOn: { lte: new Date(until.getTime() + DAY) },
-      endsOn: { gte: new Date(since.getTime() - DAY) },
-      // Ended before the first approval was given: it never covered this item.
-      OR: [{ revokedAt: null }, { revokedAt: { gte: since } }],
-      AND: [
-        {
-          OR: [
-            { fromUserId: userId, toUserId: { in: others } },
-            { toUserId: userId, fromUserId: { in: others } },
-          ],
-        },
-      ],
-    },
-  });
-  return n > 0;
-}
+const STAND_IN_MARGIN_MS = 86_400_000;
 
-/**
- * `standInBetween` for many items at once: the caller's stand-ins (either way round) that could matter since
- * `since` — ONE query — and a pure test per item with the same window rule.
- */
-export async function standInsOf(
-  prisma: { approvalDelegation: { findMany(args: unknown): Promise<StandInRow[]> } },
-  organizationId: string,
-  userId: string,
-  since: Date,
-): Promise<StandInRow[]> {
-  const DAY = 86_400_000;
-  return prisma.approvalDelegation.findMany({
-    where: {
-      organizationId,
-      endsOn: { gte: new Date(since.getTime() - DAY) },
-      OR: [{ fromUserId: userId }, { toUserId: userId }],
-    },
-    select: { fromUserId: true, toUserId: true, startsOn: true, endsOn: true, revokedAt: true },
-  });
-}
 export type StandInRow = { fromUserId: string; toUserId: string; startsOn: Date; endsOn: Date; revokedAt: Date | null };
 
 /** Every stand-in (either way round) touching any of `userIds` that could matter since `since` — ONE query. */
@@ -238,18 +189,21 @@ export async function standInsAround(
   since: Date,
 ): Promise<StandInRow[]> {
   if (!userIds.length) return [];
-  const DAY = 86_400_000;
   return prisma.approvalDelegation.findMany({
     where: {
       organizationId,
-      endsOn: { gte: new Date(since.getTime() - DAY) },
+      endsOn: { gte: new Date(since.getTime() - STAND_IN_MARGIN_MS) },
       OR: [{ fromUserId: { in: userIds } }, { toUserId: { in: userIds } }],
     },
     select: { fromUserId: true, toUserId: true, startsOn: true, endsOn: true, revokedAt: true },
   });
 }
 
-/** The rule of `standInBetween`, over rows already read: is `userId` a stand-in of one of `others` (or the other way). */
+/**
+ * THE stand-in rule — the approval and every screen read it: is `userId` a stand-in of one of `others` (or the other
+ * way round) in the wait since `since` — a stand-in that ended before the first approval never covered it; one
+ * that ended after still did.
+ */
 export function standInCovers(
   rows: StandInRow[],
   userId: string,
@@ -257,11 +211,10 @@ export function standInCovers(
   since: Date,
   until: Date = new Date(),
 ): boolean {
-  const DAY = 86_400_000;
   return rows.some(
     (r) =>
-      r.startsOn.getTime() <= until.getTime() + DAY &&
-      r.endsOn.getTime() >= since.getTime() - DAY &&
+      r.startsOn.getTime() <= until.getTime() + STAND_IN_MARGIN_MS &&
+      r.endsOn.getTime() >= since.getTime() - STAND_IN_MARGIN_MS &&
       (!r.revokedAt || r.revokedAt.getTime() >= since.getTime()) &&
       ((r.fromUserId === userId && others.includes(r.toUserId)) ||
         (r.toUserId === userId && others.includes(r.fromUserId))),
