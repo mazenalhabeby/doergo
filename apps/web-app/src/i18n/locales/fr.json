@@ -10047,7 +10047,9 @@
     "tag": {
       "waitsForYou": "Vous attend",
       "datesPassed": "Dates déjà passées"
-    }
+    },
+    "more_one": "{{count}} autre attend ({{kinds}}) — les plus anciennes s'affichent d'abord ; les autres apparaîtront ici à mesure que vous décidez celles-ci.",
+    "more_other": "{{count}} autres attendent ({{kinds}}) — les plus anciennes s'affichent d'abord ; les autres apparaîtront ici à mesure que vous décidez celles-ci."
   },
   "overtimePage": {
     "title": "Heures supplémentaires",

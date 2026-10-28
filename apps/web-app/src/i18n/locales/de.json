@@ -10047,7 +10047,9 @@
     "tag": {
       "waitsForYou": "Wartet auf Sie",
       "datesPassed": "Zeitraum schon vorbei"
-    }
+    },
+    "more_one": "{{count}} weitere wartet ({{kinds}}) — die ältesten stehen oben; der Rest erscheint hier, sobald Sie diese entschieden haben.",
+    "more_other": "{{count}} weitere warten ({{kinds}}) — die ältesten stehen oben; der Rest erscheint hier, sobald Sie diese entschieden haben."
   },
   "overtimePage": {
     "title": "Überstunden",

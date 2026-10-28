@@ -10047,7 +10047,9 @@
     "tag": {
       "waitsForYou": "Waiting for you",
       "datesPassed": "Dates already passed"
-    }
+    },
+    "more_one": "{{count}} more is waiting ({{kinds}}) — the oldest are shown first; the rest appear here as you decide these.",
+    "more_other": "{{count}} more are waiting ({{kinds}}) — the oldest are shown first; the rest appear here as you decide these."
   },
   "overtimePage": {
     "title": "Overtime",

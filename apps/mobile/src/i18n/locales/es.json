@@ -3333,7 +3333,9 @@
       "CLOCK_OUT_IN_FUTURE": "Una salida no puede estar en el futuro.",
       "OVERTIME_ALREADY_DECIDED": "Alguien ya decidió estas horas extra.",
       "NO_SHOW_ALREADY_DECIDED": "Alguien ya respondió a este turno perdido.",
-      "REQUEST_ALREADY_ROUTED": "Esta solicitud del cliente ya se ha gestionado."
+      "REQUEST_ALREADY_ROUTED": "Esta solicitud del cliente ya se ha gestionado.",
+      "SECOND_STEP_SAME_PERSON": "Usted dio la primera aprobación — la segunda debe venir de {{role}}.",
+      "SECOND_STEP_REQUIRED": "La segunda aprobación corresponde a {{role}}."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",
@@ -5430,7 +5432,9 @@
     "tag": {
       "waitsForYou": "Espera su decisión",
       "datesPassed": "Fechas ya pasadas"
-    }
+    },
+    "more_one": "Queda {{count}} más en espera ({{kinds}}) — primero se muestran las más antiguas; el resto aparecerá aquí a medida que decida estas.",
+    "more_other": "Quedan {{count}} más en espera ({{kinds}}) — primero se muestran las más antiguas; el resto aparecerá aquí a medida que decida estas."
   },
   "people": {
     "job": "Puesto"

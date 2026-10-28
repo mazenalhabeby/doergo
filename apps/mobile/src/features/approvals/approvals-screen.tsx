@@ -58,6 +58,9 @@ export function ApprovalsScreen() {
   const [items, setItems] = useState<ApprovalItem[] | null>(null);
   const [days, setDays] = useState<ApprovalDay[]>([]);
   const [unavailable, setUnavailable] = useState<string[]>([]);
+  // Waiting beyond the listed page, per kind (a backlog is read oldest first).
+  const [more, setMore] = useState<Record<string, number>>({});
+  const moreKinds = Object.keys(more).filter((k) => (more[k] ?? 0) > 0);
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   // Arriving with ?kind= (a notification, or a screen that used to decide it): open on that kind.
@@ -84,6 +87,7 @@ export function ApprovalsScreen() {
       setItems(res.items);
       setDays(res.days ?? []);
       setUnavailable(res.unavailable);
+      setMore((res.more ?? {}) as Record<string, number>);
       setFailed(false);
     } catch {
       // Never loaded: the error state with Retry. Loaded before: the list stays, with a warning line.
@@ -181,6 +185,14 @@ export function ApprovalsScreen() {
       {covering.length ? (
         <AText variant="caption" tone="accent">
           {t('approvals.standIn.covering', { names: covering.join(', ') })}
+        </AText>
+      ) : null}
+      {items && moreKinds.length ? (
+        <AText variant="caption" tone="muted">
+          {t('approvals.more', {
+            count: moreKinds.reduce((n, k) => n + more[k]!, 0),
+            kinds: moreKinds.map((k) => t(`approvals.kinds.${k}`)).join(', '),
+          })}
         </AText>
       ) : null}
       {items && (unavailable.length || failed) ? (

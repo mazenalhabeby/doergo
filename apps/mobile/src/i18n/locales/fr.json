@@ -3333,7 +3333,9 @@
       "CLOCK_OUT_IN_FUTURE": "Un pointage de sortie ne peut pas être dans le futur.",
       "OVERTIME_ALREADY_DECIDED": "Quelqu’un a déjà décidé de ces heures sup.",
       "NO_SHOW_ALREADY_DECIDED": "Quelqu’un a déjà répondu pour ce poste manqué.",
-      "REQUEST_ALREADY_ROUTED": "Cette demande client a déjà été traitée."
+      "REQUEST_ALREADY_ROUTED": "Cette demande client a déjà été traitée.",
+      "SECOND_STEP_SAME_PERSON": "Vous avez donné la première validation — la seconde doit venir de {{role}}.",
+      "SECOND_STEP_REQUIRED": "La seconde validation revient à {{role}}."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -5430,7 +5432,9 @@
     "tag": {
       "waitsForYou": "Vous attend",
       "datesPassed": "Dates déjà passées"
-    }
+    },
+    "more_one": "{{count}} autre attend ({{kinds}}) — les plus anciennes s'affichent d'abord ; les autres apparaîtront ici à mesure que vous décidez celles-ci.",
+    "more_other": "{{count}} autres attendent ({{kinds}}) — les plus anciennes s'affichent d'abord ; les autres apparaîtront ici à mesure que vous décidez celles-ci."
   },
   "people": {
     "job": "Poste"

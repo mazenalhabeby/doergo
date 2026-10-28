@@ -10047,7 +10047,9 @@
     "tag": {
       "waitsForYou": "Attende Lei",
       "datesPassed": "Date già passate"
-    }
+    },
+    "more_one": "Ne attende ancora {{count}} ({{kinds}}) — le più vecchie sono mostrate per prime; le altre compariranno qui man mano che decide queste.",
+    "more_other": "Ne attendono ancora {{count}} ({{kinds}}) — le più vecchie sono mostrate per prime; le altre compariranno qui man mano che decide queste."
   },
   "overtimePage": {
     "title": "Straordinari",

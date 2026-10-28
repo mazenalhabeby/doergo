@@ -12,6 +12,7 @@ import {
   type ApprovalItem,
   type DurationFields,
   type NoShowExcuseReason,
+  roleOrAdministrator,
 } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/island/island-context';
@@ -98,7 +99,11 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
         });
         if (res.stage === 'FIRST_STEP') {
           // Step 1 of 2: theirs is in; the item stays in the list, now waiting for the second person.
-          toast.success(t('approvals.step.firstDone', { role: res.waitingFor ?? '' }));
+          toast.success(
+            t('approvals.step.firstDone', {
+              role: roleOrAdministrator(res.waitingFor, t('approvals.step.anAdministrator')),
+            }),
+          );
         } else {
           forgetApproval(itemKey);
           toast.success(t('approvals.decided', { name: item.subject.name || t('approvals.someone') }));

@@ -9,6 +9,7 @@ import {
   type ApprovalItem,
   type ApprovalT,
   kindNeedsMinutes,
+  roleOrAdministrator,
 } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { formatDay } from '@/lib/money';
@@ -53,10 +54,13 @@ export function ApprovalDayRow({
     try {
       const res = await approvalsApi.decideDay(day.approvable);
       const failed = res.results.find((r) => !r.ok);
-      const waiting = res.results.find((r) => r.waitingFor);
+      const waiting = res.results.find((r) => r.waitingFor !== undefined);
       if (!failed && waiting) {
         toast.success(
-          t('approvals.day.partly', { what: t(`approvals.kinds.${waiting.kind}`), role: waiting.waitingFor }),
+          t('approvals.day.partly', {
+            what: t(`approvals.kinds.${waiting.kind}`),
+            role: roleOrAdministrator(waiting.waitingFor, t('approvals.step.anAdministrator')),
+          }),
         );
       } else if (failed) {
         toast.error(

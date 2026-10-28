@@ -10047,7 +10047,9 @@
     "tag": {
       "waitsForYou": "Espera su decisión",
       "datesPassed": "Fechas ya pasadas"
-    }
+    },
+    "more_one": "Queda {{count}} más en espera ({{kinds}}) — primero se muestran las más antiguas; el resto aparecerá aquí a medida que decida estas.",
+    "more_other": "Quedan {{count}} más en espera ({{kinds}}) — primero se muestran las más antiguas; el resto aparecerá aquí a medida que decida estas."
   },
   "overtimePage": {
     "title": "Horas extra",

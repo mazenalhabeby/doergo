@@ -12,6 +12,7 @@ import {
   type ApprovalFilter,
   type ApprovalKind,
   type ApprovalInbox,
+  roleOrAdministrator,
 } from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
@@ -186,7 +187,11 @@ export function useApprovalsPage() {
       const done = items.find((i) => i.kind === d.kind && i.id === d.id)
       if (res.stage === "FIRST_STEP") {
         // Step 1 of 2: theirs is in; the item stays, now waiting for the second person.
-        notify.success(t("approvals.step.firstDone", { role: res.waitingFor ?? "" }))
+        notify.success(
+          t("approvals.step.firstDone", {
+            role: roleOrAdministrator(res.waitingFor, t("approvals.step.anAdministrator")),
+          }),
+        )
         const key = itemKey(d)
         setFirstSteps((m) => ({ ...m, [key]: (m[key] ?? 0) + 1 }))
         qc.invalidateQueries({ queryKey: keys.approvals.all() })
@@ -214,6 +219,7 @@ export function useApprovalsPage() {
 
   const onDecide = useCallback((d: ApprovalDecision) => decide.mutate(d), [decide])
   const unavailable = data?.unavailable ?? []
+  const more = data?.more ?? {}
   // Whose decisions the reader covers today — said once, above the list.
   const covering = useMemo(
     () => [...new Set(items.filter((i) => i.why?.via === "DELEGATED" && i.why.fromName).map((i) => i.why!.fromName!))],
@@ -250,6 +256,7 @@ export function useApprovalsPage() {
     decide,
     onDecide,
     unavailable,
+    more,
     covering,
     currentDay,
     review,

@@ -3333,7 +3333,9 @@
       "CLOCK_OUT_IN_FUTURE": "Un'uscita non può essere nel futuro.",
       "OVERTIME_ALREADY_DECIDED": "Qualcuno ha già deciso questi straordinari.",
       "NO_SHOW_ALREADY_DECIDED": "Qualcuno ha già risposto per questo turno mancato.",
-      "REQUEST_ALREADY_ROUTED": "Questa richiesta del cliente è già stata gestita."
+      "REQUEST_ALREADY_ROUTED": "Questa richiesta del cliente è già stata gestita.",
+      "SECOND_STEP_SAME_PERSON": "Ha dato la prima approvazione — la seconda deve venire da {{role}}.",
+      "SECOND_STEP_REQUIRED": "La seconda approvazione spetta a {{role}}."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -5430,7 +5432,9 @@
     "tag": {
       "waitsForYou": "Attende Lei",
       "datesPassed": "Date già passate"
-    }
+    },
+    "more_one": "Ne attende ancora {{count}} ({{kinds}}) — le più vecchie sono mostrate per prime; le altre compariranno qui man mano che decide queste.",
+    "more_other": "Ne attendono ancora {{count}} ({{kinds}}) — le più vecchie sono mostrate per prime; le altre compariranno qui man mano che decide queste."
   },
   "people": {
     "job": "Ruolo"

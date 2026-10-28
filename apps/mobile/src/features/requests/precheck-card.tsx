@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { formatDuration, type RequestPrecheck } from '@hbcfield/shared/client';
+import { formatDuration, roleOrAdministrator, type RequestPrecheck } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { AText } from '@/components/amazen';
 import { toneTint } from '@/theme/tone-color';
@@ -18,11 +18,15 @@ export function PrecheckCard({ precheck, kind }: { precheck: RequestPrecheck | n
   const c = amazen.color;
   const { t, i18n } = useTranslation();
   if (!precheck) return null;
-  const day = (k: string) => new Date(`${k}T12:00:00`).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' });
+  const day = (k: string) =>
+    new Date(`${k}T12:00:00`).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' });
 
   const lines: Array<{ tone: Tone; text: string }> = [];
   for (const cl of precheck.clashes) {
-    lines.push({ tone: 'critical', text: t('requests.precheck.clash', { from: day(cl.startDate), to: day(cl.endDate) }) });
+    lines.push({
+      tone: 'critical',
+      text: t('requests.precheck.clash', { from: day(cl.startDate), to: day(cl.endDate) }),
+    });
   }
   if (precheck.balance && precheck.balance.after < 0) {
     lines.push({ tone: 'critical', text: t('requests.precheck.negative', { after: precheck.balance.after }) });
@@ -40,8 +44,15 @@ export function PrecheckCard({ precheck, kind }: { precheck: RequestPrecheck | n
     });
   }
   if (precheck.cover === 'tight') lines.push({ tone: 'warn', text: t('requests.precheck.cover.tight') });
-  if (precheck.secondApproval) lines.push({ tone: 'accent', text: t('requests.precheck.second', { role: precheck.secondApproval }) });
-  if (!lines.length) lines.push({ tone: 'muted', text: t(kind === 'LEAVE' ? 'requests.precheck.fineLeave' : 'requests.precheck.fine') });
+  if (precheck.secondApproval != null)
+    lines.push({
+      tone: 'accent',
+      text: t('requests.precheck.second', {
+        role: roleOrAdministrator(precheck.secondApproval, t('approvals.step.anAdministrator')),
+      }),
+    });
+  if (!lines.length)
+    lines.push({ tone: 'muted', text: t(kind === 'LEAVE' ? 'requests.precheck.fineLeave' : 'requests.precheck.fine') });
 
   const bg = toneTint(c, lines[0]!.tone, c.accentTint);
   return (
@@ -53,7 +64,8 @@ export function PrecheckCard({ precheck, kind }: { precheck: RequestPrecheck | n
         paddingHorizontal: amazen.space(3),
         backgroundColor: bg,
         gap: amazen.space(1),
-      }}>
+      }}
+    >
       <AText variant="caption" tone="muted" style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>
         {t('requests.precheck.title')}
       </AText>

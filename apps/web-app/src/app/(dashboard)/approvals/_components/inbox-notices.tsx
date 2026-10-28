@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle, UserRoundCheck } from "lucide-react"
+import { AlertTriangle, Inbox, UserRoundCheck } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { ApprovalKind } from "@hbcfield/shared/client"
 import { formatTimeAgo } from "@/lib/format-date"
@@ -15,11 +15,14 @@ import { InboxAnnouncer } from "./inbox-announcer"
 export function InboxNotices({
   covering,
   unavailable,
+  more,
   staleSince,
   count,
 }: {
   covering: string[]
   unavailable: ApprovalKind[]
+  /** Waiting beyond the listed page, per kind (a backlog is read oldest first). */
+  more: Partial<Record<ApprovalKind, number>>
   /** When the list on screen was read, if the latest refresh failed; null otherwise. */
   staleSince: number | null
   /** How many wait, once read (null while loading) — said aloud only when it CHANGES. */
@@ -28,6 +31,8 @@ export function InboxNotices({
   const { t } = useTranslation()
   // "The list as it was 5 minutes ago" keeps counting, as "Updated …" does — only while it is shown.
   useTick(undefined, staleSince != null)
+  const moreKinds = (Object.keys(more) as ApprovalKind[]).filter((k) => (more[k] ?? 0) > 0)
+  const moreCount = moreKinds.reduce((n, k) => n + (more[k] ?? 0), 0)
   return (
     <>
       <InboxAnnouncer count={count} />
@@ -41,6 +46,12 @@ export function InboxNotices({
         <Notice>
           <UserRoundCheck />
           {t("approvals.standIn.covering", { names: covering.join(", ") })}
+        </Notice>
+      )}
+      {moreCount > 0 && (
+        <Notice>
+          <Inbox />
+          {t("approvals.more", { count: moreCount, kinds: moreKinds.map((k) => t(`approvals.kinds.${k}`)).join(", ") })}
         </Notice>
       )}
       {unavailable.length > 0 && (

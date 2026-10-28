@@ -24,7 +24,10 @@ export function formatDistance(metres: number | null | undefined, options: Dista
   return formatDistanceIn(metres, { locale: readerLocale(), ...options });
 }
 
-export function distanceParts(metres: number | null | undefined, options: DistanceFormatOptions = {}): DistanceParts | null {
+export function distanceParts(
+  metres: number | null | undefined,
+  options: DistanceFormatOptions = {},
+): DistanceParts | null {
   return distancePartsIn(metres, { locale: readerLocale(), ...options });
 }
 
@@ -44,7 +47,9 @@ export function refusalText(
   fallback: string,
 ): string {
   if (o.code) {
-    const known = t(`offline.errors.${o.code}`, { defaultValue: '', ...refusalInterpolation(o.params) });
+    // A role nobody can name ('') — only an administrator can finish it, in the reader's words.
+    const role = o.params?.role === '' ? { role: t('approvals.step.anAdministrator', { defaultValue: '' }) } : {};
+    const known = t(`offline.errors.${o.code}`, { defaultValue: '', ...refusalInterpolation(o.params), ...role });
     if (known) return known;
   }
   return o.message || fallback;

@@ -10,6 +10,7 @@ import {
   type ApprovalFilter,
   type ApprovalInbox,
   type ApprovalItem,
+  roleOrAdministrator,
 } from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
@@ -55,10 +56,13 @@ export function useApprovalDays(
     mutationFn: (day: ApprovalDay) => approvalsApi.decideDay(day.approvable),
     onSuccess: (res, day) => {
       const failed = res.results.find((r) => !r.ok)
-      const waiting = res.results.find((r) => r.waitingFor)
+      const waiting = res.results.find((r) => r.waitingFor !== undefined)
       if (!failed && waiting) {
         notify.success(
-          t("approvals.day.partly", { what: t(`approvals.kinds.${waiting.kind}`), role: waiting.waitingFor }),
+          t("approvals.day.partly", {
+            what: t(`approvals.kinds.${waiting.kind}`),
+            role: roleOrAdministrator(waiting.waitingFor, t("approvals.step.anAdministrator")),
+          }),
         )
       } else if (failed) {
         notify.error(

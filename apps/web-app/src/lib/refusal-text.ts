@@ -27,7 +27,9 @@ export function refusalSentence(
 ): string | undefined {
   const p = params ?? {}
   const distances = "distanceMetres" in p || "radiusMetres" in p ? distanceRefusalParams(p, locale) : {}
-  const translated = t(`serverErrors.${code}`, { ...p, ...distances, defaultValue: "" })
+  // A role nobody can name ('') — only an administrator can finish it, in the reader's words.
+  const role = p.role === "" ? { role: t("approvals.step.anAdministrator", { defaultValue: "" }) } : {}
+  const translated = t(`serverErrors.${code}`, { ...p, ...distances, ...role, defaultValue: "" })
   return typeof translated === "string" && translated.length > 0 ? translated : undefined
 }
 

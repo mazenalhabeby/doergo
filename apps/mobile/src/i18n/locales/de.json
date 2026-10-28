@@ -3333,7 +3333,9 @@
       "CLOCK_OUT_IN_FUTURE": "Ein Ausstempeln kann nicht in der Zukunft liegen.",
       "OVERTIME_ALREADY_DECIDED": "Über diese Überstunden hat bereits jemand entschieden.",
       "NO_SHOW_ALREADY_DECIDED": "Diese verpasste Schicht wurde bereits beantwortet.",
-      "REQUEST_ALREADY_ROUTED": "Diese Kundenanfrage wurde bereits bearbeitet."
+      "REQUEST_ALREADY_ROUTED": "Diese Kundenanfrage wurde bereits bearbeitet.",
+      "SECOND_STEP_SAME_PERSON": "Sie haben die erste Freigabe gegeben — die zweite muss von {{role}} kommen.",
+      "SECOND_STEP_REQUIRED": "Die zweite Freigabe gibt {{role}}."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -5430,7 +5432,9 @@
     "tag": {
       "waitsForYou": "Wartet auf Sie",
       "datesPassed": "Zeitraum schon vorbei"
-    }
+    },
+    "more_one": "{{count}} weitere wartet ({{kinds}}) — die ältesten stehen oben; der Rest erscheint hier, sobald Sie diese entschieden haben.",
+    "more_other": "{{count}} weitere warten ({{kinds}}) — die ältesten stehen oben; der Rest erscheint hier, sobald Sie diese entschieden haben."
   },
   "people": {
     "job": "Tätigkeit"

@@ -71,6 +71,7 @@ export default function ApprovalsPage() {
     decide,
     onDecide,
     unavailable,
+    more,
     covering,
     currentDay,
     review,
@@ -100,6 +101,7 @@ export default function ApprovalsPage() {
         <InboxNotices
           covering={covering}
           unavailable={unavailable}
+          more={more}
           staleSince={isError && hasData ? dataUpdatedAt : null}
           count={isLoading ? null : items.length}
         />
