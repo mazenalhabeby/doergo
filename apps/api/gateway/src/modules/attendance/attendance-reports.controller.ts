@@ -1,5 +1,6 @@
 import { Controller, Get, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { DayRangeQueryDto } from './dto/day-range.dto';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { AttendanceReportsGatewayService } from './attendance-reports.gateway-service';
 import { scopeFor } from '../../common/permission-scope';
@@ -23,12 +24,8 @@ export class AttendanceReportsController {
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by specific user' })
-  async getAttendanceSummary(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-    @Query('userId') userId: string | undefined,
-    @Request() req: AuthedRequest,
-  ) {
+  async getAttendanceSummary(@Query() q: DayRangeQueryDto, @Request() req: AuthedRequest) {
+    const { startDate, endDate, userId } = q;
     return this.attendanceReports.getAttendanceSummary({
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
@@ -88,12 +85,8 @@ export class AttendanceReportsController {
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by specific user' })
-  async exportToCSV(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-    @Query('userId') userId: string | undefined,
-    @Request() req: AuthedRequest,
-  ) {
+  async exportToCSV(@Query() q: DayRangeQueryDto, @Request() req: AuthedRequest) {
+    const { startDate, endDate, userId } = q;
     return this.attendanceReports.exportToCSV({
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),

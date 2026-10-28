@@ -102,6 +102,7 @@
     "db:create-fresh": "pnpm --filter @hbcfield/db create-fresh",
     "size:check": "node tools/size-ratchet.mjs",
     "layer0:check": "bash tools/layer0-check.sh",
+    "layer1:check": "bash tools/layer1-check.sh",
     "size:update": "node tools/size-ratchet.mjs --update",
     "structure:check": "node tools/structure-check.mjs",
     "structure:update": "node tools/structure-check.mjs --update",

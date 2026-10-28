@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
+  assertMemberInScope,
   success,
   normalizeKindShape,
   totalsByPeriod,
@@ -85,6 +86,8 @@ export class CustodyReadService {
     } & AssetActor,
   ) {
     this.access.assertMay(data, 'view');
+    // Another organization's member is 404, like a missing one — never an empty answer.
+    await assertMemberInScope(this.prisma, { userId: data.memberId, organizationId: data.organizationId });
     /*
       Only the periods of records the caller may read. A depot manager asking
       what Ahmed holds sees the depot's vans he has — never the laptop another

@@ -244,9 +244,19 @@ describe('an external member keeps to their workspace', () => {
     );
   });
 
+  it('another organization\'s member is 404, never an empty list', async () => {
+    const prisma = fakePrisma();
+    const custody = custodyServices(prisma, new AssetAccessService(prisma), {} as any);
+    await expect(custody.forMember({ memberId: 'stranger', ...linzExternal } as any)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(prisma.assetCustody.findMany).not.toHaveBeenCalled();
+  });
+
   it('sees only Linz\'s records in a member\'s custody', async () => {
     const prisma = fakePrisma();
     const custody = custodyServices(prisma, new AssetAccessService(prisma), {} as any);
+    prisma.user.findFirst.mockResolvedValueOnce({ id: 'm1' } as never); // a member of this organization
     await custody.forMember({ memberId: 'm1', ...linzExternal } as any);
     expect(prisma.assetCustody.findMany.mock.calls[0][0].where).toMatchObject({
       userId: 'm1', asset: { category: { spaceId: { in: [LINZ] } } },

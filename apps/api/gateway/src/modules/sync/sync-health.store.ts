@@ -87,7 +87,7 @@ export class SyncHealthStore implements OnModuleDestroy {
    * found in: a member who moved to another organization would otherwise show
    * their new employer's queue to the old one until the entry expired.
    */
-  async forOrganization(organizationId: string, now = Date.now()): Promise<MemberSyncHealth[]> {
+  async forOrganization(organizationId: string, now = Date.now(), retried = false): Promise<MemberSyncHealth[]> {
     try {
       const key = ORG_INDEX(organizationId);
       await this.redis.zremrangebyscore(key, 0, now - REPORT_TTL_SECONDS * 1000);
@@ -96,9 +96,26 @@ export class SyncHealthStore implements OnModuleDestroy {
       const raw = await this.redis.mget(userIds.map(HEALTH));
       return memberHealthView(raw, organizationId, now);
     } catch {
+      // No offline queue: a command sent while the connection is (re)opening fails at once — the first read after a
+      // restart answered 503 (layer 1 test, 2026-10-28). Wait for the connection once, then ask again.
+      if (!retried && (await this.ready(2000))) return this.forOrganization(organizationId, now, true);
       // Fails open for writes; a read that cannot answer says so rather than showing "all fine".
       throw new ServiceUnavailableException('Phone sync health is unavailable right now');
     }
+  }
+
+  private ready(ms: number): Promise<boolean> {
+    if (this.redis.status === 'ready') return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const done = (ok: boolean) => {
+        clearTimeout(timer);
+        this.redis.off('ready', onReady);
+        resolve(ok);
+      };
+      const onReady = () => done(true);
+      const timer = setTimeout(() => done(false), ms);
+      this.redis.once('ready', onReady);
+    });
   }
 
   async countResults(results: readonly SyncOperationResult[]): Promise<void> {

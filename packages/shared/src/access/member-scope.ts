@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 import { notEndedWhere } from './assignment-window';
 /**
@@ -20,14 +20,19 @@ import { notEndedWhere } from './assignment-window';
  * org-wide reader. That has happened in this codebase before, which is why the
  * empty case is written out rather than left to a truthiness check.
  *
- * One indexed query (`@@index([spaceId])` on SpaceAssignment), and only when
- * narrowing is actually required — an admin pays nothing.
+ * One indexed query (`@@index([spaceId])` on SpaceAssignment) when narrowing.
+ *
+ * Org-wide, the member must still be OF THIS ORGANIZATION: another organization's
+ * member id is 404, like a missing one (layer 1 test, 2026-10-28 — the stats,
+ * performance and custody reads answered an empty 200 for any id at all). One
+ * primary-key lookup, asked whenever the caller passes a client that can read users.
  */
 export async function assertMemberInScope(
   prisma: {
     spaceAssignment: {
       findFirst: (args: unknown) => Promise<{ id: string } | null>;
     };
+    user?: { findFirst: (args: unknown) => Promise<{ id: string } | null> };
   },
   data: {
     /** The member being read. */
@@ -37,7 +42,16 @@ export async function assertMemberInScope(
     scopeSpaceIds?: string[];
   },
 ): Promise<void> {
-  if (data.scopeSpaceIds === undefined) return; // org-wide
+  if (data.scopeSpaceIds === undefined) {
+    // org-wide: any member — of THIS organization
+    if (!prisma.user) return;
+    const member = await prisma.user.findFirst({
+      where: { id: data.userId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+    return;
+  }
 
   if (data.scopeSpaceIds.length === 0) {
     throw new ForbiddenException('You do not have access to this member');

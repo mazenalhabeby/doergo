@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { DayRangeQueryDto } from './dto/day-range.dto';
 import { Role, assertServiceOk } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermissionInSpace } from '../../common/decorators';
@@ -269,12 +270,8 @@ export class BreaksController {
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'userId', required: false, type: String })
-  async getBreakSummary(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-    @Query('userId') userId: string | undefined,
-    @Request() req: AuthedRequest,
-  ) {
+  async getBreakSummary(@Query() q: DayRangeQueryDto, @Request() req: AuthedRequest) {
+    const { startDate, endDate, userId } = q;
     return this.breaksGateway.getBreakSummary({
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
