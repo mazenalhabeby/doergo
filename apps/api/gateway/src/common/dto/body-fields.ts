@@ -1,6 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import { Transform } from 'class-transformer';
-import { Allow, IsArray, IsBoolean, IsIn, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
+import { Allow, IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
 
 /**
  * Field decorators for request bodies that used to be plain interfaces (CODE_AUDIT.md B3).
@@ -28,6 +28,8 @@ const AsSent = () => Transform(({ obj, key }: { obj: Record<string, unknown>; ke
 
 /** A string, or absent / null. */
 export const OptString = () => applyDecorators(IsOptional(), IsString());
+/** A field the service cannot work without — missing is a 400, never a crash in the service (layer 1 test). */
+export const ReqString = () => applyDecorators(IsString(), IsNotEmpty());
 
 /** A finite number, or absent / null. */
 export const OptNumber = () => applyDecorators(IsOptional(), IsNumber({ allowNaN: false, allowInfinity: false }));
@@ -47,6 +49,7 @@ export const OptArray = () => applyDecorators(AsSent(), IsOptional(), IsArray())
 
 /** An object (its keys are the service's), or absent / null. */
 export const OptObject = () => applyDecorators(AsSent(), IsOptional(), IsObject());
+export const ReqObject = () => applyDecorators(AsSent(), IsObject());
 
 /** One of the listed values, or absent / null. */
 export const OptIn = (values: readonly unknown[]) => applyDecorators(AsSent(), IsOptional(), IsIn([...values]));

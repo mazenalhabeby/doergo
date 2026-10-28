@@ -1,4 +1,4 @@
-import { OptBoolean, OptNumber, OptString, OptStrings } from '../../../common/dto/body-fields';
+import { OptBoolean, OptNumber, OptString, OptStrings, ReqString } from '../../../common/dto/body-fields';
 
 /*
   Client-portal bodies (CODE_AUDIT.md B3). Clients: the web's portal pages
@@ -31,9 +31,9 @@ export class UpdatePortalDto {
 
 /** POST /portal/admin/categories */
 export class CreatePortalCategoryDto {
-  @OptString() portalId!: string;
-  @OptString() key!: string;
-  @OptString() label!: string;
+  @ReqString() portalId!: string;
+  @ReqString() key!: string;
+  @ReqString() label!: string;
   @OptString() icon?: string;
   @OptString() color?: string;
   @OptBoolean() urgent?: boolean;

@@ -1,13 +1,16 @@
 #!/bin/bash
 # Layer 1 — permissions — in one command: green means who-may-do-what still holds. LOCAL ONLY.
 #
-#   pnpm layer1:check        # ~15 minutes (needs `pnpm dev:api` and the local docker database)
+#   pnpm layer1:check        # ~30 minutes (needs `pnpm dev:api` and the local docker database)
 #
 # 1. unit tests of every permission rule: the shared resolver and levels, document visibility, CRM reach, the
 #    gateway's guards and route sweeps (external reach, observer writes, scope forwarding), every service's
 #    "is this in the caller's scope" boundary, the grant ceiling, stand-ins
-# 2. live: tools/layer1-access-e2e.py (the reviewed access map, another organization with real ids, raising
-#    one's own power, power given and taken away), the external member (48 checks), a task open to a role
+# 2. live: tools/layer1-access-e2e.py (the reviewed access map, raising one's own power, power given and taken
+#    away), tools/layer1-deep-e2e.py (every route naming a record, with real ids, and every write — by another
+#    organization, an external, an employee and a leader of another workspace; the database fingerprinted around
+#    each; reviewed map tools/layer1-record-map.txt), tools/layer1-socket-e2e.mjs (live updates), the external
+#    member (48 checks), a task open to a role
 #
 # ⚠️ Local must run like production: ACCESS_IGNORE_LEGACY_FLAGS=true in the services' .env (the old per-user
 #    columns grant nothing). Without it a seeded employee with an old column set reads the member list.
@@ -35,6 +38,8 @@ run "tracking-service: workspace scope" jest_in apps/api/tracking-service scope
 step "2. live (local API)"
 curl -sf -o /dev/null http://localhost:4000/api/v1/health || { echo "the local API is not running (pnpm dev:api)"; FAILED+=("local API"); }
 run "access map, another organization, raising power, taking it away" python3 tools/layer1-access-e2e.py
+run "every record route, every write, the workspace boundary" python3 tools/layer1-deep-e2e.py
+run "live updates: nobody hears what they may not see" node tools/layer1-socket-e2e.mjs
 run "an external member keeps to their workspace" python3 tools/external-access-e2e.py
 run "a task open to a work role" python3 tools/role-tasks-e2e.py
 

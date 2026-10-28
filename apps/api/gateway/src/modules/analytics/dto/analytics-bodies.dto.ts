@@ -1,4 +1,4 @@
-import { OptAny, OptBoolean, OptIn, OptNumber, OptString, OptStrings } from '../../../common/dto/body-fields';
+import { OptAny, OptBoolean, OptIn, OptNumber, OptString, OptStrings, ReqObject } from '../../../common/dto/body-fields';
 
 /*
   Report builder bodies (CODE_AUDIT.md B3). The definition / config is passed AS SENT to
@@ -8,7 +8,7 @@ import { OptAny, OptBoolean, OptIn, OptNumber, OptString, OptStrings } from '../
 
 /** POST /analytics/run */
 export class RunReportDto {
-  @OptAny() definition!: unknown;
+  @ReqObject() definition!: unknown;
 }
 
 /** POST /analytics/reports */
