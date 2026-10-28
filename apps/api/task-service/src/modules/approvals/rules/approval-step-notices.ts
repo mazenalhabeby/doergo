@@ -2,7 +2,7 @@ import type { Logger } from '@nestjs/common';
 import type { ClientProxy } from '@nestjs/microservices';
 import { orgAdminIds, peopleNames, personName, roleHolderIds, type PrismaService } from '@hbcfield/shared';
 import { emitEvent, approvalSecondStepEvent } from '@hbcfield/shared/microservices';
-import type { RuleGateInput } from './approval-rules-helpers';
+import type { RuleGateInput } from './rule-gate-types';
 
 /**
  * Push the holders of the next role needed (never who already approved, or the person it is about). Nobody

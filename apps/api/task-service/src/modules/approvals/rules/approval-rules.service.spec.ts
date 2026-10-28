@@ -401,14 +401,14 @@ describe('ApprovalRulesService.gate', () => {
   });
 
   it('decide(): changed meanwhile (new hours, new dates) — the approvals END: they were given for what it was', async () => {
-    const { ChangedMeanwhileException } = jest.requireActual('./already-decided');
+    const { ChangedMeanwhileException } = jest.requireActual('./conditional-write');
     await svc['gate']({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' });
     const moved = jest.fn(async () => {
-      throw new ChangedMeanwhileException('moved');
+      throw new ChangedMeanwhileException();
     });
     await expect(
       svc.decide({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }, moved),
-    ).rejects.toThrow('moved');
+    ).rejects.toThrow('look again');
     expect(steps[0].consumedAt).not.toBeNull();
   });
 

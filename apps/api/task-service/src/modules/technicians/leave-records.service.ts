@@ -18,7 +18,7 @@ import { CoverService } from './cover.service';
 import { workingDaysOf } from './member-requests';
 import { orgTimeOff } from './org-leave-list';
 import type { Prisma } from '@prisma/client';
-import { waitingReply } from '../approvals/rules/approval-rules-helpers';
+import { waitingReply } from '../approvals/rules/rule-gate-types';
 
 /** Leave as a record: entered by the office, listed, counted in working days, the balance. */
 @Injectable()

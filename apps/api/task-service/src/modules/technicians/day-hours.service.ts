@@ -14,13 +14,13 @@ import { ModuleRef } from '@nestjs/core';
 import { PrismaService, SERVICE_NAMES, success } from '@hbcfield/shared';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
-import { missedWrite } from '../approvals/rules/already-decided';
+import { missedWrite } from '../approvals/rules/conditional-write';
 import { DayHoursReshapeService } from '../attendance/shifts/day-hours-reshape.service';
 import { REQUEST_REFUSALS, SPACE_BRIEF, requestFacts } from './technicians-helpers';
 import { requestClashes } from './member-requests';
 import { ShiftResolverService } from '../attendance/core/shift-resolver.service';
 import { readDayHours } from './day-hours-read';
-import { waitingReply } from '../approvals/rules/approval-rules-helpers';
+import { waitingReply } from '../approvals/rules/rule-gate-types';
 
 export interface SetDayHoursInput {
   editorId: string;
@@ -199,7 +199,7 @@ export class DayHoursService {
     hours?: { startTime: string | null; endTime: string | null };
   }) {
     const include = { space: { select: SPACE_BRIEF }, approvedBy: { select: { firstName: true, lastName: true } } };
-    // Conditional, like every approve write (already-decided.ts): a request cancelled or set again meanwhile wins.
+    // Conditional, like every approve write (conditional-write.ts): a request cancelled or set again meanwhile wins.
     const saved = await this.prisma.timeOff
       .update({
         where: { id: a.id, status: 'PENDING', ...(a.hours ?? {}) },

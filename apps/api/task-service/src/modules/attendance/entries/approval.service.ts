@@ -11,9 +11,9 @@ import { EntryChangeLog } from './entry-change-log';
 import type { TimeEntryStatus } from '@prisma/client';
 import { announceDayDecided, type DecidedEntry } from './day-decided';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
-import { missedWrite } from '../../approvals/rules/already-decided';
+import { missedWrite } from '../../approvals/rules/conditional-write';
 import { BatchNotices } from '../../approvals/rules/approval-step-notices';
-import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
+import { waitingReply } from '../../approvals/rules/rule-gate-types';
 
 @Injectable()
 export class ApprovalService {
@@ -143,7 +143,7 @@ export class ApprovalService {
         subjectId: entry.userId,
         batch: data.batch,
       },
-      // Conditional on still waiting: a refusal at the same moment is never overwritten (already-decided.ts).
+      // Conditional on still waiting: a refusal at the same moment is never overwritten (conditional-write.ts).
       () =>
         this.prisma.timeEntry
           .update({

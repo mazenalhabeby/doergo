@@ -154,7 +154,7 @@ export function dedupeApprovals(items: ApprovalItem[]): ApprovalItem[] {
 export function approvalActionsFor(item: ApprovalItem) {
   const spec = APPROVAL_KIND_SPECS[item.kind];
   if (!item.canDecide || spec.needsPage?.(item)) return [];
-  // The first of two approvals is already theirs: only the second person approves; anybody may still reject.
-  if (item.step?.mine) return spec.actions.filter((a) => a.id !== 'approve');
+  // One of its approvals is already theirs (the first or a later one): the next person approves; anybody may reject.
+  if (item.step?.mine || item.step?.youApproved) return spec.actions.filter((a) => a.id !== 'approve');
   return spec.actions;
 }

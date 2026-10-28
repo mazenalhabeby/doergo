@@ -208,6 +208,47 @@ export async function standInBetween(
   return n > 0;
 }
 
+/**
+ * `standInBetween` for many items at once: the caller's stand-ins (either way round) that could matter since
+ * `since` — ONE query — and a pure test per item with the same window rule.
+ */
+export async function standInsOf(
+  prisma: { approvalDelegation: { findMany(args: unknown): Promise<StandInRow[]> } },
+  organizationId: string,
+  userId: string,
+  since: Date,
+): Promise<StandInRow[]> {
+  const DAY = 86_400_000;
+  return prisma.approvalDelegation.findMany({
+    where: {
+      organizationId,
+      endsOn: { gte: new Date(since.getTime() - DAY) },
+      OR: [{ fromUserId: userId }, { toUserId: userId }],
+    },
+    select: { fromUserId: true, toUserId: true, startsOn: true, endsOn: true, revokedAt: true },
+  });
+}
+export type StandInRow = { fromUserId: string; toUserId: string; startsOn: Date; endsOn: Date; revokedAt: Date | null };
+
+/** The rule of `standInBetween`, over rows already read: is `userId` a stand-in of one of `others` (or the other way). */
+export function standInCovers(
+  rows: StandInRow[],
+  userId: string,
+  others: string[],
+  since: Date,
+  until: Date = new Date(),
+): boolean {
+  const DAY = 86_400_000;
+  return rows.some(
+    (r) =>
+      r.startsOn.getTime() <= until.getTime() + DAY &&
+      r.endsOn.getTime() >= since.getTime() - DAY &&
+      (!r.revokedAt || r.revokedAt.getTime() >= since.getTime()) &&
+      ((r.fromUserId === userId && others.includes(r.toUserId)) ||
+        (r.toUserId === userId && others.includes(r.fromUserId))),
+  );
+}
+
 /** Does a stand-in grant hold `key` here (or anywhere, with no workspace)? */
 export function grantHolds(grant: DelegatedGrant, key: AccessPermissionKey, spaceId?: string | null): boolean {
   if (grant.org[key]) return true;

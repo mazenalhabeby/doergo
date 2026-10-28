@@ -60,6 +60,12 @@ export interface ApprovalItem {
     agreedMinutes?: number | null;
     waitsForYou?: boolean;
     youFinish?: boolean;
+    /** The caller already gave one of its approvals (Approve is not offered again). */
+    youApproved?: boolean;
+    /** The caller finishes it as an administrator — their own time stands as given. */
+    adminFinishes?: boolean;
+    /** How many have approved so far. */
+    approverCount?: number;
   };
   /**
    * Kind-specific facts, flat and serialisable — rendered by each app's own
@@ -80,8 +86,10 @@ export interface ApprovalsCount {
   /** Of which NOW — somebody waiting on the spot. */
   now: number;
   byKind: Partial<Record<ApprovalKind, number>>;
-  /** Of which half-way under an office rule and waiting for the CALLER (`step.waitsForYou`) — the phone's home card. */
-  yours: number;
+  /** Of which half-way under an office rule and waiting for the CALLER (`step.waitsForYou`). */
+  waitsForYou: number;
+  /** What the caller can act on NOW: not half-way, or half-way and waiting for them — the phone's home card. */
+  actionable: number;
 }
 
 /* ------------------------------------------------------------------ buttons */
@@ -212,11 +220,13 @@ export function sortApprovals(items: ApprovalItem[]): ApprovalItem[] {
 export function countApprovals(items: readonly ApprovalItem[]): ApprovalsCount {
   const byKind: Partial<Record<ApprovalKind, number>> = {};
   let now = 0;
-  let yours = 0;
+  let waitsForYou = 0;
+  let actionable = 0;
   for (const i of items) {
     byKind[i.kind] = (byKind[i.kind] ?? 0) + 1;
     if (i.group === 'NOW') now++;
-    if (i.step?.waitsForYou) yours++;
+    if (i.step?.waitsForYou) waitsForYou++;
+    if (!i.step || i.step.waitsForYou) actionable++;
   }
-  return { total: items.length, now, byKind, yours };
+  return { total: items.length, now, byKind, waitsForYou, actionable };
 }

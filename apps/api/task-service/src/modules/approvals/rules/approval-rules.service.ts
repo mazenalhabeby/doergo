@@ -11,14 +11,15 @@ import {
   personRoleAndName,
   SERVICE_NAMES,
   heldRoleIds,
+  approvalTurn,
   standInBetween,
   PrismaService,
 } from '@hbcfield/shared';
-import type { Decided, GateVerdict, RuleGateInput } from './approval-rules-helpers';
+import type { Decided, GateVerdict, RuleGateInput } from './rule-gate-types';
 import { consumeStep, joinRoleNames, openStep, stepCreateData, stepRules, storedFacts } from './approval-steps';
 import { BatchNotices, tellNextApprovers } from './approval-step-notices';
 
-export { type Decided, type GateVerdict, type RuleGateInput } from './approval-rules-helpers';
+export { type Decided, type GateVerdict, type RuleGateInput } from './rule-gate-types';
 
 /**
  * OFFICE RULES, enforced where the decision is made (shared `approval-rules.ts`).
@@ -122,12 +123,19 @@ export class ApprovalRulesService {
     // A "finished" step only this person ever approved is no decision by several — never a way to finish alone.
     const alone = !left.length && earlier.every((id) => id === input.deciderId);
     const leftNames = left.length || alone ? await this.roleLabel(left.length ? left : required) : '';
-    if (
-      alone ||
-      (left.length &&
-        (earlier.includes(input.deciderId) ||
-          (await standInBetween(this.prisma, input.organizationId, input.deciderId, earlier, open.firstAt))))
-    ) {
+    // The shared turn rule — the same one the inbox shows ("Waiting for you"), so it never promises a refusal.
+    const turn = approvalTurn({
+      callerId: input.deciderId,
+      admin: false, // an active administrator finished above
+      earlier,
+      standInOfEarlier:
+        left.length > 0 &&
+        !earlier.includes(input.deciderId) &&
+        (await standInBetween(this.prisma, input.organizationId, input.deciderId, earlier, open.firstAt)),
+      left,
+      heldLeft: [],
+    });
+    if (alone || turn.samePerson) {
       throw new ConflictException({
         message: `This needs another approval by ${leftNames}.`,
         code: 'SECOND_STEP_SAME_PERSON',

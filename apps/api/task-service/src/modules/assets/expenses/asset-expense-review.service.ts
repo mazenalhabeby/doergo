@@ -5,7 +5,7 @@ import { AssetAccessService, type AssetActor } from '../core/asset-access.servic
 import { AssetNotifier } from '../core/asset-notifier.service';
 import { assertNotSelfDecision } from '../../attendance/core/self-decision';
 import { EXPENSE_STATUS } from './asset-expense-helpers';
-import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
+import { waitingReply } from '../../approvals/rules/rule-gate-types';
 
 /**
  * What happens to an expense after it is sent: the member's own list, the office's

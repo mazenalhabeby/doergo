@@ -24,9 +24,9 @@ import { AttendanceRoutingService } from '../core/attendance-routing.service';
 import { askAboutOwnRequest } from '../../approvals/own-request-route';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { ExtraTimeDecisionService } from './extra-time-decision.service';
-import { approvedOvertimeByEntry, overtimeGateInput } from './overtime-rule-facts';
+import { approvedOvertimeByEntry, overtimeGateInput } from './overtime-gate';
 import { ruleStepItemId } from '@hbcfield/shared';
-import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
+import { waitingReply } from '../../approvals/rules/rule-gate-types';
 
 /** How far back an undecided outside time is still asked about — older belongs to closed payroll. */
 const LOOKBACK_DAYS = 31;

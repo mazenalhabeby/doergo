@@ -1,6 +1,6 @@
 import { COUNTED_ROUND_STATUSES, overtimeRuleFacts, type PrismaService } from '@hbcfield/shared';
-import type { RuleGateInput } from '../../approvals/rules/approval-rules-helpers';
-import { missedWrite } from '../../approvals/rules/already-decided';
+import type { RuleGateInput } from '../../approvals/rules/rule-gate-types';
+import { missedWrite } from '../../approvals/rules/conditional-write';
 
 /* What an overtime rule needs from the database; the pure builder is shared (`overtimeRuleFacts`). */
 

@@ -11,8 +11,8 @@ import { CountedTimeService } from '../core/counted-time.service';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
-import { approvedOvertimeByEntry, lastRoundCycle, overtimeGateInput, overtimeWriteMissed } from './overtime-rule-facts';
-import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
+import { approvedOvertimeByEntry, lastRoundCycle, overtimeGateInput, overtimeWriteMissed } from './overtime-gate';
+import { waitingReply } from '../../approvals/rules/rule-gate-types';
 
 /**
  * Approving extra time — the ONE decision path (office rules, self-decision,

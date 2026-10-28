@@ -10,7 +10,7 @@ import { assetScope } from '../core/asset-access.service';
 import { ALLOWED, PENDING_SCAN, PROPOSAL_STATUS, cleanProposalFields } from './asset-proposal-helpers';
 import { ProposalPlacesService } from './proposal-places.service';
 import { ProposalNoticesService } from './proposal-notices.service';
-import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
+import { waitingReply } from '../../approvals/rules/rule-gate-types';
 
 /**
  * The office's side of a page a member sent in: the queue, accepting (which runs

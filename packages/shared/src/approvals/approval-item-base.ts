@@ -12,6 +12,8 @@ export interface ApprovalContext {
   mayDecide: (kind: ApprovalKind, spaceId: string | null) => boolean;
   /** The organization's currency — an expense carries none of its own. */
   currency?: string | null;
+  /** The organization's time zone — "today" for dates already passed (absent = UTC). */
+  timeZone?: string | null;
 }
 
 /**

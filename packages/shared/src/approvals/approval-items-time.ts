@@ -11,6 +11,8 @@ import {
   type ApprovalContext,
   type Row,
 } from './approval-item-base';
+import { localDateKey } from '../utils/date';
+import { zoneOf } from '../utils/workspace-zone';
 
 export const timeApprovals = {
   /** A finished shift waiting for its hours to be approved. */
@@ -136,7 +138,7 @@ export const timeApprovals = {
         startDate: start,
         endDate: iso(r.endDate),
         // Every day of it is already over (asked late, or never answered) — the screens say so on the row.
-        datesPassed: datesPassed(r.endDate, ctx.now),
+        datesPassed: datesPassed(r.endDate, ctx.now, ctx.timeZone),
         startTime: r.startTime ?? null,
         endTime: r.endTime ?? null,
         workingDays: r.workingDays ?? null,
@@ -201,8 +203,11 @@ export function pastEndFacts(
   return past > 0 ? { pastEndMinutes: past, requestedMinutes: Math.min(1440, Math.ceil(past / 15) * 15) } : {};
 }
 
-/** Is a request's LAST day already behind us? A DATE column, compared as a calendar day (the day after it ended). */
-export function datesPassed(endDate: unknown, now: Date): boolean {
+/**
+ * Is a request's LAST day already behind us — in the organization's day (a DATE column is a calendar day, so "today"
+ * must be the organization's, never UTC's: HBC USA would see it on the evening of the last day).
+ */
+export function datesPassed(endDate: unknown, now: Date, timeZone?: string | null): boolean {
   const end = iso(endDate);
-  return !!end && end.slice(0, 10) < now.toISOString().slice(0, 10);
+  return !!end && end.slice(0, 10) < localDateKey(now, zoneOf(timeZone));
 }

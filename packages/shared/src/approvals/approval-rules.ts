@@ -1,4 +1,5 @@
 import type { ApprovalKind } from './approval-kinds';
+import type { Turn } from './approval-turn';
 
 /**
  * OFFICE RULES on approvals: past a threshold, a decision needs a SECOND
@@ -235,12 +236,12 @@ export interface ApprovalStepView {
   firstById: string;
   firstByName: string;
   roleName: string;
-  /** The smallest time any approver agreed so far (overtime), null when none was given. */
+  /** The smallest time any approver agreed so far (overtime), null when none was given or the kind takes no time. */
   agreedMinutes: number | null;
-  /** Asked for a caller: they hold a role still needed here and have not approved it yet (or are an administrator). */
-  waitsForCaller?: boolean;
-  /** Asked for a caller: their approval finishes it (an active administrator, or they hold every role still needed). */
-  callerFinishes?: boolean;
+  /** How many have approved so far. */
+  approverCount: number;
+  /** Asked for a caller (`approvalTurn`): the caller's turn, as the approval itself would judge it. */
+  turn?: Pick<Turn, 'waitsForYou' | 'youFinish' | 'youApproved' | 'adminFinishes'>;
 }
 
 export type NoticeStage = 'REMIND' | 'ESCALATE';

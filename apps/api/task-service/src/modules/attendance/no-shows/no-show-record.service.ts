@@ -14,7 +14,7 @@ import { DAY } from './no-show-record-helpers';
 import { PrismaService, spaceIdsOf } from '@hbcfield/shared';
 import { monthFacts, ruleRunsFor, runHints, runsFor, spaceRows } from './no-show-run-facts';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
-import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
+import { waitingReply } from '../../approvals/rules/rule-gate-types';
 
 /**
  * The no-show RECORD and its decisions (shared attendance/no-show.ts):

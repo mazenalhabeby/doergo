@@ -10,3 +10,14 @@ describe('datesPassed', () => {
   });
   it('no date → not passed', () => expect(datesPassed(null, now)).toBe(false));
 });
+
+describe('datesPassed in the organization’s day (round 10)', () => {
+  it('HBC USA: the evening of the last day is still the last day, not "passed"', () => {
+    const evening = new Date('2026-10-29T02:00:00Z'); // 19:00 on Oct 28 in Los Angeles, Oct 29 in UTC
+    expect(datesPassed('2026-10-28', evening, 'America/Los_Angeles')).toBe(false);
+    expect(datesPassed('2026-10-28', evening)).toBe(true); // UTC would say passed — the bug it fixes
+  });
+  it('Vienna: just after midnight the day before has passed', () => {
+    expect(datesPassed('2026-10-28', new Date('2026-10-28T23:30:00Z'), 'Europe/Vienna')).toBe(true);
+  });
+});

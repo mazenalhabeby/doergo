@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { overtimeWriteMissed } from '../../attendance/extra-time/overtime-rule-facts';
+import { overtimeWriteMissed } from '../../attendance/extra-time/overtime-gate';
 const roleHolderIds = jest.fn();
 jest.mock('@hbcfield/shared', () => ({
   ...jest.requireActual('@hbcfield/shared'),

@@ -22,8 +22,8 @@ export const CHANGED_MEANWHILE = 'CHANGED_MEANWHILE';
  * decided it, but the approvals were given for what it was, so `decide()` ends them like any 409.
  */
 export class ChangedMeanwhileException extends ConflictException {
-  constructor(message: string) {
-    super({ code: CHANGED_MEANWHILE, message });
+  constructor() {
+    super({ code: CHANGED_MEANWHILE, message: 'It changed a moment ago — look again and decide.' });
   }
 }
 
@@ -35,7 +35,7 @@ export class ChangedMeanwhileException extends ConflictException {
 export function missedWrite(stillWaiting: () => Promise<boolean>, decidedCode: string, message: string) {
   return async (e: unknown): Promise<never> => {
     if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025')) throw e;
-    if (await stillWaiting()) throw new ChangedMeanwhileException('It changed a moment ago — look again and decide.');
+    if (await stillWaiting()) throw new ChangedMeanwhileException();
     throw new ConflictException({ code: decidedCode, message });
   };
 }

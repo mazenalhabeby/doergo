@@ -22,8 +22,8 @@ import { TaskAssignmentService } from '../assignment/task-assignment.service';
 import { portalRequestScope } from './portal-request';
 import { emitEvent, taskAssignedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import type { TaskPriority } from '@prisma/client';
-import { alreadyDecided } from '../../approvals/rules/already-decided';
-import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
+import { alreadyDecided } from '../../approvals/rules/conditional-write';
+import { waitingReply } from '../../approvals/rules/rule-gate-types';
 
 /** Turning a client's request into a job, closing it, or sending it back — triage. */
 @Injectable()

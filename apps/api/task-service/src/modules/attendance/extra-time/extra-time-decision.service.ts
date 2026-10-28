@@ -10,8 +10,8 @@ import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
 import { COUNTED_ROUND_STATUSES } from '@hbcfield/shared';
-import { lastRoundCycle, overtimeGateInput, overtimeWriteMissed } from './overtime-rule-facts';
-import { waitingReply } from '../../approvals/rules/approval-rules-helpers';
+import { lastRoundCycle, overtimeGateInput, overtimeWriteMissed } from './overtime-gate';
+import { waitingReply } from '../../approvals/rules/rule-gate-types';
 
 /** The office deciding extra time after the fact: refusing it, taking back approved overtime, adding it. */
 
@@ -169,7 +169,7 @@ export class ExtraTimeDecisionService {
     });
     const lastCycle = await lastRoundCycle(this.prisma, entry.id);
 
-    // Claimed on the end this decision read: two at once write one round (already-decided.ts), never two.
+    // Claimed on the end this decision read: two at once write one round (conditional-write.ts), never two.
     const moved = this.prisma.timeEntry.update({
       where: { id: entry.id, expectedClockOutAt: entry.expectedClockOutAt },
       data: { expectedClockOutAt: newExpected },

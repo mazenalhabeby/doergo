@@ -1,4 +1,4 @@
-import { approvedOvertimeByEntry, lastRoundCycle } from '../extra-time/overtime-rule-facts';
+import { approvedOvertimeByEntry, lastRoundCycle } from '../extra-time/overtime-gate';
 
 /*
   What an office rule on overtime counts as ALREADY approved on a shift: every approved round, and time outside

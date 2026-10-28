@@ -18,8 +18,8 @@ import { CoverService } from './cover.service';
 import { requestFactsFor, type RequestRuleRow } from '../approvals/rules/request-rule-facts';
 import { workingDaysOf } from './member-requests';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
-import { missedWrite } from '../approvals/rules/already-decided';
-import { waitingReply } from '../approvals/rules/approval-rules-helpers';
+import { missedWrite } from '../approvals/rules/conditional-write';
+import { waitingReply } from '../approvals/rules/rule-gate-types';
 
 /** Deciding time off: approve or refuse, cancel, change, delete. Cover and working days as the member saw them. */
 @Injectable()
@@ -110,7 +110,7 @@ export class TimeOffDecisionService {
 
     // Office rules: past a threshold this approval may be one of several and the request stays pending.
     if (!approved) await this.rules.clear(organizationId, 'request', timeOffId);
-    // Conditional on still waiting: a refusal landing at the same moment is never overwritten (already-decided.ts).
+    // Conditional on still waiting: a refusal landing at the same moment is never overwritten (conditional-write.ts).
     const write = () =>
       this.prisma.timeOff
         .update({

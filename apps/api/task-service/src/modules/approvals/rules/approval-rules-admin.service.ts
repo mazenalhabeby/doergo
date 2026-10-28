@@ -9,7 +9,7 @@ import {
   roleNames,
   PrismaService,
 } from '@hbcfield/shared';
-import { RULE_MESSAGES } from './approval-rules-helpers';
+import { RULE_MESSAGES } from './rule-gate-types';
 import { roleCanDecide, ruleKindsByRole } from './rule-role-deciders';
 
 /**

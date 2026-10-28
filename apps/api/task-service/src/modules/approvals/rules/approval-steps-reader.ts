@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import {
+  approvalTurn,
   memberRolesNow,
+  standInCovers,
+  standInsOf,
   personName,
   peopleNames,
   roleNames,
@@ -45,6 +48,7 @@ export class ApprovalStepsReader {
               requiredRoleIds: true,
               doneRoleIds: true,
               approverIds: true,
+              firstAt: true,
               minutes: true,
               facts: true,
             },
@@ -62,10 +66,13 @@ export class ApprovalStepsReader {
         rules.filter((x) => x.kind === r.kind),
       );
     const leftOf = new Map(rows.map((r) => [r, left(r)]));
-    const [people, roles, caller] = await Promise.all([
+    const since = new Date(Math.min(...rows.map((r) => r.firstAt.getTime())));
+    const [people, roles, caller, standIns] = await Promise.all([
       peopleNames(this.prisma, [...new Set(rows.map((r) => r.firstById))]),
       roleNames(this.prisma, [...new Set([...leftOf.values()].flat())]),
       callerId ? memberRolesNow(this.prisma, organizationId, callerId, new Date()) : null,
+      // The gate refuses a leader and the stand-in deciding with their authority as two approvals — so does the hint.
+      callerId ? standInsOf(this.prisma, organizationId, callerId, since) : [],
     ]);
     const personById = new Map(people.map((p) => [p.id, personName(p)]));
     const roleById = new Map(roles.map((r) => [r.id, r.name]));
@@ -77,8 +84,10 @@ export class ApprovalStepsReader {
         firstById: r.firstById,
         firstByName: personById.get(r.firstById) ?? '',
         roleName: joinRoleNames(leftOf.get(r)!, roleById),
-        agreedMinutes: r.minutes ?? null,
-        ...(caller ? forCaller(caller, r, leftOf.get(r)!) : {}),
+        // Only overtime is agreed in minutes; another kind's stored number is a fact, not an agreed time.
+        agreedMinutes: r.kind === 'overtime' ? (r.minutes ?? null) : null,
+        approverCount: new Set([r.firstById, ...r.approverIds]).size,
+        ...(caller ? { turn: callerTurn(caller, standIns, r, leftOf.get(r)!) } : {}),
       }));
   }
 }
@@ -86,23 +95,27 @@ export class ApprovalStepsReader {
 type CallerRoles = NonNullable<Awaited<ReturnType<typeof memberRolesNow>>>;
 
 /**
- * The gate's own reading, for one caller: an active administrator finishes anything; otherwise it waits for them
- * when they hold a role still needed (org-wide, or in one of the item's workspaces) and have not approved it yet,
- * and they finish it when they hold EVERY role still needed. Never a second approval by the same person.
+ * The caller's turn on one step, by the gate's own rule (shared `approvalTurn`): everyone who approved — the first
+ * approver included — and their stand-ins are refused as the same person; it waits for the caller when they hold a
+ * role still needed (org-wide, or in one of the item's workspaces).
  */
-function forCaller(
+function callerTurn(
   caller: CallerRoles,
-  step: { approverIds: string[]; facts: unknown },
+  standIns: Awaited<ReturnType<typeof standInsOf>>,
+  step: { firstById: string; approverIds: string[]; firstAt: Date; facts: unknown },
   left: string[],
-): { waitsForCaller: boolean; callerFinishes: boolean } {
-  if (step.approverIds.includes(caller.id)) return { waitsForCaller: false, callerFinishes: false };
-  if (caller.admin) return { waitsForCaller: true, callerFinishes: true };
+) {
+  const earlier = [...new Set([step.firstById, ...step.approverIds])];
   const spaces = new Set(parseStoredFacts(step.facts)?.spaceIds ?? []);
   const holds = (roleId: string) =>
     caller.orgRoleId === roleId || caller.spaceRoles.some((a) => a.roleId === roleId && spaces.has(a.spaceId));
-  const held = left.filter(holds);
-  return {
-    waitsForCaller: held.length > 0,
-    callerFinishes: held.length > 0 && held.length === left.length && left.length === 1,
-  };
+  const { waitsForYou, youFinish, youApproved, adminFinishes } = approvalTurn({
+    callerId: caller.id,
+    admin: caller.admin,
+    earlier,
+    standInOfEarlier: standInCovers(standIns, caller.id, earlier, step.firstAt),
+    left,
+    heldLeft: left.filter(holds),
+  });
+  return { waitsForYou, youFinish, youApproved, adminFinishes };
 }

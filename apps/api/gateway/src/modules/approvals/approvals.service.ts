@@ -72,6 +72,7 @@ export class ApprovalsService {
       me: user.id,
       mayDecide: (kind, spaceId) => mayDecide(user, kind, spaceId),
       currency: typeof user?.orgCurrency === 'string' ? user.orgCurrency : null,
+      timeZone: typeof user?.organizationTimezone === 'string' ? user.organizationTimezone : null,
     };
     const get = (path: string) => this.get(caller, path);
     const holds = (kind: ApprovalKind) => holdsAnywhere(user, APPROVAL_KIND_SPECS[kind].decideKey);
@@ -205,8 +206,12 @@ export class ApprovalsService {
             roleName: s.roleName,
             mine: s.firstById === user.id,
             agreedMinutes: s.agreedMinutes,
-            waitsForYou: s.waitsForCaller ?? false,
-            youFinish: s.callerFinishes ?? false,
+            approverCount: s.approverCount,
+            // The caller's turn, by the approval's own rule (shared `approvalTurn`).
+            waitsForYou: s.turn?.waitsForYou ?? false,
+            youFinish: s.turn?.youFinish ?? false,
+            youApproved: s.turn?.youApproved ?? s.firstById === user.id,
+            adminFinishes: s.turn?.adminFinishes ?? false,
           };
       }
     } catch (e) {

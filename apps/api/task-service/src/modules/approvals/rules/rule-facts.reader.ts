@@ -5,7 +5,7 @@ import { PrismaService } from '@hbcfield/shared';
 export type { RuleItem, RuleItemWindow } from './rule-items';
 import { CoverService } from '../../technicians/cover.service';
 import { OutsideShiftService } from '../../attendance/extra-time/outside-shift.service';
-import { approvedOvertimeByEntry } from '../../attendance/extra-time/overtime-rule-facts';
+import { approvedOvertimeByEntry } from '../../attendance/extra-time/overtime-gate';
 import { overtimeRuleFacts } from '@hbcfield/shared';
 import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort, type RequestRuleRow } from './request-rule-facts';
 import { restGapOf, stretchDaysMany } from './leave-stretch';

@@ -2,12 +2,12 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { isAbsence, PrismaService, success } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
-import { alreadyDecided, CHANGED_MEANWHILE } from '../approvals/rules/already-decided';
+import { alreadyDecided, CHANGED_MEANWHILE } from '../approvals/rules/conditional-write';
 import { REQUEST_RULE_SELECT, requestFactsFor } from '../approvals/rules/request-rule-facts';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { CoverService } from './cover.service';
 import { workingDaysOf } from './member-requests';
-import { waitingReply } from '../approvals/rules/approval-rules-helpers';
+import { waitingReply } from '../approvals/rules/rule-gate-types';
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -81,7 +81,7 @@ export class LeaveEditsService {
       ...(datesChanged ? { startDate: start, endDate: end } : {}),
       ...(data.reason !== undefined ? { reason: data.reason?.trim() || null } : {}),
     };
-    // Conditional on the request as read (already-decided.ts): cancelled, decided or re-dated meanwhile → 409, never
+    // Conditional on the request as read (conditional-write.ts): cancelled, decided or re-dated meanwhile → 409, never
     // a request brought back to life.
     const asRead = {
       id: data.timeOffId,
