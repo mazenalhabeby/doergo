@@ -107,6 +107,12 @@ def main():
     leader_tok = login('mike')
     leader = me(leader_tok)
     print('\n— A. the inbox')
+    # A kind that cannot be read never fails the inbox (by design) — so say it here: join requests vanished for a
+    # day because the inbox asked for more than the list's own DTO allowed (400, shown only as "unavailable").
+    for who in ('client', 'manager'):
+        status, body = call('GET', '/approvals', login(who))
+        gone = data(body).get('unavailable', []) if status == 200 else ['(no inbox)']
+        check(f'every kind is readable for {who} (none unavailable)', gone == [], gone)
     items = inbox(leader_tok)
     check('the leader has items', len(items) > 0, len(items))
     check('every item says why', all(i.get('why', {}).get('via') for i in items))

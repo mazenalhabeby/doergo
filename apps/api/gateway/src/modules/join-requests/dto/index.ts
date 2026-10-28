@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsEnum, IsInt, Min, Max } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { Role } from '@hbcfield/shared';
+import { JOIN_REQUEST_MAX_PENDING_PER_ORG, Role } from '@hbcfield/shared';
 
 /**
  * List join requests query DTO
@@ -24,7 +24,8 @@ export class ListJoinRequestsDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(50)
+  // Every request an organization can have waiting — the approvals inbox reads them all (it asked 100 and got 400).
+  @Max(JOIN_REQUEST_MAX_PENDING_PER_ORG)
   limit?: number;
 }
 
@@ -60,6 +61,6 @@ export class RejectJoinRequestDto {
   @ApiPropertyOptional({ description: 'Reason for rejection' })
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   reason?: string;
 }
