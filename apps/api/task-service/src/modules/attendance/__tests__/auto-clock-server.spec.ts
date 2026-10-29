@@ -230,9 +230,14 @@ const autoEntry = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-function undoPrisma(entry: any, opts: { logged?: boolean; worked?: boolean } = {}) {
+function undoPrisma(entry: any, opts: { logged?: boolean; worked?: boolean; removed?: number; statusNow?: string } = {}) {
   const prisma: any = {
-    timeEntry: { findFirst: jest.fn().mockResolvedValue(entry), delete: jest.fn().mockResolvedValue({}) },
+    timeEntry: {
+      findFirst: jest.fn().mockResolvedValue(entry),
+      // The conditional delete inside the transaction: 0 = something landed meanwhile.
+      deleteMany: jest.fn().mockResolvedValue({ count: opts.removed ?? 1 }),
+      findUnique: jest.fn().mockResolvedValue(opts.statusNow ? { status: opts.statusNow } : null),
+    },
     activityLog: { findFirst: jest.fn().mockResolvedValue(opts.logged ? { id: 'log' } : null), create: jest.fn() },
     taskEvent: { findFirst: jest.fn().mockResolvedValue(opts.worked ? { id: 'ev' } : null) },
     shiftInstance: { findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
@@ -257,14 +262,16 @@ describe('undo an automatic clock-in', () => {
       userId: 'intruder',
       organizationId: 'org-1',
     });
-    expect(prisma.timeEntry.delete).not.toHaveBeenCalled();
+    expect(prisma.timeEntry.deleteMany).not.toHaveBeenCalled();
   });
 
   it('removes the entry and leaves the audit row', async () => {
     const prisma = undoPrisma(autoEntry());
     const { svc, emit } = buildAuto(prisma);
     await expect(undo(svc)).resolves.toMatchObject({ data: { undone: true } });
-    expect(prisma.timeEntry.delete).toHaveBeenCalledWith({ where: { id: 'e1' } });
+    expect(prisma.timeEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'e1', status: TimeEntryStatus.CLOCKED_IN, clockOutAt: null, breaks: { none: {} }, workLog: { none: {} } },
+    });
     expect(prisma.activityLog.create.mock.calls[0][0].data).toMatchObject({
       eventType: AUTO_UNDO_EVENT,
       resourceId: 'e1',
@@ -296,7 +303,28 @@ describe('undo an automatic clock-in', () => {
     await expect(undo(svc)).rejects.toMatchObject({
       response: { code: 'AUTO_CLOCK_UNDO_NOT_ALLOWED', params: { why } },
     });
-    expect(prisma.timeEntry.delete).not.toHaveBeenCalled();
+    // Refused before or inside the transaction: no audit row, no shift expected again (rolled back).
+    expect(prisma.activityLog.create).not.toHaveBeenCalled();
+    expect(prisma.shiftInstance.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a rest / work-log note landing between the check and the delete', TimeEntryStatus.CLOCKED_IN, 'WORK_RECORDED'],
+    ['a clock-out landing between the check and the delete', TimeEntryStatus.CLOCKED_OUT, 'CLOSED'],
+  ])('the delete is CONDITIONAL — %s is refused, nothing written', async (_label, statusNow, why) => {
+    const prisma = undoPrisma(autoEntry(), { removed: 0, statusNow });
+    const { svc, emit } = buildAuto(prisma);
+    await expect(undo(svc)).rejects.toMatchObject({ response: { params: { why } } });
+    expect(prisma.activityLog.create).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it('work events are asked again INSIDE the transaction, after the delete claimed the row', async () => {
+    const prisma = undoPrisma(autoEntry(), { worked: true });
+    const { svc } = buildAuto(prisma);
+    await expect(undo(svc)).rejects.toMatchObject({ response: { params: { why: 'WORK_RECORDED' } } });
+    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(prisma.activityLog.create).not.toHaveBeenCalled();
   });
 
   it('refuses past clock-in + dwell + 10 + slack — judged at the moment of the tap', async () => {
@@ -608,6 +636,19 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         update: jest.fn(),
       },
+      // The automatic close's candidates are read eligible in SQL (auto-close-candidates.ts): the shift
+      // query gets the open shifts with a planned end, the presence query nothing here.
+      $queryRaw: jest.fn(async (strings: TemplateStringsArray, ...values: any[]) => {
+        const shiftQuery = values.some((v) => v?.strings?.join('').includes('"endIsDailyLimit" = false'))
+          || strings.join('').includes('"endIsDailyLimit" = false');
+        return shiftQuery
+          ? entries
+              .filter((e) => e.expectedClockOutAt)
+              .map(({ id, userId, locationId, clockInAt, expectedClockOutAt, expectedClockInAt }) => ({
+                id, userId, locationId, clockInAt, expectedClockOutAt, expectedClockInAt,
+              }))
+          : [];
+      }),
       spaceAssignment: {
         findFirst: jest.fn().mockResolvedValue(null), // no own rules there (D1)
         findMany: jest.fn().mockResolvedValue([
@@ -662,6 +703,24 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
     expect(prisma.spaceAssignment.findMany).toHaveBeenCalledTimes(1);
   });
 
+  it('never closes somebody the phone still reports ON SITE (left to the abandoned-shift close)', async () => {
+    const entry = { ...shiftEntry(), presence: 'ON_SITE', lastSeenAt: at('15:00'), user: { firstName: 'M', lastName: 'W' } };
+    const prisma = sweepPrisma([entry]);
+    const svc = clockOutServices(
+      prisma,
+      { emit: jest.fn() } as any,
+      {} as any,
+      new CountedTimeService(prisma),
+      {} as any,
+      {} as any,
+      {} as any,
+      { pauseAtClockOut: jest.fn() } as any,
+      buildAuto(prisma).svc,
+    );
+    const res: any = await svc.closeAbandonedShifts(now);
+    expect(res.data.closed).toBe(0);
+  });
+
   it('does not close before closeAfterMinutes', async () => {
     const prisma = sweepPrisma([shiftEntry()]);
     const svc = clockOutServices(
@@ -690,7 +749,7 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
       },
     ];
     const prisma: any = {
-      timeEntry: { findMany: jest.fn().mockResolvedValue(due), update: jest.fn(), updateMany: jest.fn() },
+      timeEntry: { findMany: jest.fn().mockResolvedValue(due), update: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       spaceAssignment: { findMany: sweepPrisma([]).spaceAssignment.findMany },
     };
     const emit = jest.fn();
