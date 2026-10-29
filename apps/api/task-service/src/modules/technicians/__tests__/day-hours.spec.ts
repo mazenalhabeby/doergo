@@ -278,6 +278,7 @@ describe('DayHoursService — who may set whose day', () => {
       rostered?: boolean;
       leave?: unknown[];
       previous?: unknown;
+      covering?: unknown[];
       rules?: unknown;
     } = {},
   ) {
@@ -299,8 +300,11 @@ describe('DayHoursService — who may set whose day', () => {
         ),
       },
       timeOff: {
-        findMany: jest.fn().mockResolvedValue(opts.leave ?? []),
-        findFirst: jest.fn().mockResolvedValue(opts.previous ?? null),
+        // The changed hours already covering the day (kind HOURS alone), else the clash reader.
+        findMany: jest.fn(async (a: { where: { kind: unknown } }) =>
+          a.where.kind === 'HOURS' ? (opts.covering ?? (opts.previous ? [opts.previous] : [])) : (opts.leave ?? []),
+        ),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         create: jest.fn(async (a: { data: Record<string, unknown> }) => ({
           id: 't1',
           technician: { spaceAssignments: [{ spaceId: 'sp1' }] },
@@ -362,6 +366,27 @@ describe('DayHoursService — who may set whose day', () => {
       where: { id: 'prev' },
       data: { status: 'APPROVED' },
     });
+  });
+
+  it('hours with no workspace and hours for this workspace never both survive one day — the newer replaces', async () => {
+    const everywhere = { id: 'any', startDate: at('2026-10-24'), endDate: at('2026-10-24'), status: 'APPROVED', spaceId: null };
+    const { svc, prisma } = make({ covering: [everywhere] });
+    await svc.setDayHours(input({ endTime: '17:00' }));
+    const where = prisma.timeOff.findMany.mock.calls.find((c: any[]) => c[0].where.kind === 'HOURS')![0].where as any;
+    expect(where.OR).toEqual([{ spaceId: 'sp1' }, { spaceId: null }]);
+    // The everywhere-answer becomes this workspace's, one row for the day.
+    expect(prisma.timeOff.create).not.toHaveBeenCalled();
+    expect(prisma.timeOff.update.mock.calls[0][0]).toMatchObject({ where: { id: 'any' }, data: { spaceId: 'sp1', endTime: '17:00' } });
+
+    // Both already there: this workspace's is kept and changed, the other ends (conditionally).
+    const own = { ...everywhere, id: 'own', spaceId: 'sp1' };
+    const both = make({ covering: [everywhere, own] });
+    await both.svc.setDayHours(input({ endTime: '17:00' }));
+    expect(both.prisma.timeOff.updateMany).toHaveBeenCalledWith({
+      where: { id: 'any', status: { in: ['PENDING', 'APPROVED'] } },
+      data: { status: 'CANCELED' },
+    });
+    expect(both.prisma.timeOff.update.mock.calls[0][0]).toMatchObject({ where: { id: 'own' } });
   });
 
   it('setting it again starts its office-rule approvals over — the hours changed', async () => {

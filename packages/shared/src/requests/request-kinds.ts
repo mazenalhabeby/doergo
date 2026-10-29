@@ -196,6 +196,20 @@ export interface ApprovedDayRequest {
   startTime?: string | null;
   endTime?: string | null;
   minutes?: number | null;
+  /** When it was approved — the later of two changed-hours answers for one day wins. */
+  approvedAt?: Date | string | null;
+}
+
+/**
+ * The order a day's requests apply in — the LAST changed hours win: everywhere-requests (no
+ * workspace) first, then this workspace's own (the more specific answer); within each, by when
+ * it was approved (the newer last), then by id. Never the order a database happened to return.
+ */
+export function requestApplyOrder<T extends ApprovedDayRequest>(requests: readonly T[]): T[] {
+  const t = (r: ApprovedDayRequest) => (r.approvedAt ? new Date(r.approvedAt).getTime() : 0);
+  return [...requests].sort(
+    (a, b) => Number(!!a.spaceId) - Number(!!b.spaceId) || t(a) - t(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  );
 }
 
 /** What today's approved requests change about a clock-in at `spaceId`. */
@@ -230,7 +244,9 @@ export function applyApprovedRequests(input: {
   requests: readonly ApprovedDayRequest[];
   atLocal: (hhmm: string, nextDay?: boolean) => Date;
 }): DayRequestEffect {
-  const here = input.requests.filter((r) => !r.spaceId || !input.spaceId || r.spaceId === input.spaceId);
+  const here = requestApplyOrder(
+    input.requests.filter((r) => !r.spaceId || !input.spaceId || r.spaceId === input.spaceId),
+  );
   let start = input.expectedClockInAt;
   let end = input.expectedClockOutAt;
   let remoteApproved = false;

@@ -118,29 +118,38 @@ export class DayHoursService {
       });
     }
 
-    const previous = await this.prisma.timeOff.findFirst({
+    /*
+      ⚠️ One answer per day: hours set for THIS workspace and hours with no workspace (which apply
+      everywhere) both shaped the same day, the winner whichever the database returned first. Any
+      changed hours that would apply here are the previous answer — the newer replaces them.
+    */
+    const covering = await this.prisma.timeOff.findMany({
       where: {
         technicianId,
         kind: 'HOURS',
         status: { in: ['PENDING', 'APPROVED'] },
         startDate: { lte: day },
         endDate: { gte: day },
-        spaceId,
+        ...(spaceId ? { OR: [{ spaceId }, { spaceId: null }] } : {}),
       },
-      select: { id: true, startDate: true, endDate: true, status: true },
+      select: { id: true, startDate: true, endDate: true, status: true, spaceId: true },
+      orderBy: { id: 'asc' },
     });
     // A changed-hours request over several days is one answer for all of them: changing one day of it is its own edit.
-    if (previous && (previous.startDate.getTime() !== day.getTime() || previous.endDate.getTime() !== day.getTime())) {
+    const longer = covering.find((p) => p.startDate.getTime() !== day.getTime() || p.endDate.getTime() !== day.getTime());
+    if (longer) {
       throw new BadRequestException({
         code: 'TIMEOFF_OVERLAP',
         params: {
-          from: toISODateString(previous.startDate),
-          to: toISODateString(previous.endDate),
-          status: previous.status,
+          from: toISODateString(longer.startDate),
+          to: toISODateString(longer.endDate),
+          status: longer.status,
         },
         message: 'Changed hours already cover this day as part of a longer request.',
       });
     }
+    const previous = covering.find((p) => p.spaceId === spaceId) ?? covering[0] ?? null;
+    const replaced = covering.filter((p) => p !== previous);
 
     // Saved waiting; the office's own entry is the first approval — an office rule on requests may ask more people.
     const fields = {
@@ -153,8 +162,16 @@ export class DayHoursService {
     };
     // With the member's workspaces, as the one request reader takes it (request-rule-facts.ts).
     const include = { technician: REQUEST_RULE_SELECT.technician };
+    // The others for that day end here, conditionally (only while still waiting or approved).
+    for (const r of replaced) {
+      await this.prisma.timeOff.updateMany({
+        where: { id: r.id, status: { in: ['PENDING', 'APPROVED'] } },
+        data: { status: 'CANCELED' },
+      });
+      await this.rules.clear(organizationId, 'request', r.id);
+    }
     const pending = previous
-      ? await this.prisma.timeOff.update({ where: { id: previous.id }, data: fields, include })
+      ? await this.prisma.timeOff.update({ where: { id: previous.id }, data: { ...fields, spaceId }, include })
       : await this.prisma.timeOff.create({
           data: { technicianId, kind: 'HOURS', startDate: day, endDate: day, spaceId, ...fields },
           include,

@@ -55,7 +55,10 @@ export async function approvedRequestsAround(
       minutes: true,
       startDate: true,
       endDate: true,
+      approvedAt: true,
     },
+    // Deterministic; the shared rule (`requestApplyOrder`) decides which answer wins.
+    orderBy: [{ approvedAt: 'asc' }, { id: 'asc' }],
   });
   return rows as DayRequestRow[];
 }
