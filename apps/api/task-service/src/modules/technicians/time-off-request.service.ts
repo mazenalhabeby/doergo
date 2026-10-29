@@ -17,7 +17,7 @@ import { SPACE_BRIEF, REQUEST_REFUSALS, requestFacts } from './technicians-helpe
 import { NotificationRoutingService } from '../notification-routing/notification-routing.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { CoverService } from './cover.service';
-import { requestClashes, requestSpaces, workingDaysOf } from './member-requests';
+import { memberToday, requestClashes, requestSpaces, workingDaysOf } from './member-requests';
 import { TimeOffDecisionService } from './time-off-decision.service';
 import { emitEvent, timeOffRequestedEvent } from '@hbcfield/shared/microservices';
 
@@ -135,8 +135,10 @@ export class TimeOffRequestService {
     /*
       Not in the past. Leave keeps its rule (from tomorrow — the day itself is gone by the time
       anybody decides it); a working-day request may be about TODAY: "may I finish at 18:00".
+      ⚠️ TODAY is the member's own day (memberToday), never UTC's.
     */
-    if (leave ? start < new Date() : value.startDate < toISODateString(new Date())) {
+    const today = await memberToday(this.prisma, technicianId, value.spaceId);
+    if (leave ? value.startDate <= today : value.startDate < today) {
       throw new BadRequestException({ code: 'REQUEST_IN_PAST', message: 'Cannot request time off in the past' });
     }
 

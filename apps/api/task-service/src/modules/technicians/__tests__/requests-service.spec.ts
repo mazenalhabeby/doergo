@@ -23,6 +23,7 @@ function build(
     assignments?: Array<{ allowRemote: boolean | null; space: Record<string, unknown> }>;
     clashes?: any[];
     foreignSpace?: { organizationId: string } | null;
+    zone?: string;
   } = {},
 ) {
   const prisma: any = {
@@ -32,6 +33,7 @@ function build(
         .mockResolvedValue(
           opts.member === undefined ? { id: 'mike', allowRemote: true, role: 'EMPLOYEE' } : opts.member,
         ),
+      findUnique: jest.fn().mockResolvedValue({ timezone: opts.zone ?? null, organization: null, spaceAssignments: [] }),
     },
     spaceAssignment: {
       findMany: jest.fn().mockResolvedValue(opts.assignments ?? [{ allowRemote: null, space: space() }]),
@@ -189,6 +191,24 @@ describe('requests — what is stored and said', () => {
       'ok',
     );
     expect(await code(build().service.requestTimeOff(ask({ startDate: today })))).toBe('REQUEST_IN_PAST');
+  });
+
+  it('"today" is the MEMBER\'s day: 23:30 UTC is already tomorrow in Riyadh', async () => {
+    jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] }).setSystemTime(new Date('2026-11-02T22:30:00Z'));
+    try {
+      const hours = (startDate: string) => ask({ kind: 'HOURS', startDate, endTime: '18:00' });
+      const riyadh = () => build({ zone: 'Asia/Riyadh' }).service;
+      expect(await code(riyadh().requestTimeOff(hours('2026-11-02')))).toBe('REQUEST_IN_PAST');
+      expect(await code(riyadh().requestTimeOff(hours('2026-11-03')))).toBe('ok');
+      // Leave from the member's today is past too; from their tomorrow it is fine.
+      expect(await code(riyadh().requestTimeOff(ask({ startDate: '2026-11-03' })))).toBe('REQUEST_IN_PAST');
+      expect(await code(riyadh().requestTimeOff(ask({ startDate: '2026-11-04' })))).toBe('ok');
+      // In New York it is still the 2nd.
+      const ny = build({ zone: 'America/New_York' }).service;
+      expect(await code(ny.requestTimeOff(hours('2026-11-02')))).toBe('ok');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('old phones (no kind) still ask for vacation leave, counted in working days', async () => {

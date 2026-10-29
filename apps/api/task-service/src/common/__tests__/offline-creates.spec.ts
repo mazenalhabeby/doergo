@@ -64,7 +64,7 @@ describe('time off', () => {
   it('answers a resend before the overlap rule could refuse it as overlapping itself', async () => {
     const prior = { id: 'to-phone-0000000001', technicianId: 'u1', startDate: new Date(), endDate: new Date() };
     const prisma: any = {
-      user: { findFirst: jest.fn(async () => ({ id: 'u1' })) },
+      user: { findFirst: jest.fn(async () => ({ id: 'u1' })), findUnique: jest.fn(async () => null) },
       timeOff: { findUnique: jest.fn(async () => prior), findFirst: jest.fn(async () => prior), create: jest.fn() },
     };
     const svc = withDeps(TimeOffRequestService, { prisma });
@@ -76,7 +76,7 @@ describe('time off', () => {
 
   it("refuses an id that is somebody else's request", async () => {
     const prisma: any = {
-      user: { findFirst: jest.fn(async () => ({ id: 'u1' })) },
+      user: { findFirst: jest.fn(async () => ({ id: 'u1' })), findUnique: jest.fn(async () => null) },
       timeOff: { findUnique: jest.fn(async () => ({ id: 'x', technicianId: 'u2' })) },
     };
     const svc = withDeps(TimeOffRequestService, { prisma });

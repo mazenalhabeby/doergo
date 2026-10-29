@@ -48,7 +48,10 @@ describe('who is told about a leave request', () => {
     routing = { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) };
     cover = { assessMany: jest.fn().mockResolvedValue(new Map()) };
     prisma = {
-      user: { findFirst: jest.fn().mockResolvedValue({ id: 'mike', organizationId: 'org1' }) },
+      user: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'mike', organizationId: 'org1' }),
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
       spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
       timeOff: {
         findFirst: jest.fn().mockResolvedValue(null),

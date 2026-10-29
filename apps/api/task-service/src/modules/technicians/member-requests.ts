@@ -8,6 +8,8 @@ import {
   toISODateString,
   personRemoteFacts,
   activeAssignmentWhere,
+  localDateKey,
+  memberDayZone,
   type PrismaService,
 } from '@hbcfield/shared';
 import type { CalendarRulesService } from '../calendar/calendar-rules.service';
@@ -114,4 +116,32 @@ export async function workingDaysOf(
     });
   }
   return count.counted;
+}
+
+/**
+ * The member's TODAY, as a local day key: their own zone → the workspace the request is about
+ * (else one they work at) → the organization's (`memberDayZone`). "In the past" is judged on it —
+ * at 00:30 in Riyadh it is already tomorrow there, while UTC still says yesterday.
+ */
+export async function memberToday(
+  prisma: PrismaService,
+  userId: string,
+  spaceId?: string | null,
+  now = new Date(),
+): Promise<string> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      timezone: true,
+      organization: { select: { timezone: true } },
+      spaceAssignments: {
+        where: { ...activeAssignmentWhere(userId, now), ...(spaceId ? { spaceId } : {}) },
+        select: { space: { select: { timezone: true } } },
+        orderBy: { effectiveFrom: 'asc' },
+        take: 1,
+      },
+    },
+  });
+  const workspaceTz = u?.spaceAssignments?.[0]?.space?.timezone;
+  return localDateKey(now, memberDayZone(u?.timezone, u?.organization?.timezone, workspaceTz));
 }
