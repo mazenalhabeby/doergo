@@ -263,6 +263,28 @@ describe('DayHoursReshapeService — through the same rule as a clock-in', () =>
     expect(updates).toHaveLength(0);
   });
 
+  it('a night 22:00–06:00: a clock-in at 00:30 the next morning is that night, re-shaped by it', async () => {
+    const late = entry({
+      clockInAt: at('2026-10-24T22:30:00Z'), // 00:30 on the 25th, Vienna — inside the night of the 24th
+      clockOutAt: at('2026-10-25T04:00:00Z'), // 05:00 Vienna
+      expectedClockInAt: null,
+      expectedClockOutAt: null,
+      shiftId: null,
+      flagReasons: [],
+    });
+    const { svc, updates } = make([late]);
+    expect(await svc.reshapeDay(change(request('06:00', '22:00')))).toBe(1);
+    expect(updates[0].data.expectedClockInAt).toEqual(at('2026-10-24T20:00:00Z')); // 22:00 Vienna on the 24th
+    expect(updates[0].data.expectedClockOutAt).toEqual(at('2026-10-25T05:00:00Z')); // 06:00 on the 25th
+  });
+
+  it('after the night is over, the next morning is its own day', async () => {
+    const morning = entry({ clockInAt: at('2026-10-25T06:00:00Z'), clockOutAt: at('2026-10-25T10:00:00Z') }); // 07:00
+    const { svc, updates } = make([morning]);
+    expect(await svc.reshapeDay(change(request('06:00', '22:00')))).toBe(0);
+    expect(updates).toHaveLength(0);
+  });
+
   it('an entry of another local day is left alone', async () => {
     const { svc, updates } = make([entry({ clockInAt: at('2026-10-24T22:30:00Z') })]); // 00:30 on the 25th, Vienna
     expect(await svc.reshapeDay(change(request('18:00')))).toBe(0);

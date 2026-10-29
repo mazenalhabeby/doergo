@@ -96,6 +96,26 @@ export function remoteApprovedAt(rows: readonly DayRequestRow[], spaceId: string
   return requestsOnLocalDay(rows, at, tz).rows.some((r) => r.kind === 'REMOTE' && r.spaceId === spaceId);
 }
 
+const nextDayKey = (key: string) => toISODateString(new Date(Date.parse(`${key}T00:00:00.000Z`) + DAY_MS));
+const prevDayKey = (key: string) => toISODateString(new Date(Date.parse(`${key}T00:00:00.000Z`) - DAY_MS));
+
+/**
+ * The day whose NIGHT `at` falls in: changed hours that end at or before they start (22:00–06:00)
+ * run into the next morning, and a clock-in at 00:30 inside them belongs to the day the night
+ * STARTED (requests/request-kinds.ts). Null when `at` is in no such night.
+ */
+export function nightRequestDay(rows: readonly DayRequestRow[], at: Date, tz: string, spaceId?: string | null): string | null {
+  const today = localPartsIn(at, tz).dateStr;
+  const yesterday = prevDayKey(today);
+  const night = requestsOnLocalDay(rows, zonedWallTimeToUtc(yesterday, 12, 0, tz), tz).rows.some((r) => {
+    if (r.kind !== 'HOURS' || !r.startTime || !r.endTime || r.endTime > r.startTime) return false;
+    if (r.spaceId && spaceId && r.spaceId !== spaceId) return false;
+    const [h, m] = parseHm(r.endTime);
+    return at.getTime() < zonedWallTimeToUtc(today, h, m, tz).getTime();
+  });
+  return night ? yesterday : null;
+}
+
 /** What the day's approved requests change about a clock-in at `spaceId` (shared rule, local zone here). */
 export function dayRequestEffect(
   rows: readonly DayRequestRow[],
@@ -107,7 +127,10 @@ export function dayRequestEffect(
     expectedClockOutAt: Date | null;
   },
 ): DayRequestEffect {
-  const { dateKey, rows: today } = requestsOnLocalDay(rows, input.at, input.tz);
+  // ⚠️ After midnight inside last night's changed hours: last night's requests, not today's.
+  const night = nightRequestDay(rows, input.at, input.tz, input.spaceId);
+  const dateKey = night ?? localPartsIn(input.at, input.tz).dateStr;
+  const today = rows.filter((r) => toISODateString(r.startDate) <= dateKey && toISODateString(r.endDate) >= dateKey);
   return applyApprovedRequests({
     spaceId: input.spaceId,
     expectedClockInAt: input.expectedClockInAt,
@@ -115,8 +138,7 @@ export function dayRequestEffect(
     requests: today,
     atLocal: (hhmm, nextDay) => {
       const [h, m] = parseHm(hhmm);
-      const day = nextDay ? toISODateString(new Date(Date.parse(`${dateKey}T00:00:00.000Z`) + DAY_MS)) : dateKey;
-      return zonedWallTimeToUtc(day, h, m, input.tz);
+      return zonedWallTimeToUtc(nextDay ? nextDayKey(dateKey) : dateKey, h, m, input.tz);
     },
   });
 }

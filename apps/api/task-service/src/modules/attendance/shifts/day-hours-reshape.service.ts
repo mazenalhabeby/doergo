@@ -15,7 +15,7 @@ import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservice
 import type { Prisma } from '@prisma/client';
 import { CountedTimeService } from '../core/counted-time.service';
 import { approvalFor } from '../core/attendance-occurrence';
-import { approvedRequestsAround, dayRequestEffect, type DayRequestRow } from '../core/approved-requests';
+import { approvedRequestsAround, dayRequestEffect, nightRequestDay, type DayRequestRow } from '../core/approved-requests';
 import { reshapeForDayHours, withAgreedOutside } from './day-hours-reshape';
 
 const DAY_MS = 86_400_000;
@@ -96,9 +96,12 @@ export class DayHoursReshapeService {
       include: { location: { select: { timezone: true } } },
       orderBy: { clockInAt: 'asc' },
     });
-    const sameDay = entries.filter(
-      (e) => localPartsIn(e.clockInAt, zoneOf(e.location?.timezone, e.timezone)).dateStr === change.date,
-    );
+    // The day's sessions — and, for a night (22:00–06:00), those started after midnight inside it.
+    const sameDay = entries.filter((e) => {
+      const tz = zoneOf(e.location?.timezone, e.timezone);
+      if (localPartsIn(e.clockInAt, tz).dateStr === change.date) return true;
+      return nightRequestDay([change.request], e.clockInAt, tz, e.locationId) === change.date;
+    });
     /*
       ⚠️ Only the sessions the new hours are ABOUT: those that overlap them (a running one counts as
       running until now). An earlier session that day which ended before the new hours start — a
