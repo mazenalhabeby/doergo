@@ -3,6 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '@hbcfield/shared';
 import { TaskSupportService } from '../core/task-support.service';
 import { RolePoolService } from './role-pool.service';
+import { TaskCrewChangeService } from './task-crew-change.service';
 import { personName, TaskStatus, TaskEventType, success } from '@hbcfield/shared';
 import { emitEvent, taskDeclinedEvent } from '@hbcfield/shared/microservices';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';
@@ -16,6 +17,8 @@ export class TaskDeclineService {
     private readonly support: TaskSupportService,
     /** A task open to a role goes back to the ROLE when its taker declines. */
     private readonly rolePool: RolePoolService,
+    /** The one writer of what a crew change implies (lead, places, chat, checklist owners). */
+    private readonly crewChange: TaskCrewChangeService,
   ) {}
 
   /**
@@ -81,6 +84,13 @@ export class TaskDeclineService {
         params: { current: now },
       });
     }
+    /*
+      Off the crew too, not only off the column: a crew row left behind made the
+      decliner the job's primary again on the next crew change (syncPrimaryAssignee),
+      and kept them in its chat. Then the same writer as every other crew change.
+    */
+    await this.prisma.taskAssignee.deleteMany({ where: { taskId: data.id, userId: data.userId } });
+    await this.crewChange.afterAssigneesChanged(data.id, [], data.userId);
     const updatedTask = await this.prisma.task.findUniqueOrThrow({
       where: { id: data.id },
       include: {

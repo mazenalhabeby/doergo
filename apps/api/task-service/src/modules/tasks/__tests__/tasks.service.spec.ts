@@ -665,6 +665,31 @@ describe('TasksService', () => {
       expect(mockNotificationClient.emit).toHaveBeenCalledWith('task_declined', expect.any(Object));
     });
 
+    it('takes the decliner off the crew and runs the crew-change writer, so the job is never given back to them', async () => {
+      const assignedTask = {
+        ...mockTask,
+        status: TaskStatus.ASSIGNED,
+        assignedToId: 'tech-123',
+        assignedTo: { id: 'tech-123', firstName: 'Jane', lastName: 'Smith' },
+      };
+      mockPrismaService.task.findUnique.mockResolvedValue(assignedTask);
+      mockPrismaService.task.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.task.findUniqueOrThrow.mockResolvedValue({ ...mockTask, status: TaskStatus.NEW });
+      mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
+      mockPrismaService.taskAssignee.deleteMany.mockClear();
+      mockPrismaService.task.update.mockClear();
+
+      await service.decline({ id: 'task-123', userId: 'tech-123', userRole: Role.EMPLOYEE, organizationId: 'org-123' });
+
+      expect(mockPrismaService.taskAssignee.deleteMany).toHaveBeenCalledWith({ where: { taskId: 'task-123', userId: 'tech-123' } });
+      // The primary is re-derived from the rows that remain (none here → nobody).
+      expect(mockPrismaService.task.update).toHaveBeenCalledWith({ where: { id: 'task-123' }, data: { assignedToId: null } });
+      // A crew left empty is not pushed to ASSIGNED.
+      expect(mockPrismaService.task.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'task-123', status: TaskStatus.NEW, assignedToId: { not: null } } }),
+      );
+    });
+
     it('should throw ForbiddenException for technician not assigned to task', async () => {
       const assignedTask = { ...mockTask, status: TaskStatus.ASSIGNED, assignedToId: 'other-tech' };
       mockPrismaService.task.findUnique.mockResolvedValue(assignedTask);

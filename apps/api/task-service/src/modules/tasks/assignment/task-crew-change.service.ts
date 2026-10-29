@@ -80,8 +80,9 @@ export class TaskCrewChangeService {
       declare it, a custom workflow is left exactly alone, and that is a known
       gap rather than an oversight.
     */
+    // Somebody on it: the primary written just above (a crew left empty stays NEW).
     await this.prisma.task.updateMany({
-      where: { id: taskId, status: TaskStatus.NEW },
+      where: { id: taskId, status: TaskStatus.NEW, assignedToId: { not: null } },
       data: { status: TaskStatus.ASSIGNED },
     });
 
