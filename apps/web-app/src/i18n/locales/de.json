@@ -10041,7 +10041,24 @@
       "daysInARow_other": "{{count}} Tage in Folge",
       "noLimit": "Keine Grenze — jeder Fall",
       "capped": "Auf die höchste Grenze gesetzt: {{max}}",
-      "unreadable": "Diese Zahl ist nicht lesbar — die Grenze bleibt, wie sie war."
+      "unreadable": "Diese Zahl ist nicht lesbar — die Grenze bleibt, wie sie war.",
+      "seenFrom": "Ansicht",
+      "wholeCompany": "Ganzes Unternehmen",
+      "seenHint": "{{place}} folgt den Regeln des Unternehmens und ergänzt eigene — ein Vorgang hier braucht jede genannte Freigabe.",
+      "fromCompany": "Vom Unternehmen",
+      "fromCompanyEdit": "Vom Unternehmen · änderbar unter „Ganzes Unternehmen“",
+      "try": {
+        "title": "Vorgang testen",
+        "in": "in",
+        "hint": "Wert eingeben, um zu sehen, wer so etwas freigeben muss. Es wird nichts gespeichert.",
+        "nobody": "Niemand sonst — die übliche Freigabe genügt.",
+        "needs": "Braucht außerdem:",
+        "people_one": "Eine weitere Person.",
+        "people_other": "{{count}} verschiedene Personen, in beliebiger Reihenfolge.",
+        "admin": "Die Freigabe einer Administratorin oder eines Administrators schließt es sofort ab.",
+        "coverShort": "Es wären zu wenige Leute da",
+        "otherKind": "Eine andere Anlagenart"
+      }
     },
     "pressAgain": "Zum Bestätigen noch einmal drücken",
     "tag": {

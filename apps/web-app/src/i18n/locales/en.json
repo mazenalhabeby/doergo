@@ -10041,7 +10041,24 @@
       "daysInARow_other": "{{count}} days in a row",
       "noLimit": "No limit — every one",
       "capped": "Capped at the highest limit: {{max}}",
-      "unreadable": "Couldn't read that number — the limit stays as it was."
+      "unreadable": "Couldn't read that number — the limit stays as it was.",
+      "seenFrom": "Seen from",
+      "wholeCompany": "Whole company",
+      "seenHint": "{{place}} follows the company's rules and adds its own — an item here needs every approver they name.",
+      "fromCompany": "From the company",
+      "fromCompanyEdit": "From the company · change it under “Whole company”",
+      "try": {
+        "title": "Try an item",
+        "in": "in",
+        "hint": "Type a value to see who must approve such an item. Nothing is saved.",
+        "nobody": "Nobody else — the usual approver decides alone.",
+        "needs": "Also needs:",
+        "people_one": "One more person.",
+        "people_other": "{{count}} different people, in any order.",
+        "admin": "An administrator's approval finishes it at once.",
+        "coverShort": "People would be short",
+        "otherKind": "Another asset kind"
+      }
     },
     "pressAgain": "Press again to confirm",
     "tag": {

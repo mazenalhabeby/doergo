@@ -3,6 +3,7 @@
 import { useTranslation } from "react-i18next"
 import type { ApprovalRuleInput, ApprovalRuleView } from "@hbcfield/shared/client"
 import { Switch } from "@/components/ui/switch"
+import { Icon } from "@/components/ui/icon"
 import { cn } from "@/lib/utils"
 import type { RuleRange } from "../../_lib/rule-range"
 import type { RuleRole } from "../../_hooks/use-rules-tree"
@@ -11,6 +12,8 @@ import { WhenNode } from "./when-node"
 import { RemoveButton } from "./remove-button"
 
 const HOURS = [4, 24, 48, 72]
+const COMPANY_TAG =
+  "flex items-center gap-1 rounded-full bg-shell-chip px-2 py-0.5 text-[11.5px] font-semibold text-muted-foreground"
 
 export type RulePartName = "head" | "where" | "when" | "also" | "chase" | "done"
 
@@ -29,6 +32,7 @@ export function RulePart({
   range,
   hits,
   everywhere = true,
+  fromCompany = false,
   removing,
   onChange,
   onRemove,
@@ -43,6 +47,8 @@ export function RulePart({
   hits?: number
   /** May this caller set a rule for every workspace (not when they manage rules in some only)? */
   everywhere?: boolean
+  /** Seen from one workspace, this is the company's rule: it says so, and is changed under "Whole company". */
+  fromCompany?: boolean
   /** Its delete is in flight. */
   removing?: boolean
   onChange: (patch: Partial<ApprovalRuleInput>) => void
@@ -106,7 +112,12 @@ export function RulePart({
         <div className="group/row">
           <div className="flex h-7 items-center gap-2">
             <span className="text-[12.5px] font-semibold text-muted-foreground">{t("approvals.tree.rule", { n })}</span>
-            {readOnly ? (
+            {fromCompany ? (
+              <span className={COMPANY_TAG}>
+                <Icon name="lock" size={12} />
+                {t(everywhere ? "approvals.tree.fromCompanyEdit" : "approvals.tree.fromCompany")}
+              </span>
+            ) : readOnly ? (
               <span className="text-[11.5px] text-muted-foreground">{t("approvals.tree.readOnly")}</span>
             ) : (
               <>

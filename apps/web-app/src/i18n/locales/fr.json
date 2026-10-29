@@ -10041,7 +10041,24 @@
       "daysInARow_other": "{{count}} jours d’affilée",
       "noLimit": "Sans limite — tous",
       "capped": "Ramené à la limite maximale : {{max}}",
-      "unreadable": "Nombre illisible — la limite reste inchangée."
+      "unreadable": "Nombre illisible — la limite reste inchangée.",
+      "seenFrom": "Vu depuis",
+      "wholeCompany": "Toute l'entreprise",
+      "seenHint": "{{place}} suit les règles de l'entreprise et ajoute les siennes : ici, un élément a besoin de chaque approbateur qu'elles nomment.",
+      "fromCompany": "De l'entreprise",
+      "fromCompanyEdit": "De l'entreprise · à modifier dans « Toute l'entreprise »",
+      "try": {
+        "title": "Tester un cas",
+        "in": "dans",
+        "hint": "Saisissez une valeur pour voir qui doit l'approuver. Rien n'est enregistré.",
+        "nobody": "Personne d'autre : l'approbateur habituel décide seul.",
+        "needs": "Il faut aussi :",
+        "people_one": "Une personne de plus.",
+        "people_other": "{{count}} personnes différentes, dans n'importe quel ordre.",
+        "admin": "L'approbation d'un administrateur le termine aussitôt.",
+        "coverShort": "Il manquerait du monde",
+        "otherKind": "Un autre type d'équipement"
+      }
     },
     "pressAgain": "Appuyez à nouveau pour confirmer",
     "tag": {

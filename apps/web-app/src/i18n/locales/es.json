@@ -10041,7 +10041,24 @@
       "daysInARow_other": "{{count}} días seguidos",
       "noLimit": "Sin límite — todos",
       "capped": "Ajustado al límite máximo: {{max}}",
-      "unreadable": "No se puede leer ese número — el límite sigue como estaba."
+      "unreadable": "No se puede leer ese número — el límite sigue como estaba.",
+      "seenFrom": "Visto desde",
+      "wholeCompany": "Toda la empresa",
+      "seenHint": "{{place}} sigue las reglas de la empresa y añade las suyas: aquí un elemento necesita a cada aprobador que nombran.",
+      "fromCompany": "De la empresa",
+      "fromCompanyEdit": "De la empresa · se cambia en «Toda la empresa»",
+      "try": {
+        "title": "Probar un caso",
+        "in": "en",
+        "hint": "Escribe un valor para ver quién debe aprobarlo. No se guarda nada.",
+        "nobody": "Nadie más: decide quien aprueba normalmente.",
+        "needs": "También necesita:",
+        "people_one": "Una persona más.",
+        "people_other": "{{count}} personas distintas, en cualquier orden.",
+        "admin": "La aprobación de un administrador lo termina al instante.",
+        "coverShort": "Faltaría gente",
+        "otherKind": "Otro tipo de activo"
+      }
     },
     "pressAgain": "Pulse de nuevo para confirmar",
     "tag": {

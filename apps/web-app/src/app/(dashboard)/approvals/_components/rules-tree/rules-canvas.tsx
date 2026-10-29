@@ -22,6 +22,7 @@ import type { RuleRole } from "../../_hooks/use-rules-tree"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useOneFingerScrolls } from "../../_hooks/use-one-finger-scrolls"
 import { useRevealFocus } from "../../_hooks/use-reveal-focus"
+import { cn } from "@/lib/utils"
 import { RulePart, type RulePartName } from "./rule-step"
 
 /** What every rule node needs, shared once instead of copied into each node's data. */
@@ -38,6 +39,10 @@ export interface RulesCtx {
   everywhere: boolean
   /** The rule whose delete is in flight. */
   removing: string | null
+  /** The workspace the canvas is seen from (null = the whole company): its company rules say where they come from. */
+  seen: string | null
+  /** "Try an item": the rules it meets (the others fade); null = nothing tried. */
+  matched: Set<string> | null
 }
 type Boxes = { start: ReactNode; uncaught: ReactNode | null; add: ReactNode }
 /** Two contexts: a box changing (a save starting greys "New rule") never re-renders the rules' nodes. */
@@ -66,8 +71,9 @@ function PartNode({ data }: NodeProps<Node<PartData>>) {
   const i = ctx?.rules.findIndex((r) => r.id === data.ruleId) ?? -1
   if (!ctx || i < 0) return null
   const rule = ctx.rules[i]
+  const faded = ctx.matched != null && !ctx.matched.has(rule.id)
   return (
-    <div className={ARRIVE}>
+    <div className={cn(ARRIVE, "transition-opacity", faded && "opacity-35")}>
       {data.part !== "head" && <Ports right={data.part !== "done"} />}
       <RulePart
         part={data.part}
@@ -79,6 +85,7 @@ function PartNode({ data }: NodeProps<Node<PartData>>) {
         range={ctx.ranges[i]}
         hits={ctx.hits ? (ctx.hits[rule.id] ?? 0) : undefined}
         everywhere={ctx.everywhere}
+        fromCompany={ctx.seen != null && !rule.spaceId}
         removing={ctx.removing === rule.id}
         onChange={(patch) => ctx.onChange(rule, patch)}
         onRemove={() => ctx.onRemove(rule)}
