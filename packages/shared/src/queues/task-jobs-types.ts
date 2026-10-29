@@ -98,6 +98,8 @@ export interface TaskStatusJob {
   userId: string;
   userRole: string;
   canViewAllTasks?: boolean;
+  /** Org-wide "assign tasks" — in crew mode, what moves a step past the leader (CrewService.assertMayMoveStep). */
+  canAssignTasks?: boolean;
   organizationId: string;
   reason?: string;
   lat?: number;

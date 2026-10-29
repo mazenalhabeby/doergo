@@ -290,27 +290,40 @@ describe('CrewService.changeLead — this job only', () => {
 describe('a sick leader never stops a job from starting', () => {
   it('with nobody joined yet, the first crew member on the clock stands in', async () => {
     const s = setup({ crewMode: true, onClock: ['priya', 'conor'], task: { status: 'ACCEPTED' }, events: [] });
-    await expect(s.service.assertMayMoveStep(s.task as any, actor('priya'), false)).resolves.toBeUndefined();
-    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor'), false)).rejects.toMatchObject({ response: { code: CREW_CODES.LEADER_MOVES_STEPS } });
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('priya'))).resolves.toBeUndefined();
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor'))).rejects.toMatchObject({ response: { code: CREW_CODES.LEADER_MOVES_STEPS } });
   });
 
   it("today's lead ends with their place on the crew", async () => {
     const s = setup({ crewMode: true, task: { leadOverrideId: 'gone', leadOverrideUntil: new Date(Date.now() + 3_600_000) } });
-    await expect(s.service.assertMayMoveStep(s.task as any, actor('tobias'), false)).resolves.toBeUndefined();
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('tobias'))).resolves.toBeUndefined();
   });
 });
 
 describe('CrewService.assertMayMoveStep — crew mode', () => {
   it('off: anybody on the crew, as before', async () => {
     const s = setup({ crewMode: false });
-    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor'), false)).resolves.toBeUndefined();
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor'))).resolves.toBeUndefined();
   });
 
   it('on: only the leader; the refusal names them', async () => {
     const s = setup({ crewMode: true });
-    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor'), false)).rejects.toMatchObject({ response: { code: CREW_CODES.LEADER_MOVES_STEPS, params: { name: 'tobias' } } });
-    await expect(s.service.assertMayMoveStep(s.task as any, actor('tobias'), false)).resolves.toBeUndefined();
-    await expect(s.service.assertMayMoveStep(s.task as any, actor('anna'), true)).resolves.toBeUndefined();
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor'))).rejects.toMatchObject({ response: { code: CREW_CODES.LEADER_MOVES_STEPS, params: { name: 'tobias' } } });
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('tobias'))).resolves.toBeUndefined();
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('anna', { canAssignTasks: true }))).resolves.toBeUndefined();
+  });
+
+  it('on: "view all tasks" on the crew is one more member — moving past the leader takes "assign tasks"', async () => {
+    const s = setup({ crewMode: true });
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor', { canViewAllTasks: true })))
+      .rejects.toMatchObject({ response: { code: CREW_CODES.LEADER_MOVES_STEPS } });
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor', { viewAllSpaceIds: ['sp1'] })))
+      .rejects.toMatchObject({ response: { code: CREW_CODES.LEADER_MOVES_STEPS } });
+    const here = { org: {}, perSpace: { sp1: { canAssignTasks: true } } };
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor', { access: here }))).resolves.toBeUndefined();
+    const elsewhere = { org: {}, perSpace: { sp9: { canAssignTasks: true } } };
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor', { access: elsewhere })))
+      .rejects.toMatchObject({ response: { code: CREW_CODES.LEADER_MOVES_STEPS } });
   });
 });
 

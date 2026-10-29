@@ -204,9 +204,10 @@ export class TaskStatusService {
         userId: data.userId,
         userRole: data.userRole,
         organizationId: data.organizationId,
+        canAssignTasks: data.canAssignTasks,
         access: data.access as ResolvedAccess | undefined,
       };
-      await this.crew.assertMayMoveStep(task, actor, hasManageAuthority);
+      await this.crew.assertMayMoveStep(task, actor);
     }
 
     // ── Clocked in to start work ──

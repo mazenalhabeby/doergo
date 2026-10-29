@@ -128,12 +128,14 @@ export class CrewService {
 
   /**
    * May this person move the job's step (shared mayMoveStep)? Throws the
-   * coded refusal; answers whether they are on the crew. Asked only of a
-   * crew member who is not the office — every other move pays nothing.
+   * coded refusal. Asked of a crew member — every other move pays nothing.
+   *
+   * ⚠️ Past the effective leader only with "assign tasks" (org-wide or in THIS
+   * job's workspace) — the same office as the lead hand-over and the checklist.
+   * "View all tasks" reads the board; on a crew it is one more member.
    */
-  async assertMayMoveStep(task: CrewTask, actor: CrewActor, isOffice: boolean): Promise<void> {
-    // The office — org-wide, or "view all tasks" in THIS job's workspace — always moves it.
-    if (isOffice || this.reader.isOffice(actor, task, 'canViewAllTasks')) return;
+  async assertMayMoveStep(task: CrewTask, actor: CrewActor): Promise<void> {
+    if (this.reader.isOffice(actor, task, 'canAssignTasks')) return;
     const org = await orgCrewMode(this.prisma, task.organizationId);
     if (!org?.crewMode) return;
     const crew = await this.reader.crewOf(task);
