@@ -15,7 +15,7 @@ import {
 } from '@hbcfield/shared';
 import { dayRequestEffect, type DayRequestRow } from '../core/approved-requests';
 import { alreadyClockedIn, sameRecordOrRefuse } from '../core/attendance-occurrence';
-import { tzlookup } from './clock-in-helpers';
+import { gpsZone } from './clock-in-helpers';
 
 /**
  * What a clock-in and the clock-in list share: where the member may clock in, the
@@ -36,32 +36,11 @@ export class ClockInContextService {
   ) {}
 
   /**
-   * Resolve the shift expectation for a clock-in and return the DB fields to
-   * stamp on the TimeEntry. Returns {} for spaces without hour expectations
-   * (workModel NONE/TASK) or when no shift/schedule matches — leaving the entry
-   * with the default reminderState=NONE and no expected end. Never throws:
-   * a resolver failure must not block a clock-in.
+   * The IANA zone WHERE the worker physically clocked in (GPS, offline lookup), else the space's — stored on
+   * the entry for display. Planning reads ONE zone instead (clock-in-helpers `clockInZones`).
    */
-  /**
-   * Resolve the IANA timezone WHERE the worker physically clocked in, from the
-   * clock-in GPS. Computed once here (offline, microsecond lookup) and stored on
-   * the entry so display is a zero-cost read — and correct for remote clock-ins.
-   * Falls back to the space's timezone when GPS is unavailable/invalid.
-   */
-  resolveEntryTimezone(
-    lat: number | null | undefined,
-    lng: number | null | undefined,
-    spaceTz?: string | null,
-  ): string | null {
-    // (0,0) is Null Island — a missing/failed GPS fix, not a real location.
-    if (lat != null && lng != null && !(lat === 0 && lng === 0)) {
-      try {
-        return tzlookup(lat, lng);
-      } catch {
-        // out-of-range / lookup miss → fall through to the space timezone
-      }
-    }
-    return spaceTz ?? null;
+  resolveEntryTimezone(lat: number | null | undefined, lng: number | null | undefined, spaceTz?: string | null) {
+    return gpsZone(lat, lng) ?? spaceTz ?? null;
   }
 
   /**
@@ -110,6 +89,13 @@ export class ClockInContextService {
     };
   }
 
+  /**
+   * Resolve the shift expectation for a clock-in and return the DB fields to
+   * stamp on the TimeEntry. Returns {} for spaces without hour expectations
+   * (workModel NONE/TASK) or when no shift/schedule matches — leaving the entry
+   * with the default reminderState=NONE and no expected end. Never throws:
+   * a resolver failure must not block a clock-in.
+   */
   async buildShiftStamp(
     userId: string,
     space: ResolverSpace & { noShiftDailyMinutes?: number | null },
@@ -285,14 +271,30 @@ export class ClockInContextService {
     }
   }
 
-  /** Find or create the org's geofence-exempt "Remote" bucket location. */
+  /**
+   * Find or create the org's geofence-exempt "Remote" bucket location.
+   *
+   * ⚠️ Two first remote clock-ins at once both found none and both created one. One bucket per
+   * organization is a partial unique index (`company_locations_one_remote_bucket`): the loser's
+   * insert is refused, and it reads the winner's bucket instead.
+   */
   async getOrCreateRemoteBucket(organizationId: string) {
-    const existing = await this.prisma.companyLocation.findFirst({
-      where: { organizationId, isRemote: true },
-    });
+    const find = () =>
+      this.prisma.companyLocation.findFirst({
+        where: { organizationId, isRemote: true },
+        orderBy: { createdAt: 'asc' },
+      });
+    const existing = await find();
     if (existing) return existing;
-    return this.prisma.companyLocation.create({
-      data: { name: 'Remote', organizationId, isRemote: true, isActive: true },
-    });
+    try {
+      return await this.prisma.companyLocation.create({
+        data: { name: 'Remote', organizationId, isRemote: true, isActive: true },
+      });
+    } catch (err) {
+      if ((err as { code?: string })?.code !== 'P2002') throw err;
+      const winner = await find();
+      if (!winner) throw err;
+      return winner;
+    }
   }
 }

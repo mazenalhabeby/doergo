@@ -16,9 +16,10 @@ describe('clock review — counting rules', () => {
         'u1',
         { timezone: null, organization: { timezone: 'Europe/Vienna' } } as any,
         { id: 's1', name: 'Warehouse', timezone: 'Europe/Vienna' } as any,
-        null,
+        'Europe/Vienna',
         new Date('2026-10-25T07:00:00Z'),
-        { dayRequests: [], stampCols, flagReasons },
+        // Genuinely offline (> 10 min before it arrived) — see clock-step-trust.spec for the 3-minute case.
+        { dayRequests: [], stampCols, flagReasons, lenient: offline },
       );
       return { out, flagReasons, stampCols };
     };

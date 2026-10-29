@@ -141,7 +141,7 @@ export class SpaceMembersService {
      */
     outrankCheck?: boolean;
   }) {
-    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true, assignable: true });
     const target = await assertUserInOrg(this.prisma, data.userId, data.organizationId);
     const may: SpaceMemberAuthority = data.authority ?? { addMembers: true, grantRoles: true, manageTerms: true };
     const existing = await this.prisma.spaceAssignment.findUnique({

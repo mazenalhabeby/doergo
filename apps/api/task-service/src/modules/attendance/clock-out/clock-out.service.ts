@@ -11,8 +11,9 @@ import {
 } from '@hbcfield/shared';
 import { memberSiteRules } from '../core/member-site-rules';
 import { flagsWithMissedRest, moreTimeRefusal, parseBreakPlan } from '@hbcfield/shared';
-import { fixOfTap, judgeOccurrence } from '../../../common/occurrence.util';
-import { approvalFor } from '../core/attendance-occurrence';
+import { fixOfTap } from '../../../common/occurrence.util';
+import { approvalFor, judgeClockStep } from '../core/attendance-occurrence';
+import { judgeProvisionalReplacement, nextClockInAfter } from './provisional-replacement';
 import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
 import { ShiftCloser } from './shift-closer.service';
 import { ClockOutAlertsService } from './clock-out-alerts.service';
@@ -68,7 +69,7 @@ export class ClockOutService {
       return alreadyClosedAnswer(entry, data.evidence);
     }
 
-    const occurrence = judgeOccurrence(data.evidence, lastRestEnd(entry.breaks) ?? entry.clockInAt);
+    const occurrence = judgeClockStep(data.evidence, lastRestEnd(entry.breaks) ?? entry.clockInAt);
     const tapFix = fixOfTap(data.evidence, occurrence.at, occurrence.flags);
     if (tapFix) {
       data.lat = tapFix.lat;
@@ -91,6 +92,14 @@ export class ClockOutService {
       exactly as agreed.
     */
     const clockOutTime = occurrence.at;
+    // Replacing a temporary close: never past the next shift's start; far past the guess, a person looks.
+    const replacementFlags = replacingProvisional
+      ? judgeProvisionalReplacement({
+          provisionalAt: entry.clockOutAt,
+          at: clockOutTime,
+          nextClockInAt: await nextClockInAfter(this.prisma, entry),
+        })
+      : [];
 
     const autoOut = await this.isAutomaticClockOut(data, entry, clockOutTime);
 
@@ -104,7 +113,11 @@ export class ClockOutService {
     const totalMinutes = Math.round((clockOutTime.getTime() - entry.clockInAt.getTime()) / (1000 * 60));
 
     // Smart auto-approval: evaluate clock-out against schedule.
-    const flagReasons: string[] = [...priorClockOutFlags(entry.flagReasons, replacingProvisional), ...occurrence.flags];
+    const flagReasons = [
+      ...priorClockOutFlags(entry.flagReasons, replacingProvisional),
+      ...occurrence.flags,
+      ...replacementFlags,
+    ];
 
     // Flagging it on an away day would put a second amber badge on an entry that
     // already carries OUTSIDE_GEOFENCE_IN and is already waiting for review.

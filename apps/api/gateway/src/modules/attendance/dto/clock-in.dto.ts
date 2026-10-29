@@ -6,7 +6,10 @@ import {
   IsOptional,
   IsBoolean,
   IsIn,
+  Max,
   MaxLength,
+  Min,
+  ValidateIf,
   Matches,
   ValidateNested,
 } from 'class-validator';
@@ -28,17 +31,25 @@ export class ClockInDto {
   */
   @ApiPropertyOptional({ description: 'Current latitude (needed at a workspace with a pin)' })
   @IsNumber()
+  @Min(-90)
+  @Max(90)
   @IsOptional()
   lat?: number;
 
   @ApiPropertyOptional({ description: 'Current longitude (needed at a workspace with a pin)' })
   @IsNumber()
+  @Min(-180)
+  @Max(180)
   @IsOptional()
   lng?: number;
 
-  @ApiPropertyOptional({ description: 'GPS accuracy in meters' })
+  // ⚠️ REQUIRED with a position: a position without its accuracy was judged as a perfect fix (the same ranges
+  // as the evidence fix, occurrence.dto.ts).
+  @ApiPropertyOptional({ description: 'GPS accuracy in meters — required when lat/lng are sent' })
+  @ValidateIf((o: ClockInDto) => o.lat != null || o.lng != null || o.accuracy != null)
   @IsNumber()
-  @IsOptional()
+  @Min(0)
+  @Max(100_000)
   accuracy?: number;
 
   @ApiPropertyOptional({ description: 'Clock in remotely (WFH/anywhere), geofence-exempt' })

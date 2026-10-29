@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { scopeAllows, type SpaceScopeIds, clientInOrg, peopleWhoPass, personRef } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
 
@@ -58,6 +58,20 @@ export interface SpaceInOrgOptions {
    * still lives there.
    */
   activeOnly?: boolean;
+  /**
+   * Somewhere a PERSON can be put. Refuses the org's Remote bucket (REMOTE_BUCKET_NOT_ASSIGNABLE): it is
+   * only for somebody with no workspace — assigned to it, they could clock in "on site" at a place with no
+   * site, no rota and no ring.
+   */
+  assignable?: boolean;
+}
+
+/** Nobody is assigned to the Remote bucket (see `SpaceInOrgOptions.assignable`). */
+export function remoteBucketRefusal(): BadRequestException {
+  return new BadRequestException({
+    message: 'The Remote bucket is not a workspace people can be assigned to',
+    code: 'REMOTE_BUCKET_NOT_ASSIGNABLE',
+  });
 }
 
 export async function assertSpaceInOrg(
@@ -69,11 +83,12 @@ export async function assertSpaceInOrg(
   if (!spaceId) return;
   const found = await prisma.companyLocation.findFirst({
     where: { id: spaceId, organizationId, ...(opts.activeOnly ? { isActive: true } : {}) },
-    select: { id: true },
+    select: { id: true, isRemote: true },
   });
   if (!found || !scopeAllows(opts.scope, spaceId)) {
     throw new NotFoundException('Space not found in this organization');
   }
+  if (opts.assignable && found.isRemote) throw remoteBucketRefusal();
 }
 
 /**

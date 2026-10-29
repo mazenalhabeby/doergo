@@ -4,6 +4,7 @@ export const en: LabelWords = {
   label: {
     CLOCK_OUT_PROVISIONAL: 'Clock-out not confirmed',
     MISSED_CLOCK_OUT: 'Missed clock-out',
+    CLOCK_OUT_LONG_AFTER_CLOSE: 'Clock-out long after the automatic close',
     OUTSIDE_GEOFENCE_IN: 'Clock-in outside zone',
     OUTSIDE_GEOFENCE_OUT: 'Clock-out outside zone',
     LATE_ARRIVAL: 'Late',
@@ -16,6 +17,7 @@ export const en: LabelWords = {
     UNSCHEDULED_DAY: 'Unscheduled',
     FIX_MOCKED: 'Mock location',
     CLOCK_SUSPECT: 'Phone clock changed',
+    TIME_UNVERIFIED: 'Time not verified',
     BOUNDARY_CHANGED: 'Site boundary changed since',
     STALE: 'Sent over a week late',
     RECORDED_OFFLINE: 'Recorded offline',

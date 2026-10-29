@@ -4,6 +4,7 @@ export const it: LabelWords = {
   label: {
     CLOCK_OUT_PROVISIONAL: 'Uscita non confermata',
     MISSED_CLOCK_OUT: 'Uscita mancante',
+    CLOCK_OUT_LONG_AFTER_CLOSE: 'Uscita molto dopo la chiusura automatica',
     OUTSIDE_GEOFENCE_IN: 'Entrata fuori area',
     OUTSIDE_GEOFENCE_OUT: 'Uscita fuori area',
     LATE_ARRIVAL: 'In ritardo',
@@ -16,6 +17,7 @@ export const it: LabelWords = {
     UNSCHEDULED_DAY: 'Non pianificato',
     FIX_MOCKED: 'Posizione simulata',
     CLOCK_SUSPECT: 'Orologio del telefono modificato',
+    TIME_UNVERIFIED: 'Orario non verificato',
     BOUNDARY_CHANGED: 'Confine della sede modificato da allora',
     STALE: 'Inviato con oltre una settimana di ritardo',
     RECORDED_OFFLINE: 'Registrato offline',

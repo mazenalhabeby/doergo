@@ -26,23 +26,26 @@ export async function applyNoShiftAllowance(
   userId: string,
   user: ClockInUser,
   location: CompanyLocation,
-  workerTz: string | null,
+  /** The clock-in's ONE planning zone (clock-in-helpers `clockInZones`) — the workspace's day after the member's own. */
+  planningTz: string,
   clockInTime: Date,
-  io: { dayRequests: DayRequestRow[]; stampCols: ShiftStamp; flagReasons: string[] },
+  /** `lenient`: genuinely recorded offline (> 10 min before it arrived) — the phone could not ask. */
+  io: { dayRequests: DayRequestRow[]; stampCols: ShiftStamp; flagReasons: string[]; lenient: boolean },
 ): Promise<{ endIsDailyLimit: boolean; shapingRequests: DayRequestRow[] }> {
   const { dayRequests, stampCols, flagReasons } = io;
   let endIsDailyLimit = false;
   // Overtime agreed in advance raises a no-shift day's limit INSIDE the allowance — so a member
   // already at the limit may clock in for it — and is then not added to the end a second time.
   let shapingRequests = dayRequests;
-  const dayTz = memberDayZone(user.timezone, user.organization?.timezone, location.timezone || workerTz);
+  const dayTz = memberDayZone(user.timezone, user.organization?.timezone, planningTz);
   const agreed = agreedOvertimeMinutes(dayRequests, location.id, clockInTime, dayTz);
   const allowance = await context.noShiftAllowanceFor(userId, location, clockInTime, dayTz, agreed);
   if (allowance.kind !== 'free' && agreed > 0) shapingRequests = dayRequests.filter((r) => r.kind !== 'OVERTIME');
   // Only a workspace that needs a shift refuses. No hours left is KEPT and flagged for the leader:
   // nothing is cut any more (docs/plans/time-counting-model.md), exactly as an offline clock-in always was.
   if (allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY') {
-    if (!flagReasons.includes('RECORDED_OFFLINE')) throw noShiftRefusal(location.name);
+    // ⚠️ Not every RECORDED_OFFLINE (2 min): a request that took 3 minutes could have been refused live.
+    if (!io.lenient) throw noShiftRefusal(location.name);
     // Recorded offline (the phone could not ask): kept, as a day without a shift for the leader — never the
     // daily-hours marker, which this workspace does not have (clock review B4).
     if (!flagReasons.includes('UNSCHEDULED_DAY')) flagReasons.push('UNSCHEDULED_DAY');

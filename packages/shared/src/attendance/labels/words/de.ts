@@ -4,6 +4,7 @@ export const de: LabelWords = {
   label: {
     CLOCK_OUT_PROVISIONAL: 'Ausstempeln nicht bestätigt',
     MISSED_CLOCK_OUT: 'Ausstempeln fehlt',
+    CLOCK_OUT_LONG_AFTER_CLOSE: 'Ausstempeln lange nach dem automatischen Abschluss',
     OUTSIDE_GEOFENCE_IN: 'Einstempeln außerhalb',
     OUTSIDE_GEOFENCE_OUT: 'Ausstempeln außerhalb',
     LATE_ARRIVAL: 'Verspätet',
@@ -16,6 +17,7 @@ export const de: LabelWords = {
     UNSCHEDULED_DAY: 'Ungeplant',
     FIX_MOCKED: 'Standort vorgetäuscht',
     CLOCK_SUSPECT: 'Telefonuhr verstellt',
+    TIME_UNVERIFIED: 'Zeit nicht überprüft',
     BOUNDARY_CHANGED: 'Standortgrenze seitdem geändert',
     STALE: 'Über eine Woche später gesendet',
     RECORDED_OFFLINE: 'Offline erfasst',

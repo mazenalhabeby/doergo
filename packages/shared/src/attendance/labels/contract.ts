@@ -27,6 +27,8 @@ export const LABEL_CODES = [
   // Closing
   'MISSED_CLOCK_OUT',
   'CLOCK_OUT_PROVISIONAL',
+  /** The member's own clock-out replaced the system's temporary close by more than 12 hours: a person looks. */
+  'CLOCK_OUT_LONG_AFTER_CLOSE',
   // Where
   'OUTSIDE_GEOFENCE_IN',
   'OUTSIDE_GEOFENCE_OUT',
@@ -42,6 +44,8 @@ export const LABEL_CODES = [
   'RECORDED_OFFLINE',
   'UNANCHORED',
   'CLOCK_SUSPECT',
+  /** Sent over 15 minutes after its moment with no anchor to vouch for it (sync/occurrence.ts `timeUnverified`). */
+  'TIME_UNVERIFIED',
   'STALE',
   'FIX_MOCKED',
   'AUTO_CLOCK_IN',

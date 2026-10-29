@@ -1,5 +1,12 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import { flagsForReview } from '@hbcfield/shared';
+import {
+  flagsForReview,
+  offlineLeniency,
+  timeUnverified,
+  TIME_UNVERIFIED_FLAG,
+  type OccurrenceEvidence,
+} from '@hbcfield/shared';
+import { judgeOccurrence } from '../../../common/occurrence.util';
 
 /**
  * Attendance rules for records a phone made offline and sent later.
@@ -15,6 +22,27 @@ import { flagsForReview } from '@hbcfield/shared';
 export function approvalFor(flags: readonly string[]): 'AUTO' | 'PENDING' {
   return flagsForReview(flags).length === 0 ? 'AUTO' : 'PENDING';
 }
+
+/**
+ * When a clock-in or clock-out happened, judged once for both.
+ *
+ * `judgeOccurrence`, plus the two answers only the clock asks: is the moment vouched for
+ * (TIME_UNVERIFIED — a person looks; the time still counts), and was it genuinely recorded
+ * offline (`lenient` — the rules a phone could not ask about keep it instead of refusing).
+ */
+export function judgeClockStep(
+  evidence: OccurrenceEvidence | undefined | null,
+  previousAt: Date | null | undefined,
+  receivedAt: Date = new Date(),
+) {
+  const judged = judgeOccurrence(evidence, previousAt, receivedAt);
+  if (judged.fromEvidence && timeUnverified(judged.flags, judged.at, receivedAt)) {
+    judged.flags.push(TIME_UNVERIFIED_FLAG);
+  }
+  return { ...judged, lenient: judged.fromEvidence && offlineLeniency(judged.at, receivedAt) };
+}
+
+export type ClockStepOccurrence = ReturnType<typeof judgeClockStep>;
 
 /**
  * Somebody who is already clocked in tries again.

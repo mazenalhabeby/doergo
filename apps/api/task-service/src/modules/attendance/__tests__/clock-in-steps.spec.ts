@@ -9,9 +9,18 @@ import {
 
 describe('clockIn steps', () => {
   it('refuses a fix worse than the threshold, accepts one at it', () => {
-    expect(gpsAccuracyRefusal(ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD)).toBeNull();
-    expect(gpsAccuracyRefusal(undefined)).toBeNull();
-    expect(gpsAccuracyRefusal(ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD + 1)?.getStatus()).toBe(400);
+    expect(gpsAccuracyRefusal(ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD, true)).toBeNull();
+    expect(gpsAccuracyRefusal(undefined, false)).toBeNull();
+    expect(gpsAccuracyRefusal(ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD + 1, true)?.getStatus()).toBe(400);
+  });
+
+  it('a GPS clock-in with no accuracy, or 0, is not a perfect fix — refused FIX_INACCURATE', () => {
+    for (const accuracy of [undefined, 0, -3, NaN]) {
+      const refusal = gpsAccuracyRefusal(accuracy, true)?.getResponse() as { code?: string } | undefined;
+      expect(refusal?.code).toBe('FIX_INACCURATE');
+    }
+    // No position at all: nothing to judge (a workspace without a pin, the bucket).
+    expect(gpsAccuracyRefusal(undefined, false)).toBeNull();
   });
 
   it('names which of ceiling or grant refused, with the figures', () => {

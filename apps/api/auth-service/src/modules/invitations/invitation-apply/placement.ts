@@ -114,7 +114,11 @@ export async function applyInvitationPlacement(
 
   // Pre-assigned space, if it still exists in the org. Owner: task-service.
   if (!invitation.spaceId) return;
-  const space = await workspaceInOrg(tx, invitation.spaceId, invitation.organizationId, { activeOnly: true });
+  // Never the Remote bucket (`assignable`): it reads as absent, like an archived space.
+  const space = await workspaceInOrg(tx, invitation.spaceId, invitation.organizationId, {
+    activeOnly: true,
+    assignable: true,
+  });
   if (!space) return;
   // Permissions built for this person (external only): granted below through the builder's own writer.
   const built = invitation.isExternal && invitation.spacePermissions != null;

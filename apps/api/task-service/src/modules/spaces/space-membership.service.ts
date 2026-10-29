@@ -9,6 +9,7 @@ import {
   personPasses,
 } from '@hbcfield/shared';
 import { assertValidScheduleDays } from './space-helpers';
+import { remoteBucketRefusal } from '../../common/tenant-scope.util';
 import { PrismaService } from '@hbcfield/shared';
 import { SpaceAnnouncer } from './space-announcer.service';
 import type { ResolvedAccess } from '@hbcfield/shared';
@@ -74,6 +75,8 @@ export class SpaceMembershipService {
     if (!location) {
       throw new NotFoundException('Company location not found');
     }
+    // Never the Remote bucket: it is for somebody with NO workspace (tenant-scope.util `assignable`).
+    if (location.isRemote) throw remoteBucketRefusal();
 
     // Validate schedule days if provided
     assertValidScheduleDays(data.schedule);

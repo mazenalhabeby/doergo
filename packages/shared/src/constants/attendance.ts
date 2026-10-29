@@ -34,17 +34,17 @@ export const ATTENDANCE_CONSTANTS = {
   // packages/shared/src/attendance/away-policy.ts. Removed rather than
   // deprecated: a constant nothing reads is a setting somebody will one day
   // change and wonder why nothing happened.
-  ALERT_ON_GEOFENCE_VIOLATION: true,    // Send alerts when clock-out is outside geofence
+  ALERT_ON_GEOFENCE_VIOLATION: true, // Send alerts when clock-out is outside geofence
 
   // Shift reminder engine: how often the sweep runs. The sweep is a single
   // indexed query (status + nextRemindAt) returning only entries actually due,
   // so a tight cadence is cheap and gives ~1-min reminder precision.
-  SHIFT_REMINDER_SWEEP_INTERVAL_MS: 60 * 1000,   // Every 1 minute
+  SHIFT_REMINDER_SWEEP_INTERVAL_MS: 60 * 1000, // Every 1 minute
   SHIFT_REMINDER_JOB_ID: 'shift-reminder-sweep',
 
   // No-show materialization: rolling upsert of expected shifts. Slow cadence
   // (bounded scan over the rota); the actual no-show sweep rides the 1-min tick.
-  SHIFT_MATERIALIZE_INTERVAL_MS: 30 * 60 * 1000,  // Every 30 minutes
+  SHIFT_MATERIALIZE_INTERVAL_MS: 30 * 60 * 1000, // Every 30 minutes
   SHIFT_MATERIALIZE_JOB_ID: 'shift-materialize',
 } as const;
 
@@ -66,9 +66,9 @@ export const GEOFENCE_EXCURSION = {
 // space leader, then escalates. These are the fallback cadence values used when
 // a shift doesn't override them.
 export const SHIFT_REMINDER_DEFAULTS = {
-  GRACE_MINUTES: 5,          // Minutes after expected end before the first reminder
+  GRACE_MINUTES: 5, // Minutes after expected end before the first reminder
   REMINDER_INTERVAL_MINUTES: 5, // Gap between subsequent reminders
-  MAX_REMINDERS: 3,          // Reminders before escalating to a space leader
+  MAX_REMINDERS: 3, // Reminders before escalating to a space leader
 } as const;
 
 // Safety net for UNSCHEDULED open sessions (a clock-in with no resolved shift →
@@ -80,7 +80,7 @@ export const SHIFT_REMINDER_DEFAULTS = {
 // It NEVER force-closes — same philosophy as the shift engine.
 export const UNSCHEDULED_SESSION_DEFAULTS = {
   REMINDER_INTERVAL_MINUTES: 60, // Then remind hourly (not the 5-min shift cadence)
-  MAX_REMINDERS: 3,            // Nudges before escalating to the responsible leader (the workspace's hours + 3)
+  MAX_REMINDERS: 3, // Nudges before escalating to the responsible leader (the workspace's hours + 3)
 } as const;
 
 /*
@@ -93,9 +93,10 @@ export const UNSCHEDULED_SESSION_DEFAULTS = {
   replaces it. The temporary time never counts past the shift end.
 */
 export const OPEN_SHIFT_CLOSE = {
-  AFTER_SHIFT_END_HOURS: 12,     // A planned shift, this long after its end
-  UNPLANNED_AFTER_HOURS: 24,     // A shift with no planned end, this long after clock-in
-  BATCH: 100,                    // Per sweep tick — the partial indexes make each one cheap
+  AFTER_SHIFT_END_HOURS: 12, // A planned shift, this long after its end
+  UNPLANNED_AFTER_HOURS: 24, // A shift with no planned end, this long after clock-in
+  REPLACED_REVIEW_AFTER_HOURS: 12, // The member's clock-out this far past the temporary close goes to a person
+  BATCH: 100, // Per sweep tick — the partial indexes make each one cheap
 } as const;
 
 // Flag reasons for smart auto-approval
@@ -115,6 +116,10 @@ export const ATTENDANCE_FLAG_REASONS = {
   RECORDED_OFFLINE: 'RECORDED_OFFLINE',
   UNANCHORED: 'UNANCHORED',
   CLOCK_SUSPECT: 'CLOCK_SUSPECT',
+  // Sent long after its moment with nothing to vouch for it (sync/occurrence.ts). Waits for a person.
+  TIME_UNVERIFIED: 'TIME_UNVERIFIED',
+  // The member's clock-out replaced a temporary close by more than 12 hours (OPEN_SHIFT_CLOSE). Waits for a person.
+  CLOCK_OUT_LONG_AFTER_CLOSE: 'CLOCK_OUT_LONG_AFTER_CLOSE',
   STALE: 'STALE',
   FIX_MOCKED: 'FIX_MOCKED',
   BOUNDARY_CHANGED: 'BOUNDARY_CHANGED',

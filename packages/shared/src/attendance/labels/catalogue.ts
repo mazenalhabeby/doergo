@@ -32,6 +32,7 @@ type Spec = [code: LabelCode, tone: LabelTone];
 const SPECS: Spec[] = [
   ['CLOCK_OUT_PROVISIONAL', 'amber'],
   ['MISSED_CLOCK_OUT', 'red'],
+  ['CLOCK_OUT_LONG_AFTER_CLOSE', 'amber'],
   ['OUTSIDE_GEOFENCE_IN', 'amber'],
   ['OUTSIDE_GEOFENCE_OUT', 'amber'],
   ['LATE_ARRIVAL', 'amber'],
@@ -44,6 +45,7 @@ const SPECS: Spec[] = [
   ['UNSCHEDULED_DAY', 'purple'],
   ['FIX_MOCKED', 'red'],
   ['CLOCK_SUSPECT', 'red'],
+  ['TIME_UNVERIFIED', 'red'],
   ['BOUNDARY_CHANGED', 'amber'],
   ['HOURS_CHANGED', 'amber'],
   ['STALE', 'amber'],

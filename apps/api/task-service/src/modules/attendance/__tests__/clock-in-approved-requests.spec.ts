@@ -194,6 +194,26 @@ describe('clock-in with an approved request', () => {
       expect(data.approvalStatus).toBe('PENDING');
     });
 
+    it('on an approved remote day neither a position nor its accuracy is asked (no FIX_MISSING, no GPS_ACCURACY_LOW)', async () => {
+      at('2026-09-15T06:00:00.000Z');
+      const { service, prisma } = await build({ requests: [request({})] });
+      await service.clockIn({ userId: 'u1', organizationId: 'org-1', locationId: 'loc-1' });
+      const noFix = created(prisma);
+      expect(noFix.isRemote).toBe(true); // away, as approved — never "on site" for want of a fix
+      expect(noFix.flagReasons).toContain('APPROVED_REMOTE');
+      const coarse = await build({ requests: [request({})] });
+      await coarse.service.clockIn(clockIn({ ...AWAY, accuracy: 5000 }));
+      expect(created(coarse.prisma).flagReasons).toContain('APPROVED_REMOTE');
+    });
+
+    it('control: without the approval a pinned site still asks for the position', async () => {
+      at('2026-09-15T06:00:00.000Z');
+      const { service } = await build();
+      await expect(
+        service.clockIn({ userId: 'u1', organizationId: 'org-1', locationId: 'loc-1' }),
+      ).rejects.toMatchObject({ response: { code: 'FIX_MISSING' } });
+    });
+
     it('does not apply to another workspace', async () => {
       at('2026-09-15T06:00:00.000Z');
       const { service } = await build({ requests: [request({ spaceId: 'elsewhere' })] });
@@ -310,5 +330,22 @@ describe('the clock-in list with an approved remote day', () => {
     });
     const res: any = await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
     expect(res.data[0].awayAllowed).toBe(false);
+  });
+});
+
+describe('ONE planning zone per clock-in', () => {
+  beforeAll(() => jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] }));
+  afterAll(() => jest.useRealTimers());
+
+  it("a workspace WITH coordinates plans every step in its own zone; the GPS zone is only the entry's", async () => {
+    at('2026-09-15T06:00:00.000Z');
+    const { service, prisma } = await build();
+    // The workspace's zone deliberately differs from where its pin (and the fix) are.
+    prisma.companyLocation.findFirst.mockResolvedValue({ ...location, timezone: 'America/New_York' });
+    await service.clockIn(clockIn());
+    const site = (service as any).clockIns.site;
+    expect(site.context.shiftResolver.resolveForClockIn.mock.calls[0][0].clockInTz).toBe('America/New_York');
+    expect(site.presence.atClockIn.mock.calls[0][0].timezone).toBe('America/New_York');
+    expect(created(prisma).timezone).toBe('Europe/Vienna'); // where the person was — display only
   });
 });

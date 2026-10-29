@@ -53,7 +53,9 @@ export type OccurrenceFlag =
   /** The phone clock disagrees with the anchored estimate. Needs a person. */
   | 'CLOCK_SUSPECT'
   /** Older than the window an offline record is expected in. Needs a person. */
-  | 'STALE';
+  | 'STALE'
+  /** A clock step sent well after its moment, with no anchor that can vouch for that moment. Needs a person. */
+  | 'TIME_UNVERIFIED';
 
 export type OccurrenceRefusal = 'OCCURRED_AT_INVALID' | 'OCCURRED_IN_FUTURE' | 'OUT_OF_ORDER';
 
@@ -78,6 +80,17 @@ export const OCCURRENCE_RULES = {
   FIX_MAX_GAP_MS: 2 * 60 * 1000,
   /** Same bound the clock-in has always used. */
   FIX_MAX_ACCURACY_M: 100,
+  /**
+   * A clock step this much older than its arrival, with no anchor to vouch for its moment
+   * (UNANCHORED or CLOCK_SUSPECT), is TIME_UNVERIFIED. Below it is ordinary network delay.
+   */
+  TIME_UNVERIFIED_AFTER_MS: 15 * 60 * 1000,
+  /**
+   * The "recorded offline, so it is kept" leniency (a remote day despite a workspace, no shift where
+   * one is required) applies only to a moment at least this old: the phone genuinely could not ask.
+   * RECORDED_OFFLINE alone starts at 2 minutes — a slow request is not an offline record.
+   */
+  OFFLINE_LENIENCY_AFTER_MS: 10 * 60 * 1000,
 } as const;
 
 /**
@@ -171,6 +184,26 @@ export function assessFix(
     return { ok: false, code: 'FIX_NOT_AT_TAP', message: 'Your location was not taken at the moment of the action' };
   }
   return { ok: true };
+}
+
+/** The clock step's moment was not vouched for by the server — it waits for a person. */
+export const TIME_UNVERIFIED_FLAG = 'TIME_UNVERIFIED' as const;
+
+/**
+ * A clock-in or clock-out claiming a moment well before it arrived, with nothing to vouch for that moment.
+ *
+ * ⚠️ Decided by the owner (2026-10-29): RECORDED_OFFLINE and UNANCHORED stay informational on their own, but
+ * together past 15 minutes they let anybody type any time — put the phone in flight mode, move its clock back
+ * five hours, tap. The time still counts; a leader looks at it. Anchored (and not suspect) stays automatic.
+ */
+export function timeUnverified(flags: readonly string[], occurredAt: Date, receivedAt: Date): boolean {
+  const unvouched = flags.includes('UNANCHORED') || flags.includes('CLOCK_SUSPECT');
+  return unvouched && receivedAt.getTime() - occurredAt.getTime() > OCCURRENCE_RULES.TIME_UNVERIFIED_AFTER_MS;
+}
+
+/** Was this genuinely recorded offline — late enough that "the phone could not ask" is the honest reading? */
+export function offlineLeniency(occurredAt: Date, receivedAt: Date): boolean {
+  return receivedAt.getTime() - occurredAt.getTime() > OCCURRENCE_RULES.OFFLINE_LENIENCY_AFTER_MS;
 }
 
 /**

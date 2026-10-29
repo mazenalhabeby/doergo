@@ -6,6 +6,7 @@ import {
   computeScheduleFlags,
   workspaceSchedulesShifts,
   AUTO_CLOCK_IN_FLAG,
+  APPROVED_REMOTE_FLAG,
   autoClockInWithinWindow,
   presenceClockInAllowed,
   presenceSessionEnd,
@@ -13,7 +14,7 @@ import {
   type MemberAutoClockSettings,
   type OccurrenceEvidence,
 } from '@hbcfield/shared';
-import type { judgeOccurrence } from '../../../common/occurrence.util';
+import type { ClockStepOccurrence } from '../core/attendance-occurrence';
 
 /** The steps of `ClockInService.clockIn` that need nothing but their inputs. */
 
@@ -47,7 +48,7 @@ export interface ClockInInput {
   trigger?: ClockTrigger;
 }
 
-export type ClockInOccurrence = ReturnType<typeof judgeOccurrence>;
+export type ClockInOccurrence = ClockStepOccurrence;
 
 /** What a clock-in needs about the member — auth-service's columns, published in shared data/people. */
 export { CLOCK_IN_USER_SELECT } from '@hbcfield/shared';
@@ -55,9 +56,22 @@ import { CLOCK_IN_USER_SELECT } from '@hbcfield/shared';
 
 export type ClockInUser = Prisma.UserGetPayload<{ select: typeof CLOCK_IN_USER_SELECT }>;
 
-/** Null when the fix is good enough to judge; otherwise the refusal. */
-export function gpsAccuracyRefusal(accuracy: number | undefined): BadRequestException | null {
-  if (accuracy && accuracy > ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD) {
+/**
+ * Null when the fix is good enough to judge (or there is no fix); otherwise the refusal.
+ *
+ * ⚠️ A position WITHOUT an accuracy (or with 0, which no real fix reports) is not "precise": it used to
+ * skip the check, so a hand-made request with lat/lng alone was judged as a perfect fix.
+ */
+export function gpsAccuracyRefusal(accuracy: number | undefined, hasFix: boolean): BadRequestException | null {
+  if (!hasFix) return null;
+  if (accuracy == null || !(accuracy > 0)) {
+    return new BadRequestException({
+      code: 'FIX_INACCURATE',
+      message: 'Your location is not precise enough yet',
+      params: { radiusMetres: ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD },
+    });
+  }
+  if (accuracy > ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD) {
     // Coded, with the figures, so each app says it in the member's language (clock review C1).
     return new BadRequestException({
       code: 'GPS_ACCURACY_LOW',
@@ -189,6 +203,33 @@ export function autoClockInFlag(input: {
           stamp.expectedClockOutAt ?? null,
         ));
   return holds ? [AUTO_CLOCK_IN_FLAG] : [];
+}
+
+/**
+ * The labels an on-site clock-in carries for WHERE it was made (before its time is judged).
+ *
+ * BOUNDARY_CHANGED: judged against today's boundary, which may not be the one that stood when the member
+ * tapped. Rather than keep a history of boundaries, say so: a person looks at an entry whose site moved
+ * while it was on its way. Only a move of the site itself counts — not a rename (`boundaryChangedAt`).
+ *
+ * An away day is recorded as away, and reviewed — not from suspicion: there is no geofence evidence behind
+ * it, and the honest handling of unverifiable evidence is that a person looks at it. It keeps its workspace,
+ * its shift and its rests, which is the point of admitting it here rather than in a bucket of its own.
+ * Approved in advance: said on the entry (APPROVED_REMOTE), already decided — never sent to review for it.
+ */
+export function whereFlags(input: {
+  occurrence: { at: Date; flags: readonly string[] };
+  location: { boundaryChangedAt?: Date | null };
+  clockedInAway: boolean;
+  remoteApproved: boolean;
+}): string[] {
+  const { occurrence, location } = input;
+  const flags: string[] = [];
+  if (occurrence.flags.includes('RECORDED_OFFLINE') && (location.boundaryChangedAt ?? 0) > occurrence.at) {
+    flags.push('BOUNDARY_CHANGED');
+  }
+  if (input.clockedInAway) flags.push(input.remoteApproved ? APPROVED_REMOTE_FLAG : 'OUTSIDE_GEOFENCE_IN');
+  return flags;
 }
 
 /** The tap's position, when the member gave one (clock review C2: asked only where the place checks it). */

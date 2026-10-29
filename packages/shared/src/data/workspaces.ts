@@ -5,15 +5,23 @@
 import { activeAssignmentWhere, notEndedWhere } from '../access/assignment-window';
 import type { On } from './db';
 
-/** Is this workspace the organization's (and, with `activeOnly`, not archived)? */
+/**
+ * Is this workspace the organization's (and, with `activeOnly`, not archived)? With `assignable`, never the
+ * org's Remote bucket — nobody is placed in it (it is only for somebody with no workspace at all).
+ */
 export async function workspaceInOrg(
   db: On<'companyLocation', 'findFirst'>,
   spaceId: string,
   organizationId: string,
-  opts: { activeOnly?: boolean } = {},
+  opts: { activeOnly?: boolean; assignable?: boolean } = {},
 ): Promise<boolean> {
   const found = await db.companyLocation.findFirst({
-    where: { id: spaceId, organizationId, ...(opts.activeOnly ? { isActive: true } : {}) },
+    where: {
+      id: spaceId,
+      organizationId,
+      ...(opts.activeOnly ? { isActive: true } : {}),
+      ...(opts.assignable ? { isRemote: false } : {}),
+    },
     select: { id: true },
   });
   return !!found;

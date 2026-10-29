@@ -296,6 +296,40 @@ describe('attendance recorded offline', () => {
       expect(body.message).toMatch(/You are [\d.,]+\u00A0k?m away\./);
     });
 
+    it('a clock-in 3 h old with NO anchor is TIME_UNVERIFIED and waits for a leader (decided by the owner)', async () => {
+      const { service, prisma } = await build();
+      const { anchor: _a, uptimeMs: _u, ...unanchored } = evidence();
+      await service.clockIn(clockIn({ evidence: unanchored }));
+      const data = prisma.timeEntry.create.mock.calls[0][0].data;
+      expect(data.clockInAt).toEqual(TAP); // it still counts from the tap
+      expect(data.flagReasons).toEqual(expect.arrayContaining(['UNANCHORED', 'RECORDED_OFFLINE', 'TIME_UNVERIFIED']));
+      expect(data.approvalStatus).toBe('PENDING');
+    });
+
+    it('within 15 minutes an unanchored clock-in is ordinary network delay — approved on its own', async () => {
+      const { service, prisma } = await build();
+      const recent = new Date(NOW.getTime() - 10 * 60_000);
+      const { anchor: _a, uptimeMs: _u, ...unanchored } = evidence(recent);
+      await service.clockIn(clockIn({ evidence: unanchored }));
+      const data = prisma.timeEntry.create.mock.calls[0][0].data;
+      expect(data.flagReasons).not.toContain('TIME_UNVERIFIED');
+      expect(data.approvalStatus).toBe('AUTO');
+    });
+
+    it('an ANCHORED clock-in hours old stays automatic — the anchor vouches for its moment', async () => {
+      const { service, prisma } = await build();
+      await service.clockIn(clockIn());
+      const data = prisma.timeEntry.create.mock.calls[0][0].data;
+      expect(data.flagReasons).not.toContain('TIME_UNVERIFIED');
+      expect(data.approvalStatus).toBe('AUTO');
+    });
+
+    it('never clocks in "on site" at the Remote bucket: the workspace read excludes it', async () => {
+      const { service, prisma } = await build();
+      await service.clockIn(clockIn());
+      expect(prisma.companyLocation.findFirst.mock.calls[0][0].where).toMatchObject({ id: 'loc-1', isRemote: false });
+    });
+
     it('behaves exactly as before for a screen that sends no evidence', async () => {
       const { service, prisma } = await build();
       await service.clockIn({ userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', ...SITE, accuracy: 10 });
@@ -403,7 +437,8 @@ describe('attendance recorded offline', () => {
 
     it('replaces a temporary close with the real clock-out the phone was holding', async () => {
       const { service, prisma } = await build();
-      prisma.timeEntry.findFirst.mockResolvedValue({
+      // The shift, then "no later shift" (the replacing clock-out may not pass the next clock-in).
+      prisma.timeEntry.findFirst.mockResolvedValueOnce({
         ...open(),
         status: TimeEntryStatus.CLOCKED_OUT,
         clockOutAt: new Date('2026-09-14T17:00:00Z'),
@@ -422,6 +457,50 @@ describe('attendance recorded offline', () => {
       expect(data.flagReasons).toContain('RECORDED_OFFLINE');
       expect(data.flagReasons).not.toContain('CLOCK_OUT_PROVISIONAL');
       expect(data.flagReasons).not.toContain('MISSED_CLOCK_OUT');
+    });
+
+    it('an unanchored clock-out hours old is TIME_UNVERIFIED and waits for a leader', async () => {
+      const { service, prisma } = await build();
+      prisma.timeEntry.findFirst.mockResolvedValue(open());
+      const { anchor: _a, uptimeMs: _u, ...unanchored } = evidence(TAP);
+      await service.clockOut(clockOut({ evidence: unanchored }));
+      const data = prisma.timeEntry.updateMany.mock.calls[0][0].data;
+      expect(data.flagReasons).toContain('TIME_UNVERIFIED');
+      expect(data.approvalStatus).toBe('PENDING');
+    });
+
+    const provisional = (clockOutAt: string) => ({
+      ...open(),
+      status: TimeEntryStatus.CLOCKED_OUT,
+      clockOutAt: new Date(clockOutAt),
+      clockOutProvisional: true,
+      clockOutBasis: 'SHIFT_END',
+      flagReasons: ['MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL'],
+    });
+
+    it('refuses a replacing clock-out later than the next shift began (the two would overlap)', async () => {
+      const { service, prisma } = await build();
+      prisma.timeEntry.findFirst
+        .mockResolvedValueOnce(provisional('2026-09-14T06:30:00Z'))
+        .mockResolvedValueOnce({ clockInAt: new Date('2026-09-14T07:30:00Z') }); // the next shift, before the tap
+      await expect(service.clockOut(clockOut())).rejects.toMatchObject({
+        status: 409,
+        response: expect.objectContaining({ code: 'CLOCK_OUT_AFTER_NEXT_SHIFT' }),
+      });
+      expect(prisma.timeEntry.updateMany).not.toHaveBeenCalled();
+      const next = prisma.timeEntry.findFirst.mock.calls[1][0];
+      expect(next.where).toMatchObject({ userId: 'u1', id: { not: 'e1' }, clockInAt: { gt: open().clockInAt } });
+    });
+
+    it('a replacing clock-out more than 12 h past the temporary close counts — and goes to a person', async () => {
+      const { service, prisma } = await build();
+      const shift = { ...provisional('2026-09-13T18:00:00Z'), clockInAt: new Date('2026-09-13T06:00:00Z') };
+      prisma.timeEntry.findFirst.mockResolvedValueOnce(shift).mockResolvedValueOnce(null);
+      await service.clockOut(clockOut());
+      const data = prisma.timeEntry.updateMany.mock.calls[0][0].data;
+      expect(data.clockOutAt).toEqual(TAP);
+      expect(data.flagReasons).toContain('CLOCK_OUT_LONG_AFTER_CLOSE');
+      expect(data.approvalStatus).toBe('PENDING');
     });
 
     it('a late clock-out with a reason asks a leader for the overtime', async () => {

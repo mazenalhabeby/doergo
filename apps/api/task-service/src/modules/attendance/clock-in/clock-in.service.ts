@@ -20,8 +20,8 @@ import {
   personForClockIn,
 } from '@hbcfield/shared';
 import { remoteApprovedAt, approvedRequestsAround, type DayRequestRow } from '../core/approved-requests';
-import { fixOfTap, judgeOccurrence } from '../../../common/occurrence.util';
-import { alreadyClockedIn, sameRecordOrRefuse } from '../core/attendance-occurrence';
+import { fixOfTap } from '../../../common/occurrence.util';
+import { alreadyClockedIn, judgeClockStep, sameRecordOrRefuse } from '../core/attendance-occurrence';
 import { PrismaService } from '@hbcfield/shared';
 import { ClockInContextService } from './clock-in-context.service';
 import { ClockInRemoteService } from './clock-in-remote.service';
@@ -29,6 +29,7 @@ import { ClockInSiteWriter } from './clock-in-site.writer';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
 import { fixOf, gpsAccuracyRefusal, outsideSiteRefusal, type ClockInInput } from './clock-in-steps';
 import { joinedIntoWhere } from '../core/clock-in-join';
+import { clockInZones } from './clock-in-helpers';
 
 /**
  * Starting a shift: where a member may clock in, the clock-in itself, and the
@@ -108,7 +109,7 @@ export class ClockInService {
           select: { clockOutAt: true },
         })
       : null;
-    const occurrence = judgeOccurrence(data.evidence, lastClosed?.clockOutAt);
+    const occurrence = judgeClockStep(data.evidence, lastClosed?.clockOutAt);
     const tapFix = fixOfTap(data.evidence, occurrence.at, occurrence.flags);
     if (tapFix) {
       data.lat = tapFix.lat;
@@ -192,13 +193,10 @@ export class ClockInService {
 
     if (existingEntry) throw alreadyClockedIn(existingEntry, occurrence.fromEvidence);
 
-    // Get location details
+    // Get location details. Never the Remote bucket: it has no site to judge and no rota — it is reached
+    // only through `isRemote`, by somebody with no workspace (ClockInRemoteService).
     const workspace = await this.prisma.companyLocation.findFirst({
-      where: {
-        id: data.locationId,
-        organizationId: data.organizationId,
-        isActive: true,
-      },
+      where: { id: data.locationId, organizationId: data.organizationId, isActive: true, isRemote: false },
     });
 
     if (!workspace) {
@@ -208,8 +206,15 @@ export class ClockInService {
     // they work here another way, with their own daily hours. Everything below reads the result.
     const location = { ...workspace, ...effectiveClockRules(workspace, assignment) } as typeof workspace;
 
+    // ONE planning zone for every step of this clock-in (clock-in-helpers `clockInZones`).
+    const zones = clockInZones(data, location, orgTz);
+    // The approver said yes to working away from HERE today: that is the authorisation, above the
+    // grant and the ceiling. It covers only where — lateness is still judged below. Asked FIRST: on
+    // such a day there is no site to be precise about, so neither a fix nor its accuracy is required.
+    const remoteApproved = remoteApprovedAt(dayRequests, location.id, occurrence.at, zones.planningTz);
+
     // Check GPS accuracy
-    const accuracyRefusal = gpsAccuracyRefusal(data.accuracy);
+    const accuracyRefusal = remoteApproved ? null : gpsAccuracyRefusal(data.accuracy, !!fixOf(data));
     if (accuracyRefusal) throw accuracyRefusal;
 
     // Is this position at the site? One helper answers it for a radius and for
@@ -225,14 +230,15 @@ export class ClockInService {
     };
     // A position is needed only where the place checks one (C2): a pinned site refuses a clock-in without it.
     const fix = fixOf(data);
-    if (spaceHasPin && !fix) {
+    if (spaceHasPin && !fix && !remoteApproved) {
       throw new BadRequestException({
         code: 'FIX_MISSING',
         message: `Your location is needed to clock in at ${location.name}.`,
         params: { location: location.name },
       });
     }
-    const at = fix ? isAtSite(fix, zone) : { inside: true, distanceToCentre: null };
+    // No position on an approved remote day: away, as approved — never "on site" for want of a fix.
+    const at = fix ? isAtSite(fix, zone) : { inside: !(spaceHasPin && remoteApproved), distanceToCentre: null };
     const distance = at.distanceToCentre ?? 0;
     // A workspace with its ring switched off has nobody "outside" it — never an away day, never review (B6).
     const withinGeofence = at.inside || ringSwitchedOff(location.geofencePolicy);
@@ -250,9 +256,6 @@ export class ClockInService {
       site never allows it" send somebody to different people to get it fixed,
       and they are standing outside a client's office while they read it.
     */
-    // The approver said yes to working away from HERE today: that is the authorisation, above the
-    // grant and the ceiling. It covers only where — lateness is still judged below.
-    const remoteApproved = remoteApprovedAt(dayRequests, location.id, occurrence.at, location.timezone || orgTz);
     const away =
       !withinGeofence && !remoteApproved
         ? resolveAwayAccess({
@@ -275,6 +278,7 @@ export class ClockInService {
         occurrence,
         dayRequests,
         orgTz,
+        zones,
         withinGeofence,
         insideSite: at.inside,
         remoteApproved,

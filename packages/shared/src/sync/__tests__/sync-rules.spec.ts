@@ -11,6 +11,11 @@ import {
   outboxOutcomeForResult,
   retryDelayMs,
   OCCURRENCE_RULES,
+  timeUnverified,
+  offlineLeniency,
+  TIME_UNVERIFIED_FLAG,
+  labelEntry,
+  labelWord,
 } from '@hbcfield/shared';
 
 const NOW = new Date('2026-09-14T11:14:00Z');
@@ -19,7 +24,8 @@ const iso = (ms: number) => new Date(ms).toISOString();
 
 /** A phone that last heard from the server at 07:31 with 16 712 004 ms uptime. */
 const anchor = { serverTime: '2026-09-14T07:31:02Z', uptimeMs: 16_712_004 };
-const uptimeAt = (atIso: string) => anchor.uptimeMs + (new Date(atIso).getTime() - new Date(anchor.serverTime).getTime());
+const uptimeAt = (atIso: string) =>
+  anchor.uptimeMs + (new Date(atIso).getTime() - new Date(anchor.serverTime).getTime());
 
 describe('assessOccurrence', () => {
   it('accepts a clock-in recorded offline at 07:58 with an honest clock', () => {
@@ -54,12 +60,17 @@ describe('assessOccurrence', () => {
   });
 
   it('refuses the future beyond drift tolerance, allows a little', () => {
-    expect(assessOccurrence({ occurredAt: iso(NOW.getTime() + min(10)) }, { now: NOW }).refusal?.code).toBe('OCCURRED_IN_FUTURE');
+    expect(assessOccurrence({ occurredAt: iso(NOW.getTime() + min(10)) }, { now: NOW }).refusal?.code).toBe(
+      'OCCURRED_IN_FUTURE',
+    );
     expect(assessOccurrence({ occurredAt: iso(NOW.getTime() + min(1)) }, { now: NOW }).refusal).toBeUndefined();
   });
 
   it('refuses an action that precedes the one it follows', () => {
-    const r = assessOccurrence({ occurredAt: '2026-09-14T07:00:00Z' }, { now: NOW, previousAt: new Date('2026-09-14T07:58:00Z') });
+    const r = assessOccurrence(
+      { occurredAt: '2026-09-14T07:00:00Z' },
+      { now: NOW, previousAt: new Date('2026-09-14T07:58:00Z') },
+    );
     expect(r.refusal?.code).toBe('OUT_OF_ORDER');
   });
 
@@ -68,7 +79,10 @@ describe('assessOccurrence', () => {
   });
 
   it('sends a week-old record to a person', () => {
-    const r = assessOccurrence({ occurredAt: iso(NOW.getTime() - OCCURRENCE_RULES.STALE_AFTER_MS - min(1)) }, { now: NOW });
+    const r = assessOccurrence(
+      { occurredAt: iso(NOW.getTime() - OCCURRENCE_RULES.STALE_AFTER_MS - min(1)) },
+      { now: NOW },
+    );
     expect(r.flags).toEqual(expect.arrayContaining(['RECORDED_OFFLINE', 'STALE']));
     expect(flagsForReview(r.flags).length > 0).toBe(true);
   });
@@ -129,5 +143,25 @@ describe('outbox outcomes', () => {
     expect(retryDelayMs(50, mid)).toBe(300_000);
     expect(retryDelayMs(1, () => 0)).toBe(1600);
     expect(retryDelayMs(1, () => 1)).toBe(2400);
+  });
+});
+
+describe('a clock step nobody can vouch for (TIME_UNVERIFIED, decided 2026-10-29)', () => {
+  const at = (mins: number) => new Date(NOW.getTime() - min(mins));
+  it('unanchored or suspect AND more than 15 min old → unverified, and it sends the day to review', () => {
+    expect(timeUnverified(['UNANCHORED', 'RECORDED_OFFLINE'], at(16), NOW)).toBe(true);
+    expect(timeUnverified(['CLOCK_SUSPECT'], at(5 * 60), NOW)).toBe(true);
+    expect(flagsForReview([TIME_UNVERIFIED_FLAG])).toEqual([TIME_UNVERIFIED_FLAG]);
+    expect(labelEntry(TIME_UNVERIFIED_FLAG).kind).toBe('review');
+    expect(labelWord(TIME_UNVERIFIED_FLAG, 'de')).toBe('Zeit nicht überprüft');
+  });
+  it('within 15 min (network delay), or anchored, nothing changes', () => {
+    expect(timeUnverified(['UNANCHORED'], at(15), NOW)).toBe(false);
+    expect(timeUnverified(['RECORDED_OFFLINE'], at(5 * 60), NOW)).toBe(false);
+  });
+  it('the offline leniency starts past 10 minutes, not at RECORDED_OFFLINE (2 minutes)', () => {
+    expect(offlineLeniency(at(3), NOW)).toBe(false);
+    expect(offlineLeniency(at(10), NOW)).toBe(false);
+    expect(offlineLeniency(at(11), NOW)).toBe(true);
   });
 });

@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { nextBreakRemindAt, parseBreakPlan, readLabelFacts, TimeEntryStatus } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
-import { approvalFor } from './attendance-occurrence';
+import { alreadyClockedIn, approvalFor } from './attendance-occurrence';
 
 /**
  * One entry per shift (label rules, new entries only).
@@ -39,6 +39,32 @@ export function isJoinableFragment(prior: FragmentCandidate | null, clockInAt: D
 }
 
 const CLOSE_ONLY_FLAGS = new Set(['EARLY_DEPARTURE', 'OVERTIME', 'PAST_DAILY_LIMIT', 'OUTSIDE_GEOFENCE_OUT']);
+/** The arrival was judged on the fragment — the join is the same arrival, never "late back from a rest". */
+const ARRIVAL_FLAGS = new Set(['LATE_ARRIVAL', 'LATE_FROM_REST']);
+
+/**
+ * The reopened entry's labels: the fragment's (less what only its close said) AND the joining clock-in's own.
+ *
+ * ⚠️ The join used to keep only the fragment's, so a clock-in outside the zone, from a mock location, with a
+ * moved clock or with no hours left today joined an automatic fragment and was approved on its labels alone.
+ */
+export function joinedFlags(fragmentFlags: readonly string[], joiningFlags: readonly string[]): string[] {
+  const kept = fragmentFlags.filter((f) => !CLOSE_ONLY_FLAGS.has(f));
+  return [...new Set([...kept, ...joiningFlags.filter((f) => !ARRIVAL_FLAGS.has(f))])];
+}
+
+/** What the joining clock-in says about where it was made — it was the person, not the fragment, who was away. */
+export interface JoiningClockIn {
+  userId: string;
+  clockInId: string | undefined;
+  nextRemindAt: Date | null | undefined;
+  now: Date;
+  /** The joining clock-in's own labels (occurrence, position, daily limit …). */
+  flags: readonly string[];
+  /** Away from the site (OUTSIDE_GEOFENCE_IN or APPROVED_REMOTE), and why. */
+  isRemote: boolean;
+  awayReason: string | null;
+}
 
 /**
  * Reopen the fragment for this clock-in. Claimed with a conditional update (the
@@ -49,9 +75,9 @@ const CLOSE_ONLY_FLAGS = new Set(['EARLY_DEPARTURE', 'OVERTIME', 'PAST_DAILY_LIM
 export async function joinFragment(
   prisma: Pick<PrismaService, 'timeEntry'>,
   fragment: FragmentCandidate,
-  join: { clockInId: string | undefined; nextRemindAt: Date | null | undefined; now: Date },
+  join: JoiningClockIn,
 ) {
-  const flags = fragment.flagReasons.filter((f) => !CLOSE_ONLY_FLAGS.has(f));
+  const flags = joinedFlags(fragment.flagReasons, join.flags);
   const facts = readLabelFacts(fragment.labelFacts);
   const plan = parseBreakPlan(fragment.breakPlan);
   const reopenedFacts = facts
@@ -63,7 +89,7 @@ export async function joinFragment(
         joinedClockInIds: [...(facts.joinedClockInIds ?? []), ...(join.clockInId ? [join.clockInId] : [])],
       }
     : undefined;
-  const claim = await prisma.timeEntry.updateMany({
+  const claim = await reopenOrRefuse(prisma, join.userId, {
     where: { id: fragment.id, status: TimeEntryStatus.CLOCKED_OUT, clockOutAt: fragment.clockOutAt },
     data: {
       status: TimeEntryStatus.CLOCKED_IN,
@@ -82,11 +108,36 @@ export async function joinFragment(
       reminderCount: 0,
       nextRemindAt: join.nextRemindAt ?? null,
       nextBreakRemindAt: plan.length ? nextBreakRemindAt(plan, join.now) : null,
+      // Away when the person was: never cleared here — a fragment made away stays away.
+      ...(join.isRemote ? { isRemote: true, awayReason: join.awayReason } : {}),
       ...(reopenedFacts ? { labelFacts: JSON.parse(JSON.stringify(reopenedFacts)) as Prisma.InputJsonValue } : {}),
     },
   });
   if (claim.count === 0) return null;
   return prisma.timeEntry.findUnique({ where: { id: fragment.id }, include: { location: true } });
+}
+
+/**
+ * The reopening write. ⚠️ One open shift per member is a unique index (`time_entries_one_open_per_user`): a
+ * shift opened meanwhile (another device, the office) refuses the reopen with P2002 — answered as the
+ * ordinary "already clocked in", never a 500.
+ */
+async function reopenOrRefuse(
+  prisma: Pick<PrismaService, 'timeEntry'>,
+  userId: string,
+  args: Prisma.TimeEntryUpdateManyArgs,
+): Promise<{ count: number }> {
+  try {
+    return await prisma.timeEntry.updateMany(args);
+  } catch (err) {
+    if ((err as { code?: string })?.code !== 'P2002') throw err;
+    const open = await prisma.timeEntry.findFirst({
+      where: { userId, status: TimeEntryStatus.CLOCKED_IN },
+      include: { location: true },
+    });
+    if (open) throw alreadyClockedIn(open, true);
+    throw err;
+  }
 }
 
 /** The entry a clock-in (by its phone-made id) was joined into, looked up within two days. */

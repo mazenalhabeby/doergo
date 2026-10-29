@@ -102,14 +102,15 @@ export class ClockInRemoteService {
       occurrence.at,
     );
     /*
-      ⚠️ Recorded OFFLINE, it is kept — never refused. The phone chose from the
+      ⚠️ Recorded OFFLINE, it is kept — never refused. Genuinely offline: more than 10 minutes before it
+      arrived (`occurrence.lenient`) — a request that merely took 3 minutes could have been refused live. The phone chose from the
       list it had saved; when that list was out of date, refusing at sync would
       throw away a day somebody actually worked, which no offline rule does (the
       daily limit flags instead of refusing, for the same reason). It arrives
       flagged REMOTE_WITH_WORKSPACE, so a person decides. Online, the member
       sees the refusal while still able to clock in at the workspace.
     */
-    const remoteDespiteWorkspace = workspaces.length > 0 && occurrence.flags.includes('RECORDED_OFFLINE');
+    const remoteDespiteWorkspace = workspaces.length > 0 && occurrence.lenient;
     if (workspaces.length > 0 && !remoteDespiteWorkspace) {
       throw new BadRequestException({
         message: 'You are assigned to a workspace, so clock in there — away from the site if your workspace allows it.',
@@ -123,7 +124,7 @@ export class ClockInRemoteService {
     });
     if (already) throw alreadyClockedIn(already, occurrence.fromEvidence);
     // The same accuracy as on site (B10): a position this coarse says nothing about where the day was worked.
-    const coarse = gpsAccuracyRefusal(data.accuracy);
+    const coarse = gpsAccuracyRefusal(data.accuracy, !!fixOf(data));
     if (coarse) throw coarse;
     const bucket = await this.context.getOrCreateRemoteBucket(data.organizationId);
     const fix = fixOf(data);

@@ -2,12 +2,10 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import type { CompanyLocation, SpaceAssignment } from '@prisma/client';
 import {
-  zoneOf,
   success,
   TimeEntryStatus,
   siteEnforcesZone,
   parseGeofencePolygon,
-  APPROVED_REMOTE_FLAG,
   autoClockActive,
   clocksByPresence,
   SERVICE_NAMES,
@@ -19,6 +17,7 @@ import { isJoinableFragment, joinFragment } from '../core/clock-in-join';
 import type { DayRequestRow } from '../core/approved-requests';
 import { approvalFor } from '../core/attendance-occurrence';
 import { applyNoShiftAllowance } from './clock-in-no-shift';
+import type { ClockInZones } from './clock-in-helpers';
 import { ClockInContextService } from './clock-in-context.service';
 import { BreakRulesService } from '../core/break-rules.service';
 import { PresenceService } from '../presence/presence.service';
@@ -29,6 +28,7 @@ import {
   armAutoClockReminder,
   autoClockInFlag,
   scheduleFlagsAtClockIn,
+  whereFlags,
   type ClockInInput,
   type ClockInOccurrence,
   type ClockInUser,
@@ -46,6 +46,8 @@ export interface OnSiteClockIn {
   withinGeofence: boolean;
   insideSite: boolean; // physically inside the area — a ring switched off admits them without placing them
   remoteApproved: boolean;
+  /** One planning zone for every step below; the entry's own zone is for display only. */
+  zones: ClockInZones;
   zone: {
     lat: number | null;
     lng: number | null;
@@ -71,41 +73,14 @@ export class ClockInSiteWriter {
   ) {}
 
   async recordOnSite(data: ClockInInput & { locationId: string }, ctx: OnSiteClockIn) {
-    const { user, location, assignment, occurrence, dayRequests, orgTz, withinGeofence, remoteApproved } = ctx;
+    const { user, location, assignment, occurrence, dayRequests, withinGeofence, remoteApproved } = ctx;
     const clockInTime = occurrence.at;
-    const flagReasons: string[] = [...occurrence.flags];
-
-    /*
-      Judged against today's boundary, which may not be the one that stood when
-      the member tapped. Rather than keep a history of boundaries, say so: a
-      person looks at an entry whose site moved while it was on its way.
-    */
-    // Label rules: only a move of the site itself counts — not a rename (`boundaryChangedAt`).
-    if (occurrence.flags.includes('RECORDED_OFFLINE') && (location.boundaryChangedAt ?? 0) > clockInTime) {
-      flagReasons.push('BOUNDARY_CHANGED');
-    }
-
-    /*
-      An away day is recorded as away, and reviewed.
-
-      Not from suspicion: there is no geofence evidence behind it, and the honest
-      handling of unverifiable evidence is that a person looks at it. It is one
-      row in a queue that already exists — and it keeps its workspace, its shift
-      and its rests, which is the entire point of admitting it here rather than
-      filing it in a bucket of its own.
-    */
+    // How it was recorded, and where (clock-in-steps `whereFlags`).
     const clockedInAway = !withinGeofence;
-    if (clockedInAway) {
-      // Approved in advance: said on the entry, already decided — never sent to review for it.
-      flagReasons.push(remoteApproved ? APPROVED_REMOTE_FLAG : 'OUTSIDE_GEOFENCE_IN');
-    }
+    const flagReasons = [...occurrence.flags, ...whereFlags({ occurrence, location, clockedInAway, remoteApproved })];
 
-    // No-GPS fallback: a PHYSICAL space falls back to its own (site) timezone; a
-    // LOGICAL space has none, so fall back to the org timezone. When GPS is
-    // present the worker's actual location wins regardless.
-    const spaceIsPhysical = location.lat != null && location.lng != null;
-    const fallbackTz = spaceIsPhysical ? location.timezone : orgTz;
-    const workerTz = this.context.resolveEntryTimezone(data.lat, data.lng, fallbackTz);
+    // ⚠️ Every planning step reads `planningTz` (clock-in-helpers `clockInZones`); `entryTz` is only stored.
+    const { planningTz, entryTz } = ctx.zones;
 
     // Resolve the shift ONCE (rota-aware + timezone-correct) and reuse it for both
     // the flags and the stamp — no separate legacy technicianSchedule query.
@@ -115,15 +90,16 @@ export class ClockInSiteWriter {
       data.userId,
       location,
       clockInTime,
-      workerTz ?? undefined,
+      planningTz,
     );
 
     let { endIsDailyLimit, shapingRequests } = scheduled
       ? { endIsDailyLimit: false, shapingRequests: dayRequests }
-      : await applyNoShiftAllowance(this.context, data.userId, user, location, workerTz, clockInTime, {
+      : await applyNoShiftAllowance(this.context, data.userId, user, location, planningTz, clockInTime, {
           dayRequests,
           stampCols,
           flagReasons,
+          lenient: occurrence.lenient,
         });
 
     /*
@@ -135,7 +111,7 @@ export class ClockInSiteWriter {
     const requestShaped = this.context.applyDayRequests(stampCols, shapingRequests, {
       spaceId: location.id,
       at: clockInTime,
-      tz: location.timezone || workerTz || orgTz,
+      tz: planningTz,
     });
     if (requestShaped.endMoved) endIsDailyLimit = false;
     // An agreed start on a day with no shift IS the plan for that day.
@@ -204,7 +180,7 @@ export class ClockInSiteWriter {
         withinGeofence,
         byPresence,
         clockInAt: clockInTime,
-        timezone: location.timezone || workerTz || orgTz,
+        timezone: planningTz,
         stamp: stampCols,
       }),
     );
@@ -224,7 +200,7 @@ export class ClockInSiteWriter {
       clockInAt: clockInTime,
       expectedStartAt: stampCols.expectedClockInAt ?? null,
       expectedEndAt: stampCols.expectedClockOutAt ?? null,
-      timezone: zoneOf(workerTz, location.timezone),
+      timezone: planningTz,
     });
 
     // Where they are working from the first moment: inside an area that exists, or decided from the evidence.
@@ -234,42 +210,54 @@ export class ClockInSiteWriter {
       point: fixOf(data),
       insideArea: siteEnforcesZone(ctx.zone) && ctx.insideSite,
       at: clockInTime,
-      timezone: workerTz ?? location.timezone ?? orgTz,
+      timezone: planningTz,
       recordedOffline: flagReasons.includes('RECORDED_OFFLINE'),
     });
 
-    // One entry per shift: right after an automatic fragment of this shift, join it (clock-in-join.ts).
+    const awayReason = clockedInAway ? data.awayReason?.trim().slice(0, 200) || null : null;
+    // One entry per shift: right after an automatic fragment of this shift, join it — with THIS clock-in's labels.
+    const join = { userId: data.userId, clockInId: data.id, nextRemindAt: stampCols.nextRemindAt, now: new Date() };
     const joined = isJoinableFragment(prior, clockInTime)
-      ? await joinFragment(this.context.prisma, prior, { clockInId: data.id, nextRemindAt: stampCols.nextRemindAt, now: new Date() })
+      ? await joinFragment(this.context.prisma, prior, {
+          ...join,
+          flags: flagReasons,
+          isRemote: clockedInAway,
+          awayReason,
+        })
       : null;
-    const entry = joined ?? await this.context.createEntryOnce(data.id, data.userId, {
-      ...(data.id ? { id: data.id } : {}),
-      userId: data.userId,
-      locationId: data.locationId,
-      status: TimeEntryStatus.CLOCKED_IN,
-      clockInAt: clockInTime,
-      clockInLat: data.lat,
-      clockInLng: data.lng,
-      clockInAccuracy: data.accuracy,
-      clockInWithinGeofence: withinGeofence,
-      // Away, but for THIS workspace: the rota, the rests and the expected
-      // hours all hang off it and stay attached.
-      isRemote: clockedInAway,
-      awayReason: clockedInAway ? data.awayReason?.trim().slice(0, 200) || null : null,
-      // Away needs a fix (a pinned site refuses without one, C2) — never geocode nothing.
-      clockInPlace: clockedInAway && data.lat != null && data.lng != null ? await this.geocoder.reverseGeocode(data.lat, data.lng) : null,
-      timezone: workerTz,
-      flagReasons,
-      approvalStatus,
-      organizationId: data.organizationId,
-      ...stampCols,
-      ...presenceCols,
-      endIsDailyLimit,
-      ...labels.columns,
-      labelFacts: labels.columns.labelFacts as never,
-      breakPlan: restPlan.breakPlan as never,
-      nextBreakRemindAt: restPlan.nextBreakRemindAt,
-    });
+    const entry =
+      joined ??
+      (await this.context.createEntryOnce(data.id, data.userId, {
+        ...(data.id ? { id: data.id } : {}),
+        userId: data.userId,
+        locationId: data.locationId,
+        status: TimeEntryStatus.CLOCKED_IN,
+        clockInAt: clockInTime,
+        clockInLat: data.lat,
+        clockInLng: data.lng,
+        clockInAccuracy: data.accuracy,
+        clockInWithinGeofence: withinGeofence,
+        // Away, but for THIS workspace: the rota, the rests and the expected
+        // hours all hang off it and stay attached.
+        isRemote: clockedInAway,
+        awayReason,
+        // Away needs a fix (a pinned site refuses without one, C2) — never geocode nothing.
+        clockInPlace:
+          clockedInAway && data.lat != null && data.lng != null
+            ? await this.geocoder.reverseGeocode(data.lat, data.lng)
+            : null,
+        timezone: entryTz,
+        flagReasons,
+        approvalStatus,
+        organizationId: data.organizationId,
+        ...stampCols,
+        ...presenceCols,
+        endIsDailyLimit,
+        ...labels.columns,
+        labelFacts: labels.columns.labelFacts as never,
+        breakPlan: restPlan.breakPlan as never,
+        nextBreakRemindAt: restPlan.nextBreakRemindAt,
+      }));
 
     this.logger.log(
       `Clock in successful: entry=${entry.id}, user=${data.userId}, location=${location.name}, ` +
@@ -283,12 +271,11 @@ export class ClockInSiteWriter {
         .markShiftInstancePresent(data.userId, data.locationId, stampCols.shiftId, entry.id, clockInTime, {
           organizationId: data.organizationId,
           recordedOffline: flagReasons.includes('RECORDED_OFFLINE'),
-          timezone: zoneOf(workerTz, location.timezone),
+          timezone: planningTz,
         })
         .catch((e) => this.logger.warn(`markShiftInstancePresent failed for entry=${entry.id}: ${e}`));
     }
 
-    // Emit real-time event for dashboard/team updates
     emitEvent(this.notificationClient, attendanceClockInEvent, {
       userId: data.userId,
       organizationId: data.organizationId,
