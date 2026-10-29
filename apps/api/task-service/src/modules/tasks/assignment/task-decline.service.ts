@@ -4,7 +4,7 @@ import { PrismaService } from '@hbcfield/shared';
 import { TaskSupportService } from '../core/task-support.service';
 import { RolePoolService } from './role-pool.service';
 import { TaskCrewChangeService } from './task-crew-change.service';
-import { personName, TaskStatus, TaskEventType, success } from '@hbcfield/shared';
+import { personName, TaskStatus, TaskEventType, success, assertFoundInOrg } from '@hbcfield/shared';
 import { emitEvent, taskDeclinedEvent } from '@hbcfield/shared/microservices';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
@@ -36,6 +36,9 @@ export class TaskDeclineService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
+    // Another organization's job, not given to the caller, does not exist to them: 404, never a
+    // 403 TASK_REASSIGNED that confirms the id. (A guest it WAS given to still declines it.)
+    if (task.assignedToId !== data.userId) assertFoundInOrg(task, data.organizationId, 'Task');
 
     /*
       A decline can arrive hours after the tap, from a phone that was offline.

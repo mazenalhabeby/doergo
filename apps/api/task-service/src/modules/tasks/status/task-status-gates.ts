@@ -59,6 +59,16 @@ export function assertMayMoveStatus(
     }
     return;
   }
+  // Cross-org isolation (C2): an ADMIN / canViewAllTasks holder in one tenant
+  // must not drive a task in ANOTHER tenant. A foreign task may only be moved
+  // with a CONTRIBUTE/CONTROL (canCreateTasks) grant for its real space —
+  // mirroring update() and assign(). Without it the task does not exist to the
+  // caller: 404, asked FIRST, never a 403 that confirms the id.
+  if (task.organizationId !== data.organizationId) {
+    if (!task.spaceId || !accessAllowsInSpace(data.access, 'canCreateTasks', task.spaceId)) {
+      assertFoundInOrg(task, data.organizationId, 'Task');
+    }
+  }
   // Any non-cancel status: canonical execution statuses AND custom-workflow
   // columns (including an "Assigned" column, which the old code wrongly sent to
   // "Access denied"). A worker may set these on tasks assigned to them; a
@@ -75,16 +85,6 @@ export function assertMayMoveStatus(
       message: 'You can only update execution status of tasks assigned to you',
       code: 'TASK_REASSIGNED',
     });
-  }
-  // Cross-org isolation (C2): the authority checks above never compared the
-  // task's org to the caller's, so an ADMIN / canViewAllTasks holder in one
-  // tenant could drive a task in ANOTHER tenant. A foreign task may only be
-  // moved with a CONTRIBUTE/CONTROL (canCreateTasks) grant for its real space
-  // — mirroring update() and assign(). Own-org tasks skip this.
-  if (task.organizationId !== data.organizationId) {
-    if (!task.spaceId || !accessAllowsInSpace(data.access, 'canCreateTasks', task.spaceId)) {
-      throw new ForbiddenException('You can only update the status of tasks in your organization');
-    }
   }
 }
 

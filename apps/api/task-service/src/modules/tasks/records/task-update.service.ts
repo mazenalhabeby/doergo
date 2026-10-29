@@ -62,7 +62,8 @@ export class TaskUpdateService {
     // CONTRIBUTE/CONTROL grant (canCreateTasks) for that task's real space.
     if (existingTask.organizationId !== organizationId) {
       if (!existingTask.spaceId || !accessAllowsInSpace(access, 'canCreateTasks', existingTask.spaceId)) {
-        throw new ForbiddenException('You can only update tasks in your organization');
+        // Another organization's task does not exist to this caller (never a 403 confirming the id).
+        assertFoundInOrg(existingTask, organizationId, 'Task');
       }
       // Don't let a guest move an owner's task into another space (incl. one they
       // can't reach). Foreign tasks stay in their space.

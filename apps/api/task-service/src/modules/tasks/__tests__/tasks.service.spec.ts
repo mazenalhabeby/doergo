@@ -487,7 +487,7 @@ describe('TasksService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException for different organization', async () => {
+    it('another organization\'s task reads as missing (404, not 403)', async () => {
       const taskInOtherOrg = { ...mockTask, organizationId: 'other-org' };
       mockPrismaService.task.findUnique.mockResolvedValue(taskInOtherOrg);
 
@@ -501,7 +501,7 @@ describe('TasksService', () => {
           canCreateTasks: true,
           organizationId: 'org-123',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException for completed task', async () => {
@@ -609,7 +609,7 @@ describe('TasksService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException for different organization', async () => {
+    it('another organization\'s task reads as missing (404, not 403)', async () => {
       const taskInOtherOrg = { ...mockTask, organizationId: 'other-org' };
       mockPrismaService.task.findUnique.mockResolvedValue(taskInOtherOrg);
 
@@ -623,7 +623,7 @@ describe('TasksService', () => {
           canAssignTasks: true,
           organizationId: 'org-123',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException for task not in assignable state', async () => {
@@ -726,6 +726,14 @@ describe('TasksService', () => {
           organizationId: 'org-123',
         }),
       ).rejects.toMatchObject({ response: expect.objectContaining({ code: 'TASK_REASSIGNED' }) });
+    });
+
+    it("another organization's job, not given to the caller, reads as missing (404, not TASK_REASSIGNED)", async () => {
+      const foreign = { ...mockTask, organizationId: 'other-org', status: TaskStatus.ASSIGNED, assignedToId: 'other-tech' };
+      mockPrismaService.task.findUnique.mockResolvedValue(foreign);
+      await expect(
+        service.decline({ id: 'task-123', userId: 'tech-123', userRole: Role.EMPLOYEE, organizationId: 'org-123' }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('refuses a decline that arrives after the task moved on, naming where it is now', async () => {

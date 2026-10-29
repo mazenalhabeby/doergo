@@ -68,7 +68,7 @@ describe('who may move a task', () => {
     }
   });
 
-  it('a foreign task moves only with a canCreateTasks grant in its space', () => {
+  it('a foreign task moves only with a canCreateTasks grant in its space — else it reads as missing', () => {
     const foreign = task({ organizationId: 'other' });
     expect(() =>
       assertMayMoveStatus(
@@ -77,7 +77,15 @@ describe('who may move a task', () => {
         { isAssignedUser: false, hasManageAuthority: true },
         logger,
       ),
-    ).toThrow('You can only update the status of tasks in your organization');
+    ).toThrow(NotFoundException);
+    // Even for somebody it was given to: the org check comes FIRST (never TASK_REASSIGNED, which confirms the id).
+    expect(() =>
+      assertMayMoveStatus(foreign, input(), { isAssignedUser: false, hasManageAuthority: false }, logger),
+    ).toThrow(NotFoundException);
+    const granted = input({ access: { perSpace: { s1: { canCreateTasks: true } } } });
+    expect(() =>
+      assertMayMoveStatus(foreign, granted, { isAssignedUser: true, hasManageAuthority: false }, logger),
+    ).not.toThrow();
   });
 });
 

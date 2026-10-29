@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import {
   PrismaService,
   personName,
@@ -10,6 +10,7 @@ import {
   canReceiveTasks,
   workerToAssign,
   peopleTaskGate,
+  assertFoundInOrg,
 } from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from '../core/task-scope';
 import { TaskSupportService } from '../core/task-support.service';
@@ -116,7 +117,8 @@ export class TaskAssignmentService {
     if (task.organizationId !== data.organizationId) {
       if (!task.spaceId || !accessAllowsInSpace(data.access, 'canAssignTasks', task.spaceId)) {
         this.logger.warn(`Authorization denied: assign task across orgs`, { userId: data.userId, taskId: data.id });
-        throw new ForbiddenException('You can only assign tasks in your organization');
+        // 404, not 403: another organization's task does not exist to this caller.
+        assertFoundInOrg(task, data.organizationId, 'Task');
       }
     } else {
       /*
