@@ -157,6 +157,38 @@ export class AssetHoldersService {
   }
 
   /**
+   * Would the people holding a record NOW still be allowed in this kind?
+   *
+   * Asked when a record moves to another kind and the request names no holders:
+   * a driver kept on a kind held by clients only, by one at a time, by nobody,
+   * or in a workspace they do not work in would be a holder no rule allows.
+   * DECISION (2026-10-29): the move is REFUSED (`ASSET_MOVE_HOLDERS`) rather than
+   * closing their custody quietly — taking a van out of somebody's hands is a
+   * handover the office should choose, and sending the holders (or none) with
+   * the move is that choice.
+   */
+  async assertStillFit(
+    current: HolderInput[],
+    organizationId: string,
+    kindConfig: unknown,
+    withinSpaceId?: string | null,
+  ): Promise<void> {
+    if (!current.length) return;
+    const refuse = () =>
+      new BadRequestException({
+        message: 'The people holding this cannot hold the new type. Choose who holds it (or nobody) with the move.',
+        code: 'ASSET_MOVE_HOLDERS',
+      });
+    let kept: unknown[];
+    try {
+      kept = await this.resolve(current, organizationId, kindConfig, withinSpaceId);
+    } catch {
+      throw refuse();
+    }
+    if (kept.length < current.length) throw refuse();
+  }
+
+  /**
    * The `within` a holder list is checked against: a workspace-scoped manager
    * (`manageSpaceIds` is a list) gives a record only to the people and clients
    * of the workspace it lives in; an org-wide one (null/undefined) is not narrowed.

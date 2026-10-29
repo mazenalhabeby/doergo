@@ -73,7 +73,7 @@ export class AssetUpdateService {
       category is kept here rather than only validated, because its field list
       decides which of the record's details survive the move.
     */
-    let movingToKind: { config: unknown } | null = null;
+    let movingToKind: { config: unknown; spaceId: string | null } | null = null;
     if (data.categoryId !== undefined) {
       if (data.categoryId) {
         const category = await this.prisma.assetCategory.findUnique({
@@ -95,7 +95,7 @@ export class AssetUpdateService {
         }
         // Only an actual change; re-saving the same kind is not a move and must
         // not quietly prune fields somebody added by hand.
-        if (category.id !== asset.categoryId) movingToKind = { config: category.config };
+        if (category.id !== asset.categoryId) movingToKind = { config: category.config, spaceId: category.spaceId };
       } else if (!this.access.mayIn(data, 'manage', null)) {
         // Clearing the kind takes the record out of every workspace.
         throw new BadRequestException('Choose a type in a workspace you manage');
@@ -134,6 +134,15 @@ export class AssetUpdateService {
       that type and not the one it is leaving.
     */
     const wanted: HolderInput[] | undefined = AssetHoldersService.fromLegacy(data);
+    // A move that names no holders keeps today's — only if the new kind still allows them (ASSET_MOVE_HOLDERS).
+    if (movingToKind && wanted === undefined) {
+      const current = await this.prisma.assetHolder.findMany({
+        where: { assetId: data.id },
+        select: { userId: true, customerId: true },
+      });
+      const within = AssetHoldersService.holderReach(data, movingToKind.spaceId);
+      await this.holderService.assertStillFit(current, data.organizationId, movingToKind.config, within);
+    }
     let holderRows: Array<{ userId: string | null; customerId: string | null }> | null = null;
     let before: Array<{ userId: string | null; customerId: string | null }> | null = null;
     /** How many the DESTINATION kind allows — the custody write is capped by it too. */

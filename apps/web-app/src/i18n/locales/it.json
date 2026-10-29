@@ -8370,6 +8370,7 @@
     "WORKSPACE_ARCHIVED": "Questo luogo di lavoro è stato archiviato. Chiedi al tuo ufficio dove timbrare.",
     "TRIAGE_WORKSPACE_ARCHIVED": "Questo spazio di lavoro è stato archiviato. Indirizza la richiesta a un altro spazio di lavoro.",
     "CRM_PORTAL_OTHER_WORKSPACE": "Questo portale appartiene a uno spazio di lavoro diverso da quello del cliente.",
+    "ASSET_MOVE_HOLDERS": "Chi lo detiene ora non può detenere il nuovo tipo. Scegli chi lo detiene (o nessuno) durante lo spostamento.",
     "ASSET_HAS_HISTORY": "Questo elemento ha costi o uno storico di chi lo ha avuto, quindi non può essere eliminato. Imposta invece lo stato su Ritirato: lo storico resta e non viene più fatturato.",
     "CLOCK_OUT_AFTER_NEXT_SHIFT": "Questo orario di uscita è dopo l'inizio del tuo prossimo turno. Scegli un orario precedente o chiedi al tuo ufficio.",
     "REMOTE_BUCKET_NOT_ASSIGNABLE": "Non è possibile aggiungere persone a Remoto. Scegli uno spazio di lavoro.",
