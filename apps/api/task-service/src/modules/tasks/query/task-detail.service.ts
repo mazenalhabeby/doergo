@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { effectiveWorkflowOf } from '../../workflows/effective-workflow';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 import { JobTimeService } from '../handover/job-time.service';
 import { CrewService } from '../handover/crew.service';
@@ -155,10 +156,9 @@ export class TaskDetailService {
         (ACTIVE_OR_DONE.some((s) => s === task.status) ? task.createdAt : null);
     }
 
-    // Effective flow = the task's own workflow, else its space's workflow —
-    // resolved from the per-org cache (Redis) instead of a DB join.
-    const effWorkflowId = task.workflowId ?? task.space?.workflowId ?? null;
-    const effectiveWorkflow = await this.workflowCache.getWorkflow(data.organizationId, effWorkflowId);
+    // Effective flow = the task's own workflow, else its space's DEFAULT — the one
+    // rule the status code uses (effective-workflow.ts), read in the TASK's org.
+    const effectiveWorkflow = await effectiveWorkflowOf(this.prisma, this.workflowCache, task);
     // Capabilities active AT the current status (per-step). The status's own
     // DB-stored capabilities are authoritative (admin-editable); fall back to the
     // shared map only when there's no matching workflow status (legacy tasks).

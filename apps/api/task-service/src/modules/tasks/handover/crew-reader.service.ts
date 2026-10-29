@@ -17,7 +17,7 @@ import {
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowId } from '../../workflows/space-workflow.util';
+import { effectiveWorkflowOf } from '../../workflows/effective-workflow';
 import { JobTimeService } from './job-time.service';
 import { TaskAccessService } from '../access/task-access.service';
 import { CrewActor, CrewTask, TASK_SELECT } from './crew-helpers';
@@ -93,9 +93,7 @@ export class CrewReader {
 
   /** How each step of this job counts. */
   async kindOf(task: Pick<CrewTask, 'organizationId' | 'workflowId' | 'spaceId'>) {
-    const flowId =
-      task.workflowId ?? (task.spaceId ? await resolveSpaceDefaultWorkflowId(this.prisma, task.spaceId) : null);
-    const wf = await this.workflows.getWorkflow(task.organizationId, flowId);
+    const wf = await effectiveWorkflowOf(this.prisma, this.workflows, task);
     return { kind: (s: string) => stepTimeKind(s, stepCapabilities(wf, s)) };
   }
 

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
-import { flowTracksLocation } from '@hbcfield/shared';
+import { flowTracksLocation, type PrismaService } from '@hbcfield/shared';
+import { effectiveWorkflowIds } from '../../workflows/effective-workflow';
 
 /**
  * What one task looks like in a LIST.
@@ -39,24 +40,36 @@ export const TASK_LIST_INCLUDE = {
  * task's FLOW, not its coordinates: a support ticket carrying the customer's
  * address has a pin and no travel step.
  *
- * One workflow lookup per DISTINCT flow rather than per task — a page of a
- * hundred jobs with eight task types costs eight cache reads.
+ * The flow is the one rule (effective-workflow.ts — the workspace's DEFAULT, as the
+ * status code reads it), batched: two queries for the page, then one workflow
+ * lookup per DISTINCT flow, read in the TASK's organization (a shared workspace's
+ * job follows its owner's flow).
  */
-export async function annotateTracksLocation<T extends { workflowId?: string | null; space?: { workflowId?: string | null } | null }>(
+export async function annotateTracksLocation<
+  T extends { organizationId: string; workflowId?: string | null; spaceId?: string | null },
+>(
+  prisma: PrismaService,
   tasks: T[],
-  getWorkflow: (id: string) => Promise<{ statuses?: { capabilities?: string[] | null }[] | null; name?: string } | null>,
+  getWorkflow: (orgId: string, id: string) => Promise<FlowSteps | null>,
 ): Promise<(T & { tracksLocation: boolean })[]> {
-  const flowIds = [...new Set(tasks.map((t) => t.workflowId ?? t.space?.workflowId ?? null).filter(Boolean))] as string[];
+  const flowOf = await effectiveWorkflowIds(prisma, tasks);
+  const keyOf = (t: T) => {
+    const id = flowOf.get(t) ?? null;
+    return id ? `${t.organizationId}:${id}` : null;
+  };
   const tracksByFlow = new Map<string, boolean>();
   await Promise.all(
-    flowIds.map(async (id) => {
-      const wf = await getWorkflow(id);
-      tracksByFlow.set(id, flowTracksLocation(wf?.statuses, wf?.name));
+    [...new Set(tasks.map(keyOf).filter((k): k is string => !!k))].map(async (key) => {
+      const [orgId, id] = key.split(':');
+      const wf = await getWorkflow(orgId, id);
+      tracksByFlow.set(key, flowTracksLocation(wf?.statuses, wf?.name));
     }),
   );
   return tasks.map((t) => {
-    const flowId = t.workflowId ?? t.space?.workflowId ?? null;
+    const key = keyOf(t);
     // No flow at all falls back to the shared default, exactly as the task detail does.
-    return { ...t, tracksLocation: flowId ? (tracksByFlow.get(flowId) ?? false) : flowTracksLocation(null, null) };
+    return { ...t, tracksLocation: key ? (tracksByFlow.get(key) ?? false) : flowTracksLocation(null, null) };
   });
 }
+
+type FlowSteps = { statuses?: { capabilities?: string[] | null }[] | null; name?: string };

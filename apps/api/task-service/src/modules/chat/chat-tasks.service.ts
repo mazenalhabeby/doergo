@@ -5,6 +5,7 @@ import { CHAT_CODES, SERVICE_NAMES, taskChatClosed, peopleWhoPass } from '@hbcfi
 import { PrismaService } from '@hbcfield/shared';
 import { TaskAccessService, type TaskAccessFacts } from '../tasks/access/task-access.service';
 import { WorkflowConfigCache } from '../workflows/config-cache/workflow-config-cache.service';
+import { effectiveWorkflowOf } from '../workflows/effective-workflow';
 import { CHAT_TASK_SELECT, CHAT_USER_SELECT, shapeConversation } from './chat-shape';
 import { announceMembersChanged } from './chat-system';
 import type { ChatMembership } from './chat-membership';
@@ -18,7 +19,6 @@ const TASK_SELECT = {
   spaceId: true,
   assignedToId: true,
   workflowId: true,
-  space: { select: { workflowId: true } },
 } as const;
 
 /**
@@ -235,16 +235,8 @@ export class ChatTasksService {
   }
 
   /** Over = finished or cancelled, by the job's own flow (cached), else the canonical statuses. */
-  private async isOver(task: {
-    status: string;
-    organizationId: string;
-    workflowId: string | null;
-    space?: { workflowId: string | null } | null;
-  }) {
-    const workflow = await this.workflows.getWorkflow(
-      task.organizationId,
-      task.workflowId ?? task.space?.workflowId ?? null,
-    );
+  private async isOver(task: { status: string; organizationId: string; workflowId: string | null; spaceId: string | null }) {
+    const workflow = await effectiveWorkflowOf(this.prisma, this.workflows, task);
     return taskChatClosed(task.status, workflow?.statuses ?? []);
   }
 }

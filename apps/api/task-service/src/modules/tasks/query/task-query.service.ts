@@ -215,8 +215,8 @@ export class TaskQueryService {
       this.prisma.task.count({ where }),
     ]);
 
-    const withTracking = await annotateTracksLocation(tasks, (id) =>
-      this.workflowCache.getWorkflow(query.organizationId, id),
+    const withTracking = await annotateTracksLocation(this.prisma, tasks, (orgId, id) =>
+      this.workflowCache.getWorkflow(orgId, id),
     );
 
     return paginated(withTracking, { page: safePage, limit: safeLimit, total });

@@ -10,7 +10,7 @@ import {
 } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
 import type { CachedWorkflow, WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowId } from '../../workflows/space-workflow.util';
+import { effectiveWorkflowId } from '../../workflows/effective-workflow';
 import type { StatusTask, UpdateStatusInput } from './task-status.types';
 
 /**
@@ -117,10 +117,7 @@ export async function assertTransitionAllowed(
   data: UpdateStatusInput,
   isManager: boolean,
 ): Promise<CachedWorkflow | null> {
-  let effWorkflowId: string | null = task.workflowId ?? null;
-  if (!effWorkflowId && task.spaceId) {
-    effWorkflowId = await resolveSpaceDefaultWorkflowId(prisma, task.spaceId);
-  }
+  const effWorkflowId = await effectiveWorkflowId(prisma, task);
   let allowedTransitions: string[] | null = null;
   let workflowStatusKeys: string[] | null = null;
   // Is the task already in a terminal status? Set from the workflow below when

@@ -27,6 +27,7 @@ import {
 import { type TaskAccessFacts } from '../access/task-access.service';
 import { PERSON, REPORT_TASK_SELECT, personOf, iso, nameOf, isImage } from './task-report-helpers';
 import { TaskReportSections } from './task-report-sections';
+import { effectiveWorkflowOf } from '../../workflows/effective-workflow';
 
 /**
  * The full report for ONE job (packages/shared/src/tasks/task-report.ts).
@@ -77,7 +78,7 @@ export class TaskReportService extends TaskReportSections {
 
     // ⚠️ A report is of a FINISHED job (the flow's final, non-canceled step).
     // Asked first, from the cached flow, so an unfinished job costs one lookup.
-    const workflow = await this.workflows.getWorkflow(task.organizationId, task.workflowId ?? task.space?.workflowId ?? null);
+    const workflow = await effectiveWorkflowOf(this.prisma, this.workflows, task);
     if (!isJobFinished(task.status, (workflow?.statuses ?? []))) {
       throw new ConflictException({ message: 'The report is ready once the job is finished.', code: REPORT_NOT_FINISHED });
     }

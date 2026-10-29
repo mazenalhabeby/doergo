@@ -91,8 +91,8 @@ export class SyncPullService {
       include: TASK_LIST_INCLUDE,
     });
     const hasMore = rows.length > limit;
-    const page = await annotateTracksLocation(hasMore ? rows.slice(0, limit) : rows, (id) =>
-      this.workflows.getWorkflow(req.organizationId, id),
+    const page = await annotateTracksLocation(this.prisma, hasMore ? rows.slice(0, limit) : rows, (orgId, id) =>
+      this.workflows.getWorkflow(orgId, id),
     );
 
     // Deletions since the last pull. A reset sends none: the phone is replacing
