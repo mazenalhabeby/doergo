@@ -3321,6 +3321,7 @@
       "WORKSPACE_ARCHIVED": "Ce lieu de travail a été archivé. Demandez à votre bureau où pointer.",
       "TRIAGE_WORKSPACE_ARCHIVED": "Cet espace de travail a été archivé. Envoyez la demande vers un autre espace de travail.",
       "CRM_PORTAL_OTHER_WORKSPACE": "Ce portail appartient à un autre espace de travail que le client.",
+      "ASSET_HAS_HISTORY": "Cet élément a des coûts ou un historique de détention, il ne peut donc pas être supprimé. Passez plutôt son statut à Retiré : son historique est conservé et il n'est plus facturé.",
       "CLOCK_OUT_AFTER_NEXT_SHIFT": "Cette heure de sortie est après le début de votre prochain service. Choisissez une heure plus tôt ou demandez à votre bureau.",
       "NOT_ON_THE_CLOCK": "Vous n'avez pas pointé votre arrivée.",
       "ALREADY_ON_REST": "Vous êtes déjà en pause. Terminez-la d'abord.",

@@ -29,10 +29,10 @@ describe('AssetsService.delete — history is not disposable (AS-B1)', () => {
     task: { updateMany: jest.fn() },
   };
 
-  const asset = (tasks: number) => ({
+  const asset = (tasks: number, money = 0, custody = 0) => ({
     id: 'a-1',
     organizationId: 'org-1',
-    _count: { tasks },
+    _count: { tasks, money, custody },
   });
 
   beforeEach(async () => {
@@ -63,6 +63,16 @@ describe('AssetsService.delete — history is not disposable (AS-B1)', () => {
     expect(prisma.asset.delete).not.toHaveBeenCalled();
     // And it must not have detached the history on the way to refusing.
     expect(prisma.task.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('refuses an asset with costs or custody periods (ASSET_HAS_HISTORY) — they would cascade away', async () => {
+    for (const [money, custody] of [[3, 0], [0, 2]]) {
+      prisma.asset.findUnique.mockResolvedValue(asset(0, money, custody));
+      const err = await del().catch((e) => e);
+      expect(err).toBeInstanceOf(BadRequestException);
+      expect(err.getResponse()).toMatchObject({ code: 'ASSET_HAS_HISTORY' });
+    }
+    expect(prisma.asset.delete).not.toHaveBeenCalled();
   });
 
   it('still deletes an asset with no history', async () => {

@@ -8370,6 +8370,7 @@
     "WORKSPACE_ARCHIVED": "This workspace was archived. Ask your office where to clock in.",
     "TRIAGE_WORKSPACE_ARCHIVED": "This workspace was archived. Route the request to another workspace.",
     "CRM_PORTAL_OTHER_WORKSPACE": "This portal belongs to another workspace than the client.",
+    "ASSET_HAS_HISTORY": "This item has costs or a record of who held it, so it cannot be deleted. Set its status to Retired instead — its history stays and it stops being billed.",
     "CLOCK_OUT_AFTER_NEXT_SHIFT": "This clock-out time is after your next shift began. Choose an earlier time, or ask your office.",
     "REMOTE_BUCKET_NOT_ASSIGNABLE": "People can't be added to Remote. Choose a workspace.",
     "NOT_ON_THE_CLOCK": "You are not clocked in.",

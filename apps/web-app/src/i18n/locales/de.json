@@ -8370,6 +8370,7 @@
     "WORKSPACE_ARCHIVED": "Dieser Arbeitsort wurde archiviert. Fragen Sie Ihr Büro, wo Sie einstempeln sollen.",
     "TRIAGE_WORKSPACE_ARCHIVED": "Dieser Arbeitsort wurde archiviert. Leiten Sie die Anfrage an einen anderen Arbeitsort weiter.",
     "CRM_PORTAL_OTHER_WORKSPACE": "Dieses Portal gehört zu einem anderen Arbeitsort als der Kunde.",
+    "ASSET_HAS_HISTORY": "Dieser Gegenstand hat Kosten oder eine Übergabe-Historie und kann nicht gelöscht werden. Setzen Sie den Status stattdessen auf „Ausgemustert“ – die Historie bleibt erhalten und er wird nicht mehr berechnet.",
     "CLOCK_OUT_AFTER_NEXT_SHIFT": "Diese Ausstempelzeit liegt nach dem Beginn Ihrer nächsten Schicht. Wählen Sie eine frühere Zeit oder fragen Sie Ihr Büro.",
     "REMOTE_BUCKET_NOT_ASSIGNABLE": "Personen können nicht zu Remote hinzugefügt werden. Wählen Sie einen Arbeitsbereich.",
     "NOT_ON_THE_CLOCK": "Sie sind nicht eingestempelt.",

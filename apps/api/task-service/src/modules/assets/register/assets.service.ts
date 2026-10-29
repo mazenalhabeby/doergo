@@ -197,7 +197,7 @@ export class AssetsService {
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
-      include: { _count: { select: { tasks: true } } },
+      include: { _count: { select: { tasks: true, money: true, custody: true } } },
     });
 
     assertFoundInOrg(asset, data.organizationId, 'Asset');
@@ -214,6 +214,21 @@ export class AssetsService {
         `This asset has ${asset._count.tasks} job(s) in its history and cannot be deleted. ` +
           'Set its status to Retired instead — the record and its history stay, and it stops being billed.',
       );
+    }
+
+    /*
+      Costs and custody are history too (decision 2026-10-29): the money rows
+      and the periods they are attributed by CASCADE with the record, so a
+      delete would erase what a van cost and who had it — with nothing on any
+      screen to say so. Retired keeps both and stops the billing.
+    */
+    if (asset._count.money > 0 || asset._count.custody > 0) {
+      throw new BadRequestException({
+        message:
+          'This asset has costs or a custody history and cannot be deleted. ' +
+          'Set its status to Retired instead — the record and its history stay, and it stops being billed.',
+        code: 'ASSET_HAS_HISTORY',
+      });
     }
 
     await this.prisma.asset.delete({ where: { id: data.id } });
