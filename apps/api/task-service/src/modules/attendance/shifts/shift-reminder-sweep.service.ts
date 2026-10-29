@@ -128,6 +128,22 @@ export class ShiftReminderSweepService {
       targetsByEntry.set(e.id, await this.routing.notifyTargetsFor(e, 'attendance', leadersBySpace));
     }
 
+    /*
+      Each row is CLAIMED on what was read — still clocked in, same nextRemindAt —
+      and the push goes out only on a win. Two overlapping ticks tell nobody
+      twice, and a clock-out landing meanwhile is never marked ESCALATED with the
+      leader told "forgot to clock out".
+    */
+    const claim = (entry: Due, data: { reminderState: 'REMINDED' | 'ESCALATED'; [k: string]: unknown }) =>
+      this.prisma.timeEntry
+        .updateMany({
+          where: { id: entry.id, status: TimeEntryStatus.CLOCKED_IN, nextRemindAt: entry.nextRemindAt },
+          data,
+        })
+        .then((r) => r.count === 1);
+    const remindedIds: string[] = [];
+    const escalatedIds: string[] = [];
+
     // Deferred writes (thunks) so we can cap DB concurrency.
     const tasks: Array<() => Promise<void>> = [];
 
@@ -145,10 +161,8 @@ export class ShiftReminderSweepService {
       const userName = personName(entry.user);
       const nextRemindAt = new Date(now.getTime() + intervalMin * 60_000);
       tasks.push(async () => {
-        await this.prisma.timeEntry.update({
-          where: { id: entry.id },
-          data: { reminderState: 'REMINDED', reminderCount: nextCount, nextRemindAt },
-        });
+        if (!(await claim(entry, { reminderState: 'REMINDED', reminderCount: nextCount, nextRemindAt }))) return;
+        remindedIds.push(entry.id);
         /*
           One question at the end of a shift (decided 2026-10-18): a new entry with a
           planned end gets the FIRST reminder only — "Your shift has ended", with Clock
@@ -176,10 +190,8 @@ export class ShiftReminderSweepService {
       const userName = personName(entry.user);
       const leaderIds = targetsByEntry.get(entry.id) ?? [];
       tasks.push(async () => {
-        await this.prisma.timeEntry.update({
-          where: { id: entry.id },
-          data: { reminderState: 'ESCALATED', nextRemindAt: null },
-        });
+        if (!(await claim(entry, { reminderState: 'ESCALATED', nextRemindAt: null }))) return;
+        escalatedIds.push(entry.id);
         emitEvent(this.notificationClient, attendanceShiftEscalationEvent, {
           entryId: entry.id,
           userId: entry.user.id,
@@ -207,10 +219,10 @@ export class ShiftReminderSweepService {
     }
 
     return success({
-      remindedCount: toRemind.length,
-      escalatedCount: toEscalate.length,
-      entryIds: [...toRemind.map((r) => r.entry.id), ...toEscalate.map((e) => e.id)],
-      message: `Reminded ${toRemind.length}, escalated ${toEscalate.length}`,
+      remindedCount: remindedIds.length,
+      escalatedCount: escalatedIds.length,
+      entryIds: [...remindedIds, ...escalatedIds],
+      message: `Reminded ${remindedIds.length}, escalated ${escalatedIds.length}`,
     });
   }
 }

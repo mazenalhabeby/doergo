@@ -472,7 +472,7 @@ describe('AttendanceService', () => {
 
       // The write bumps reminder state/count + re-arms nextRemindAt; it never
       // sets AUTO_OUT or a clockOutAt.
-      const updateArg = mockPrismaService.timeEntry.update.mock.calls[0][0];
+      const updateArg = mockPrismaService.timeEntry.updateMany.mock.calls[0][0];
       expect(updateArg.data.reminderState).toBe('REMINDED');
       expect(updateArg.data.reminderCount).toBe(1);
       expect(updateArg.data.nextRemindAt).toBeInstanceOf(Date);
@@ -491,7 +491,7 @@ describe('AttendanceService', () => {
       const second = (await service.runShiftReminders()) as any;
       // Still counted (the leader is told on the same schedule), but nothing is sent to the worker.
       expect(second.data.remindedCount).toBe(1);
-      expect(mockPrismaService.timeEntry.update.mock.calls.at(-1)[0].data.reminderCount).toBe(2);
+      expect(mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0].data.reminderCount).toBe(2);
       expect(mockNotificationClient.emit).not.toHaveBeenCalledWith('attendance_shift_reminder', expect.anything());
     });
 
@@ -512,7 +512,7 @@ describe('AttendanceService', () => {
       expect(result.data.remindedCount).toBe(0);
       expect(result.data.escalatedCount).toBe(1);
 
-      const updateArg = mockPrismaService.timeEntry.update.mock.calls[0][0];
+      const updateArg = mockPrismaService.timeEntry.updateMany.mock.calls[0][0];
       expect(updateArg.data.reminderState).toBe('ESCALATED');
       expect(updateArg.data.nextRemindAt).toBeNull(); // stop the loop
 
@@ -572,6 +572,31 @@ describe('AttendanceService', () => {
       expect(result.data.remindedCount).toBe(0);
       expect(result.data.escalatedCount).toBe(0);
       expect(mockPrismaService.timeEntry.update).not.toHaveBeenCalled();
+    });
+
+    it('CLAIMS the row on what it read; a clock-out landing meanwhile is never ESCALATED nor told', async () => {
+      const due = dueEntry({ reminderCount: 3 });
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([due]);
+      mockPrismaService.timeEntry.updateMany.mockResolvedValueOnce({ count: 0 }); // the claim lost
+      mockDeciders.workspaceDeciders.mockResolvedValue([spaceDecider('leader-1')]);
+
+      const result = (await service.runShiftReminders()) as any;
+
+      expect(mockPrismaService.timeEntry.updateMany.mock.calls[0][0].where).toEqual({
+        id: due.id,
+        status: 'CLOCKED_IN',
+        nextRemindAt: due.nextRemindAt,
+      });
+      expect(result.data.escalatedCount).toBe(0);
+      expect(mockNotificationClient.emit).not.toHaveBeenCalledWith('attendance_shift_escalation', expect.anything());
+    });
+
+    it('a lost reminder claim (two ticks at once) pushes nothing', async () => {
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 0 })]);
+      mockPrismaService.timeEntry.updateMany.mockResolvedValueOnce({ count: 0 });
+      const result = (await service.runShiftReminders()) as any;
+      expect(result.data.remindedCount).toBe(0);
+      expect(mockNotificationClient.emit).not.toHaveBeenCalledWith('attendance_shift_reminder', expect.anything());
     });
   });
 
