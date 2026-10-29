@@ -44,6 +44,8 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
     phase: { findFirst: jest.fn() },
     sprint: { findFirst: jest.fn() },
     epic: { findFirst: jest.fn() },
+    // The parent's workspace, active unless a test archives it.
+    companyLocation: { findFirst: jest.fn() },
   };
 
   const ORG = 'org-1';
@@ -67,6 +69,7 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
   const sub = (over: Record<string, unknown> = {}) =>
     service.createSubtask({ parentId: 'p-1', title: 'Step', ...siteACreator, ...over });
   const written = () => prisma.task.create.mock.calls[0][0].data;
+  let archived = false;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -75,6 +78,10 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
     prisma.task.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 'new', ...data }));
     prisma.taskEvent.create.mockResolvedValue({});
     prisma.workflowStatus.findFirst.mockResolvedValue({ key: 'TODO' });
+    prisma.companyLocation.findFirst.mockImplementation(({ where }: any) =>
+      Promise.resolve(where.isActive === true && archived ? null : { id: where.id, isRemote: false }),
+    );
+    archived = false;
     for (const k of ['asset', 'phase', 'sprint', 'epic']) prisma[k].findFirst.mockResolvedValue({ id: 'owned' });
 
     const module: TestingModule = await Test.createTestingModule({
@@ -102,6 +109,12 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
     }).compile();
     service = module.get(TasksService);
     (service as any).support.invalidateStatusCountsCache = jest.fn();
+  });
+
+  it("refuses a sub-job under a parent in an ARCHIVED workspace (as creating a job there is)", async () => {
+    archived = true;
+    await expect(sub()).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.task.create).not.toHaveBeenCalled();
   });
 
   it('inherits the parent’s workspace and task type, starting at that flow’s first step', async () => {

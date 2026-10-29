@@ -8264,6 +8264,7 @@
     "ROLE_TASK_PEOPLE_OR_ROLE": "Assegna persone o apri l’attività a un ruolo, non entrambe le cose.",
     "ROLE_TASK_FINISHED": "Questa attività è conclusa.",
     "ROLE_TASK_TAKEN": "Qualcun altro ha preso l’ultimo posto.",
+    "TASK_STEP_NOT_IN_DESTINATION_FLOW": "Il passaggio attuale di questo lavoro non esiste nel flusso di quello spazio di lavoro. Scegli un flusso mentre lo sposti.",
     "TASK_HAS_FINISHED_SUBTASKS": "Questo lavoro ha sottolavori completati. La loro registrazione resta, quindi il lavoro non può essere eliminato.",
     "ROLE_TASK_ALREADY_YOURS": "Sei già su questa attività.",
     "ROLE_TASK_NOT_ROLE": "Questa attività non è stata aperta a un ruolo.",

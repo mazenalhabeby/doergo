@@ -8264,6 +8264,7 @@
     "ROLE_TASK_PEOPLE_OR_ROLE": "Affectez des personnes ou ouvrez la tâche à un rôle — pas les deux.",
     "ROLE_TASK_FINISHED": "Cette tâche est terminée.",
     "ROLE_TASK_TAKEN": "Quelqu’un d’autre a pris la dernière place.",
+    "TASK_STEP_NOT_IN_DESTINATION_FLOW": "L’étape actuelle de ce travail n’existe pas dans le flux de cet espace de travail. Choisissez un flux en le déplaçant.",
     "TASK_HAS_FINISHED_SUBTASKS": "Ce travail a des sous-travaux terminés. Leur trace est conservée, le travail ne peut donc pas être supprimé.",
     "ROLE_TASK_ALREADY_YOURS": "Vous êtes déjà sur cette tâche.",
     "ROLE_TASK_NOT_ROLE": "Cette tâche n’a pas été ouverte à un rôle.",

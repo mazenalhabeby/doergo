@@ -3298,6 +3298,7 @@
       "CHECKLIST_CHANGED": "Jemand hat diesen Punkt gerade geändert. Bitte erneut ansehen.",
       "CHECKLIST_ITEM_NOT_YOURS": "Nur die zuständige Person, der Leiter dieses Auftrags oder das Büro ändert diesen Punkt.",
       "ROLE_TASK_TAKEN": "Jemand anderes war schneller.",
+      "TASK_STEP_NOT_IN_DESTINATION_FLOW": "Der Schritt dieses Auftrags existiert im Ablauf dieses Arbeitsbereichs nicht. Fragen Sie Ihr Büro.",
       "TASK_HAS_FINISHED_SUBTASKS": "Dieser Auftrag hat abgeschlossene Unteraufträge und kann daher nicht gelöscht werden.",
       "ROLE_TASK_ALREADY_YOURS": "Sie sind bereits bei diesem Auftrag.",
       "ROLE_TASK_STARTED": "Die Arbeit hat begonnen — verlassen Sie stattdessen das Team.",

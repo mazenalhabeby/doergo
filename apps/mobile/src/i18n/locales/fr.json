@@ -3298,6 +3298,7 @@
       "CHECKLIST_CHANGED": "Quelqu’un vient de modifier ce point. Regardez à nouveau.",
       "CHECKLIST_ITEM_NOT_YOURS": "Seule la personne responsable, le chef de cette intervention ou le bureau modifie ce point.",
       "ROLE_TASK_TAKEN": "Quelqu’un d’autre l’a prise en premier.",
+      "TASK_STEP_NOT_IN_DESTINATION_FLOW": "L’étape de ce travail n’existe pas dans le flux de cet espace de travail. Demandez à votre bureau.",
       "TASK_HAS_FINISHED_SUBTASKS": "Ce travail a des sous-travaux terminés, il ne peut donc pas être supprimé.",
       "ROLE_TASK_ALREADY_YOURS": "Vous êtes déjà sur cette mission.",
       "ROLE_TASK_STARTED": "Le travail a commencé — quittez plutôt l’équipe.",

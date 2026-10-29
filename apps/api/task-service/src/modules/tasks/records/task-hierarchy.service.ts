@@ -4,6 +4,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, personPasses } from '@hbcfield/shared';
 import { TaskStatus, TaskEventType, success, assertFoundInOrg } from '@hbcfield/shared';
 import { TaskSupportService } from '../core/task-support.service';
+import { assertSpaceInOrg } from '../../../common/tenant-scope.util';
 import { resolveOwnedTaskRefs, assertMayAssign, assertMayCreateUnder, assertTargetIsInSpace } from '../core/task-scope';
 import { emitEvent, taskCreatedEvent } from '@hbcfield/shared/microservices';
 import type { SubtaskCreateJob } from '@hbcfield/shared';
@@ -34,6 +35,8 @@ export class TaskHierarchyService {
     // The org is not the boundary for a space-granted member: their "create
     // tasks" applies inside their own spaces only.
     assertMayCreateUnder(parent, data);
+    // An archived workspace takes no new job — a sub-job included (the refusal creating and moving one use).
+    await assertSpaceInOrg(this.prisma, parent.spaceId, parent.organizationId, { activeOnly: true });
 
     // Verify no circular parent-child relationship
     let current: string | null = data.parentId;

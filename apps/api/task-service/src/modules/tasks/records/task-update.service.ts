@@ -11,6 +11,7 @@ import type { TaskUpdateJob } from '@hbcfield/shared';
 import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
 import { effectiveWorkflowOf } from '../../workflows/effective-workflow';
 import { stepState } from './task-step-state';
+import { assertStepSurvivesMove } from './task-move-flow';
 
 /** Changing a task's fields (never its open-role columns or its status). Deleting one: TaskRemovalService. */
 @Injectable()
@@ -89,6 +90,10 @@ export class TaskUpdateService {
         // An id from a client says nothing about whose it is — and an archived
         // workspace takes no new work. The shared tenant check, not a copy of it.
         await assertSpaceInOrg(this.prisma, destination, existingTask.organizationId, { activeOnly: true });
+        // A job following the workspace's flow must find its step in the new one (unless a flow is chosen now).
+        if (updateData.workflowId === undefined) {
+          await assertStepSurvivesMove(this.prisma, this.workflows, existingTask, destination);
+        }
       }
     }
 

@@ -38,7 +38,9 @@ describe('TasksService — edit / move / assign scope', () => {
     task: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn(), count: jest.fn() },
     taskAssignee: { findFirst: jest.fn() },
     taskEvent: { create: jest.fn() },
-    companyLocation: { findFirst: jest.fn() },
+    companyLocation: { findFirst: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) },
+    // No workspace flow: the job runs on the built-in one (effective-workflow.ts).
+    spaceWorkflow: { findFirst: jest.fn().mockResolvedValue(null) },
     spaceAssignment: { findFirst: jest.fn() },
     user: { findFirst: jest.fn() },
     asset: { findFirst: jest.fn() },

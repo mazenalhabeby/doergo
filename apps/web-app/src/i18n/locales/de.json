@@ -8264,6 +8264,7 @@
     "ROLE_TASK_PEOPLE_OR_ROLE": "Personen zuweisen oder für eine Rolle öffnen — nicht beides.",
     "ROLE_TASK_FINISHED": "Dieser Auftrag ist abgeschlossen.",
     "ROLE_TASK_TAKEN": "Jemand anderes hat den letzten Platz übernommen.",
+    "TASK_STEP_NOT_IN_DESTINATION_FLOW": "Der aktuelle Schritt dieses Auftrags existiert im Ablauf dieses Arbeitsbereichs nicht. Wählen Sie beim Verschieben einen Ablauf dafür.",
     "TASK_HAS_FINISHED_SUBTASKS": "Dieser Auftrag hat abgeschlossene Unteraufträge. Ihre Aufzeichnung bleibt erhalten, daher kann der Auftrag nicht gelöscht werden.",
     "ROLE_TASK_ALREADY_YOURS": "Sie sind bereits bei diesem Auftrag.",
     "ROLE_TASK_NOT_ROLE": "Dieser Auftrag wurde nicht für eine Rolle geöffnet.",
