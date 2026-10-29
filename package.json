@@ -121,14 +121,14 @@
   },
   "packageManager": "pnpm@9.15.0",
   "dependencies": {
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.4.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@playwright/test": "^1.49.1",
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.64.1",
     "eslint": "^9.39.4",
-    "prettier": "3.9.9",
+    "prettier": "3.9.10",
     "sharp": "^0.35.5",
-    "typescript-eslint": "^8.57.0"
+    "typescript-eslint": "^8.72.1"
   }
 }
