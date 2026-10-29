@@ -126,8 +126,9 @@ export async function assertTransitionAllowed(
     task.status === TaskStatus.COMPLETED || task.status === TaskStatus.CLOSED || task.status === TaskStatus.CANCELED;
   let wf = null;
   if (effWorkflowId) {
-    // Read from the per-org workflow cache (Redis) instead of the DB.
-    wf = await workflowCache.getWorkflow(data.organizationId, effWorkflowId);
+    // Read from the per-org workflow cache (Redis) instead of the DB — the TASK's
+    // organization: a guest of a shared workspace moves the owner's flow, not their own.
+    wf = await workflowCache.getWorkflow(task.organizationId, effWorkflowId);
     workflowStatusKeys = wf?.statuses?.map((s: { key: string }) => s.key) ?? null;
     const cur = wf?.statuses?.find((s: { key: string }) => s.key === task.status);
     if (cur) allowedTransitions = cur.transitions ?? [];

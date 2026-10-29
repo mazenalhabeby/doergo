@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Logger, NotFoundException } from '@nestjs/common';
 import { Role, TaskStatus } from '@hbcfield/shared';
-import { assertMayMoveStatus, managesBoard } from '../status/task-status-gates';
+import { assertMayMoveStatus, assertTransitionAllowed, managesBoard } from '../status/task-status-gates';
 import { assertDueBySiteDay } from '../status/task-status-checks';
 import { statusUpdateData } from '../status/task-status-write';
 import { ROLE_WAVE_CLOSED } from '../assignment/role-pool.service';
@@ -78,6 +78,21 @@ describe('who may move a task', () => {
         logger,
       ),
     ).toThrow('You can only update the status of tasks in your organization');
+  });
+});
+
+describe('the flow a move is judged on', () => {
+  it("a guest of a shared workspace moves the OWNER's flow, read in the task's organization", async () => {
+    const getWorkflow = jest.fn().mockResolvedValue({
+      statuses: [
+        { key: 'NEW', transitions: ['WORKING'] },
+        { key: 'WORKING', transitions: [] },
+      ],
+    });
+    const prisma = {} as any;
+    const foreign = task({ organizationId: 'owner', workflowId: 'wf-owner' });
+    await assertTransitionAllowed(prisma, { getWorkflow } as any, foreign, input({ status: 'WORKING', organizationId: 'guest' }), false);
+    expect(getWorkflow).toHaveBeenCalledWith('owner', 'wf-owner');
   });
 });
 
