@@ -224,7 +224,10 @@ export class ShiftCloser {
       userId: entry.userId,
       organizationId: entry.organizationId,
       at,
-      ...(spec.pause.sinceClockIn ? { since: entry.clockInAt } : {}),
+      // Only a real clock-out replacing a temporary close's guess moves the pause that guess made.
+      ...(spec.pause.sinceClockIn && spec.from === 'PROVISIONAL' && entry.clockOutAt
+        ? { replacing: { since: entry.clockInAt, at: entry.clockOutAt } }
+        : {}),
       reason: spec.pause.reason,
       ...(spec.pause.handovers ? { handovers: spec.pause.handovers } : {}),
     });

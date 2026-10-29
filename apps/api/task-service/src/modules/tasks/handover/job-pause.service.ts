@@ -49,15 +49,15 @@ export class JobPauseService {
    * notes they wrote. A job somebody else on its crew is still clocked in for
    * keeps running — the crew is still on it.
    *
-   * `since` (the shift's start) lets a replaced clock-out time move a pause it
-   * already made: the open-shift sweep closes with a guess, and the member's
-   * real clock-out arriving later is the truth.
+   * `replacing` (the shift's start, and the temporary close's guess) lets a real
+   * clock-out move the pause that guess made: the open-shift sweep closes with a
+   * guess, and the member's real clock-out arriving later is the truth.
    */
   async pauseAtClockOut(args: {
     userId: string;
     organizationId: string;
     at: Date;
-    since?: Date | null;
+    replacing?: { since: Date; at: Date } | null;
     reason: 'CLOCK_OUT' | 'AUTO_CLOSE' | 'FORGOT' | 'OFFICE_CLOSE';
     handovers?: ClockOutHandover[];
   }): Promise<{ paused: string[] }> {
@@ -71,32 +71,7 @@ export class JobPauseService {
 
   private async pause(args: Parameters<JobPauseService['pauseAtClockOut']>[0]): Promise<{ paused: string[] }> {
     const { userId, organizationId, at } = args;
-
-    // A pause this shift already made, at a time now known to be wrong.
-    if (args.since) {
-      await this.prisma.task.updateMany({
-        where: { organizationId, pausedById: userId, pausedAt: { gte: args.since } },
-        data: { pausedAt: at },
-      });
-      // The leave this shift's end already wrote moves with it.
-      const lefts = await this.prisma.taskEvent.findMany({
-        where: {
-          userId,
-          eventType: TaskEventType.CREW_LEFT,
-          createdAt: { gte: args.since },
-          task: { organizationId },
-          metadata: { path: ['why'], equals: 'CLOCK_OUT' },
-        },
-        select: { id: true, metadata: true },
-        take: 50,
-      });
-      for (const l of lefts) {
-        await this.prisma.taskEvent.update({
-          where: { id: l.id },
-          data: { metadata: { ...((l.metadata ?? {}) as object), at: at.toISOString() } },
-        });
-      }
-    }
+    if (args.replacing) await this.moveGuessedPause(userId, organizationId, args.replacing, at);
 
     const jobs = await this.workingJobsOf(userId, organizationId);
     /*
@@ -167,6 +142,36 @@ export class JobPauseService {
       emitEvent(this.notifications, tasksPausedEvent, { taskIds: paused, userId, organizationId, reason: args.reason });
     }
     return { paused };
+  }
+
+  /**
+   * A temporary close paused jobs at its guess; the real clock-out moves THOSE —
+   * the task's pause, the PAUSED event job time reads, and the leave it wrote —
+   * and nothing else. Matched on the guess's own minute, so a job they left by
+   * hand earlier in the shift keeps its own pause.
+   */
+  private async moveGuessedPause(userId: string, organizationId: string, guess: { since: Date; at: Date }, at: Date) {
+    await this.prisma.task.updateMany({
+      where: { organizationId, pausedById: userId, pausedAt: guess.at },
+      data: { pausedAt: at },
+    });
+    const rows = await this.prisma.taskEvent.findMany({
+      where: {
+        userId,
+        eventType: { in: [TaskEventType.PAUSED, TaskEventType.CREW_LEFT] },
+        createdAt: { gte: guess.since },
+        task: { organizationId },
+        metadata: { path: ['at'], equals: guess.at.toISOString() },
+      },
+      select: { id: true, metadata: true },
+      take: 100,
+    });
+    for (const r of rows) {
+      await this.prisma.taskEvent.update({
+        where: { id: r.id },
+        data: { metadata: { ...((r.metadata ?? {}) as object), at: at.toISOString() } },
+      });
+    }
   }
 
   /**

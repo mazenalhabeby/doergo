@@ -264,11 +264,29 @@ describe('JobPauseService', () => {
   });
 
   it('a real clock-out after the overnight guess moves the pause to the real minute', async () => {
-    await clockOut({ since: T('07:00') });
+    prisma.taskEvent.findMany.mockResolvedValueOnce([
+      { id: 'ev-paused', metadata: { reason: 'AUTO_CLOSE', at: T('23:00').toISOString() } },
+    ]);
+    await clockOut({ replacing: { since: T('07:00'), at: T('23:00') } });
+    // Only the pause the guess made — matched on its own minute, never every pause since the clock-in.
     expect(prisma.task.updateMany.mock.calls[0][0]).toEqual({
-      where: { organizationId: 'o1', pausedById: 'mike', pausedAt: { gte: T('07:00') } },
+      where: { organizationId: 'o1', pausedById: 'mike', pausedAt: T('23:00') },
       data: { pausedAt: T('11:15') },
     });
+    // The PAUSED event's own minute moves too — it is what job time reads.
+    const ask = prisma.taskEvent.findMany.mock.calls[0][0].where;
+    expect(ask.eventType).toEqual({ in: ['PAUSED', 'CREW_LEFT'] });
+    expect(ask.metadata).toEqual({ path: ['at'], equals: T('23:00').toISOString() });
+    expect(prisma.taskEvent.update).toHaveBeenCalledWith({
+      where: { id: 'ev-paused' },
+      data: { metadata: { reason: 'AUTO_CLOSE', at: T('11:15').toISOString() } },
+    });
+  });
+
+  it('an ordinary clock-out never moves a pause made earlier in the shift', async () => {
+    await clockOut();
+    const moved = prisma.task.updateMany.mock.calls.filter((c: any) => c[0].where.pausedById);
+    expect(moved).toHaveLength(0);
   });
 
   it('never fails the clock-out', async () => {
