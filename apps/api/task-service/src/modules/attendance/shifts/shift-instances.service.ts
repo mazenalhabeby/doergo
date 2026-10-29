@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 import { ShiftResolverService } from '../core/shift-resolver.service';
-import { notEndedWhere, zoneOf, success, SHIFT_REMINDER_DEFAULTS } from '@hbcfield/shared';
+import { notEndedWhere, zoneOf, success, rotaInForceOn, SHIFT_REMINDER_DEFAULTS } from '@hbcfield/shared';
 import { localPartsIn } from '@hbcfield/shared';
 import { dropUpcomingShifts } from '../../shifts/rota-end';
 
@@ -66,8 +66,11 @@ export class ShiftInstancesService {
           isActive: true,
           effectiveFrom: { lte: horizon },
           ...notEndedWhere(now),
-          // An administrator off the clock (review A7) is never expected to clock in, so never a no-show.
-          user: { clockOff: false },
+          // An administrator off the clock (review A7) is never expected to clock in, so never a no-show;
+          // nor is a deactivated member (deactivating drops their upcoming shifts — never re-create them).
+          user: { clockOff: false, isActive: true },
+          // An archived workspace plans nobody.
+          space: { isActive: true },
         },
         include: {
           shift: true,
@@ -81,15 +84,21 @@ export class ShiftInstancesService {
       if (assignments.length === 0) break;
       cursor = assignments[assignments.length - 1].id;
       processed += assignments.length;
+      const live = await this.liveMemberships(assignments, horizon);
 
       for (const a of assignments) {
         if (!a.shift?.isActive) continue;
         const physical = a.space.lat != null && a.space.lng != null;
         const tz = physical ? zoneOf(a.space.timezone) : zoneOf(a.user.timezone, a.user.organization?.timezone);
         for (const dateStr of this.localDaysInWindow(now, horizon, tz)) {
+          // ⚠️ Only days the rota row is IN FORCE: a row starting next Monday planned this week too,
+          // and every one of those days became a no-show.
+          if (!rotaInForceOn(a, dateStr)) continue;
           const win = this.shiftResolver.matchAndWindowForDate(a, tz, dateStr);
           if (!win) continue;
           if (win.expectedClockOutAt.getTime() < now.getTime()) continue; // already over
+          // Somebody no longer (or not yet) on the workspace's roster at the start is not expected there.
+          if (!isMemberAt(live.get(`${a.userId}:${a.spaceId}`), win.expectedClockInAt)) continue;
           const graceMin = a.shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
           pending.push({
             organizationId: a.space.organizationId,
@@ -119,8 +128,33 @@ export class ShiftInstancesService {
     return success({ processed, created });
   }
 
+  /** The roster windows (SpaceAssignment) of one batch's people at their workspaces — one query. */
+  private async liveMemberships(
+    rows: ReadonlyArray<{ userId: string; spaceId: string }>,
+    horizon: Date,
+  ): Promise<Map<string, MemberWindow>> {
+    const members = await this.prisma.spaceAssignment.findMany({
+      where: {
+        userId: { in: [...new Set(rows.map((r) => r.userId))] },
+        spaceId: { in: [...new Set(rows.map((r) => r.spaceId))] },
+        effectiveFrom: { lte: horizon },
+        ...notEndedWhere(new Date()),
+      },
+      select: { userId: true, spaceId: true, effectiveFrom: true, effectiveTo: true },
+    });
+    return new Map(members.map((m) => [`${m.userId}:${m.spaceId}`, m]));
+  }
+
   /** The shifts still ahead that nobody has acted on yet — dropped when a member stops using the clock (A7). */
   async dropUpcomingFor(userId: string, organizationId: string): Promise<number> {
     return dropUpcomingShifts(this.prisma, { userId, organizationId });
   }
+}
+
+type MemberWindow = { effectiveFrom: Date; effectiveTo: Date | null };
+
+/** The clock-in's own rule (`activeAssignmentWhere`), asked of the shift's start. */
+export function isMemberAt(m: MemberWindow | undefined, at: Date): boolean {
+  if (!m) return false;
+  return m.effectiveFrom.getTime() <= at.getTime() && (!m.effectiveTo || m.effectiveTo.getTime() >= at.getTime());
 }

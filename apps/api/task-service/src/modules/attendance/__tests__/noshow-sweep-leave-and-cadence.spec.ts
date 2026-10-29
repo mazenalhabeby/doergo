@@ -72,11 +72,15 @@ function settler(leaves: any[]) {
     timeOff: { findMany: jest.fn().mockResolvedValue(leaves) },
     user: { findMany: jest.fn().mockResolvedValue([{ id: 'u1', isActive: true, organizationId: 'org-1' }]) },
     shiftAssignment: { findMany: jest.fn().mockResolvedValue([]) },
+    spaceAssignment: {
+      findMany: jest.fn().mockResolvedValue([{ userId: 'u1', spaceId: 'space-1', effectiveFrom: day('2026-01-01'), effectiveTo: null }]),
+    },
+    companyLocation: { findMany: jest.fn().mockResolvedValue([{ id: 'space-1', isActive: true }]) },
   };
   // The rota still plans it: only the leave decides here.
   svc.shiftResolver = { matchAndWindowForDate: () => ({}) };
   svc.prisma.shiftAssignment.findMany.mockResolvedValue([
-    { userId: 'u1', spaceId: 'space-1', shiftId: 'shift-1', recurrence: 'WEEKLY', daysOfWeek: [], daysOfMonth: [], dates: [], effectiveFrom: day('2026-01-01'), effectiveTo: null, shift: { isActive: true }, space: { timezone: 'Europe/Vienna' } },
+    { userId: 'u1', spaceId: 'space-1', shiftId: 'shift-1', recurrence: 'WEEKLY', daysOfWeek: [], daysOfMonth: [], dates: [], effectiveFrom: day('2026-01-01'), effectiveTo: null, isActive: true, shift: { isActive: true }, space: { timezone: 'Europe/Vienna' } },
   ]);
   return svc as NoShowSettleService;
 }

@@ -7,10 +7,12 @@ import {
   toISODateString,
   type NoShowSettlement,
   peopleStanding,
+  rotaInForceOn,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { CalendarRulesService } from '../../calendar/calendar-rules.service';
 import { ShiftResolverService } from '../core/shift-resolver.service';
+import { isMemberAt } from '../shifts/shift-instances.service';
 
 /** What a missed shift needs to be judged — the columns of a ShiftInstance. */
 export interface NoShowInstance {
@@ -133,7 +135,8 @@ export class NoShowSettleService {
     const firstDay = days[0]!;
     const lastDay = days[days.length - 1]!;
 
-    const [entries, leaves, users, assignments] = await Promise.all([
+    const spaceIds = [...new Set(instances.map((i) => i.spaceId))];
+    const [entries, leaves, users, assignments, members, spaces] = await Promise.all([
       this.prisma.timeEntry.findMany({
         where: {
           userId: { in: userIds },
@@ -166,11 +169,19 @@ export class NoShowSettleService {
           dates: true,
           effectiveFrom: true,
           effectiveTo: true,
+          isActive: true,
           shift: { select: { startLocal: true, endLocal: true, crossesMidnight: true, isActive: true } },
           space: { select: { timezone: true } },
         },
       }),
+      this.prisma.spaceAssignment.findMany({
+        where: { userId: { in: userIds }, spaceId: { in: spaceIds } },
+        select: { userId: true, spaceId: true, effectiveFrom: true, effectiveTo: true },
+      }),
+      this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, isActive: true } }),
     ]);
+    const memberOf = new Map(members.map((m) => [`${m.userId}:${m.spaceId}`, m]));
+    const openSpaces = new Set(spaces.filter((x) => x.isActive).map((x) => x.id));
     const holidays = await this.holidayDays(instances, firstDay, lastDay);
     const userById = new Map(users.map((u) => [u.id, u]));
 
@@ -190,19 +201,23 @@ export class NoShowSettleService {
       );
       const u = userById.get(inst.userId);
       const memberGone = !u || !u.isActive || u.organizationId !== inst.organizationId;
-      // As the rota stands NOW: an assignment for this person, shift and workspace, in force that day, that plans it.
-      const dayStart = new Date(`${inst.localDate}T00:00:00.000Z`).getTime() - 14 * 3_600_000;
-      const dayEnd = new Date(`${inst.localDate}T23:59:59.999Z`).getTime() + 14 * 3_600_000;
-      const stillPlanned = assignments.some(
-        (a) =>
-          a.userId === inst.userId &&
-          a.spaceId === inst.spaceId &&
-          a.shiftId === inst.shiftId &&
-          a.shift?.isActive !== false &&
-          a.effectiveFrom.getTime() <= dayEnd &&
-          (!a.effectiveTo || a.effectiveTo.getTime() >= dayStart) &&
-          !!this.shiftResolver.matchAndWindowForDate(a, zoneOf(a.space?.timezone), inst.localDate),
-      );
+      // As the rota stands NOW: an assignment for this person, shift and workspace, in force that day
+      // (compared as local DAYS, never a padded instant), that plans it — in a workspace still open,
+      // with the person on its roster at the shift's start and still on it.
+      const m = memberOf.get(`${inst.userId}:${inst.spaceId}`);
+      const stillPlanned =
+        openSpaces.has(inst.spaceId) &&
+        isMemberAt(m, inst.expectedClockInAt) &&
+        isMemberAt(m, now) &&
+        assignments.some(
+          (a) =>
+            a.userId === inst.userId &&
+            a.spaceId === inst.spaceId &&
+            a.shiftId === inst.shiftId &&
+            a.shift?.isActive !== false &&
+            rotaInForceOn(a, inst.localDate) &&
+            !!this.shiftResolver.matchAndWindowForDate(a, zoneOf(a.space?.timezone), inst.localDate),
+        );
       const holiday = holidays.get(inst.spaceId)?.has(inst.localDate) ?? false;
       out.set(inst.id, settleNoShow(inst, { overlapping, onLeave, memberGone, stillPlanned, holiday }));
     }
