@@ -8683,6 +8683,7 @@
     "stepClose": "Chiude la sua custodia di {{name}}: le spese successive non gli vengono più addebitate.",
     "stepRetire": "Dismette {{name}}. Lo storico resta; smette di essere fatturato.",
     "clamped": "Il contratto inizia più avanti di oggi, quindi la custodia parte da oggi: nel mezzo nulla può restare senza titolare. Le date del contratto restano sulla scheda.",
+    "raised": "Il contratto inizia prima di quanto la custodia possa essere registrata, quindi la custodia parte il {{date}}. Le date del contratto restano sulla scheda.",
     "created": "{{name}} è a registro e consegnato.",
     "readFailed": "Non si è potuto leggere: compilalo tu.",
     "previewFailed": "Non si è potuto calcolare l’effetto",

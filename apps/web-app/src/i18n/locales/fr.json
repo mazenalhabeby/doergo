@@ -8683,6 +8683,7 @@
     "stepClose": "Clôt sa garde de {{name}} — les frais suivants ne lui sont plus imputés.",
     "stepRetire": "Retire {{name}}. Son historique reste ; sa facturation s’arrête.",
     "clamped": "Le contrat commence plus tard qu’aujourd’hui : la garde est enregistrée à partir d’aujourd’hui — rien ne peut rester sans détenteur entre-temps. Les dates du contrat sont conservées sur la fiche.",
+    "raised": "Le contrat commence plus tôt que la garde ne peut être enregistrée : la garde commence le {{date}}. Les dates du contrat sont conservées sur la fiche.",
     "created": "{{name}} est enregistré et remis.",
     "readFailed": "Lecture impossible — remplissez vous-même.",
     "previewFailed": "Impossible de déterminer l’effet",

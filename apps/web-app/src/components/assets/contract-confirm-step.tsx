@@ -87,6 +87,24 @@ export function ContractConfirmStep({
         </p>
       )}
 
+      {/* The term began before what it replaces was handed over, or too long ago: custody starts later. */}
+      {preview.startRaised && (
+        <p
+          className={
+            "rounded-xl border border-amber-300/70 bg-amber-50/60 p-3 text-xs " +
+            "text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 " +
+            "dark:text-amber-200"
+          }
+        >
+          {t(
+            "contract.raised",
+            "The term starts earlier than custody can be recorded, so custody starts on {{date}}. " +
+              "The term’s own dates are kept on the record.",
+            { date: new Date(preview.startsAt).toLocaleDateString() },
+          )}
+        </p>
+      )}
+
       <DialogFooter className="gap-2">
         <Button variant="ghost" onClick={onBack}>
           {t("common.back", "Back")}

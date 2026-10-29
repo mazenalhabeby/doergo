@@ -8,7 +8,7 @@ import {
   type KindShape,
 } from '@hbcfield/shared';
 import { AssetAccessService } from '../core/asset-access.service';
-import { ContractFields, ContractActor, asParsedContract } from './asset-contract-helpers';
+import { ContractFields, ContractActor, asParsedContract, contractCustodyStart } from './asset-contract-helpers';
 
 /**
  * A contract reading → the plan accepting it would carry out, computed from what
@@ -44,6 +44,8 @@ export class ContractPlanService {
     startsAt: Date;
     /** True when the term begins later than today and custody starts now instead. */
     startClamped: boolean;
+    /** True when the term began too early and custody starts later (contractCustodyStart). */
+    startRaised: boolean;
   }> {
     const kind = await this.prisma.assetCategory.findFirst({
       where: { id: data.categoryId, organizationId: data.organizationId },
@@ -149,9 +151,13 @@ export class ContractPlanService {
     const now = new Date();
     const asked = data.fields.startsOn ? new Date(data.fields.startsOn) : now;
     if (Number.isNaN(asked.getTime())) throw new BadRequestException('That start date could not be read');
-    const startClamped = asked.getTime() > now.getTime();
-    const startsAt = startClamped ? now : asked;
+    // …nor before what it replaces was given to them, nor older than any asset entry may be (contractCustodyStart).
+    const start = contractCustodyStart(asked, {
+      now,
+      holdingSince: open.map((p) => p.startedAt),
+      canManageAssets: data.canManageAssets,
+    });
 
-    return { proposal, shape, holding, startsAt, startClamped };
+    return { proposal, shape, holding, ...start };
   }
 }

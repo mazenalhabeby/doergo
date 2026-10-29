@@ -8683,6 +8683,7 @@
     "stepClose": "Closes their custody of {{name}} — later costs stop landing on it.",
     "stepRetire": "Retires {{name}}. Its history stays; it stops being billed.",
     "clamped": "The term starts later than today, so custody is recorded from today — nothing can be held by nobody in between. The term’s own dates are kept on the record.",
+    "raised": "The term starts earlier than custody can be recorded, so custody starts on {{date}}. The term’s own dates are kept on the record.",
     "created": "{{name}} is on the books and handed over.",
     "readFailed": "Could not read it — fill it in yourself.",
     "previewFailed": "Could not work out what that would do",

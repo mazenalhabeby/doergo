@@ -8683,6 +8683,7 @@
     "stepClose": "Beendet die Übergabe von {{name}} — spätere Kosten zählen nicht mehr darauf.",
     "stepRetire": "Mustert {{name}} aus. Die Historie bleibt; die Verrechnung endet.",
     "clamped": "Der Vertrag beginnt später als heute, daher wird die Übergabe ab heute erfasst — dazwischen darf nichts von niemandem gehalten werden. Die Vertragsdaten bleiben am Datensatz.",
+    "raised": "Der Vertrag beginnt früher, als die Übergabe erfasst werden kann, daher beginnt sie am {{date}}. Die Vertragsdaten bleiben am Datensatz.",
     "created": "{{name}} ist erfasst und übergeben.",
     "readFailed": "Konnte nicht gelesen werden — bitte selbst ausfüllen.",
     "previewFailed": "Konnte nicht ermitteln, was das bewirkt",

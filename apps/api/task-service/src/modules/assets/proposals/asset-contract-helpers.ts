@@ -1,3 +1,4 @@
+import { ASSET_ENTRY_BACKDATE_DAYS, assetEntryDateProblem } from '@hbcfield/shared';
 import { type AssetActor } from '../core/asset-access.service';
 import { AssetCustodyService } from '../custody/asset-custody.service';
 import type { ContractFieldsMessage } from '@hbcfield/shared/microservices';
@@ -58,3 +59,30 @@ export function asParsedContract(fields: ContractFields): ParsedContract {
 }
 
 export { Db };
+
+/**
+ * When custody from a contract starts — the term's start, kept inside what custody can record.
+ *
+ * · Never in the FUTURE (a van held by nobody until then): today, `startClamped`.
+ * · Never before the member's current custody of what it replaces began — the
+ *   old period would end before it started (`before-start`) and the whole
+ *   contract would be refused.
+ * · Never further back than anything else filed against an asset
+ *   (`assetEntryDateProblem`, 120 days unless the org-wide `canManageAssets`):
+ *   a contract typed in today must not re-attribute four months of costs.
+ * Raised to the later of the two bounds, `startRaised` — the screen says so.
+ */
+export function contractCustodyStart(
+  asked: Date,
+  opts: { now: Date; holdingSince: Array<Date | string>; canManageAssets?: boolean },
+): { startsAt: Date; startClamped: boolean; startRaised: boolean } {
+  if (asked.getTime() > opts.now.getTime()) return { startsAt: opts.now, startClamped: true, startRaised: false };
+  const floors = opts.holdingSince.map((d) => new Date(d).getTime());
+  if (assetEntryDateProblem(asked, { canManageAssets: opts.canManageAssets, now: opts.now }) === 'too-old') {
+    floors.push(opts.now.getTime() - ASSET_ENTRY_BACKDATE_DAYS * 86_400_000);
+  }
+  const floor = Math.max(...floors.filter((t) => !Number.isNaN(t)), Number.NEGATIVE_INFINITY);
+  return floor > asked.getTime()
+    ? { startsAt: new Date(floor), startClamped: false, startRaised: true }
+    : { startsAt: asked, startClamped: false, startRaised: false };
+}

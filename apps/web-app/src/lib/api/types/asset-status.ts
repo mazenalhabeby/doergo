@@ -278,6 +278,8 @@ export interface ContractPreview {
   startsAt: string
   /** The term begins later than today, so custody is recorded from today. */
   startClamped: boolean
+  /** The term began before what it replaces was handed over, or too long ago — custody starts later. */
+  startRaised?: boolean
 }
 
 export interface ContractProposalInput {

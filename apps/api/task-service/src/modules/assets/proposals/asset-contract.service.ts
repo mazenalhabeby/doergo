@@ -78,11 +78,12 @@ export class AssetContractService {
     } & ContractActor,
   ) {
     this.assertMay(data, 'use the contract flow');
-    const { proposal, startsAt, startClamped } = await this.plans.resolve(data);
+    const { proposal, startsAt, startClamped, startRaised } = await this.plans.resolve(data);
     return success({
       ...proposal,
       startsAt,
       startClamped,
+      startRaised,
       canApply: canApply(proposal),
     });
   }
@@ -116,7 +117,7 @@ export class AssetContractService {
     this.assertMay(data, 'manage assets');
 
     // Recomputed from scratch, on the server, exactly as the preview was.
-    const { proposal, shape, startsAt, startClamped } = await this.plans.resolve(data);
+    const { proposal, shape, startsAt, startClamped, startRaised } = await this.plans.resolve(data);
     if (!canApply(proposal)) {
       const first = proposal.problems[0]!;
       throw new BadRequestException(
@@ -217,6 +218,7 @@ export class AssetContractService {
             termStartsOn: data.fields.startsOn ?? null,
             termEndsOn: data.fields.endsOn ?? null,
             startClamped,
+            startRaised,
           } as unknown as Prisma.InputJsonValue,
         },
       });
@@ -242,6 +244,7 @@ export class AssetContractService {
       retired: !!data.retireReplaced && created.retirable.length > 0,
       startedAt: startsAt,
       startClamped,
+      startRaised,
     });
   }
 

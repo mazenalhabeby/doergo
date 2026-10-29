@@ -8683,6 +8683,7 @@
     "stepClose": "Cierra su custodia de {{name}}: los gastos posteriores dejan de imputarse ahí.",
     "stepRetire": "Retira {{name}}. Su historial se conserva; deja de facturarse.",
     "clamped": "El contrato empieza más tarde que hoy, así que la custodia se registra desde hoy: nada puede quedar sin titular en medio. Las fechas del contrato se guardan en la ficha.",
+    "raised": "El contrato empieza antes de lo que se puede registrar la custodia, así que la custodia empieza el {{date}}. Las fechas del contrato se guardan en la ficha.",
     "created": "{{name}} está dado de alta y entregado.",
     "readFailed": "No se pudo leer: rellénalo tú.",
     "previewFailed": "No se pudo calcular qué haría",
