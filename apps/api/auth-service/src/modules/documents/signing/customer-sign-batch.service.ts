@@ -2,7 +2,7 @@ import { Inject, BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { nextPendingStep, acceptedForSigning, MAX_BATCH_SIGN, chainProgress } from '@hbcfield/shared';
 import { signatureKey, sha256 } from '@hbcfield/shared/storage';
 import { PrismaService } from '@hbcfield/shared';
-import { type RequestContext, type SealSigner, decodeSignaturePng } from '../core/document-common';
+import { type RequestContext, type SealSigner, decodeSignaturePng, CLIENT_STEP_WHERE } from '../core/document-common';
 import { DocumentStorageService } from '../core/document-storage.service';
 import { DocumentLookupService } from '../core/document-lookup.service';
 import { DocumentNotifierService } from '../core/document-notifier.service';
@@ -129,7 +129,7 @@ export class CustomerSignBatchService {
           countersignature to a version its supplier has withdrawn.
         */
         const mine = await this.prisma.documentSigner.findFirst({
-          where: { id: signerId, documentId: document.id, status: 'PENDING' },
+          where: { id: signerId, documentId: document.id, status: 'PENDING', ...CLIENT_STEP_WHERE },
           select: { order: true },
         });
         if (!currentStep || !mine || currentStep.order !== mine.order) continue;

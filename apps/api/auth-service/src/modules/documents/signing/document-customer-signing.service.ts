@@ -1,7 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { personName, nextPendingStep, type SignableDocument, type SignerStep } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { CUSTOMER_LINK_STATUSES, canRenderInline, roleLabel, downloadName } from '../core/document-common';
+import {
+  CUSTOMER_LINK_STATUSES,
+  CLIENT_STEP_WHERE,
+  canRenderInline,
+  roleLabel,
+  downloadName,
+} from '../core/document-common';
 import { DocumentStorageService } from '../core/document-storage.service';
 
 /**
@@ -37,6 +43,9 @@ export class DocumentCustomerSigningService {
         // frozen onto the row at issue so a client changing theirs tomorrow
         // cannot redirect a document already in flight.
         email: data.email,
+        // A CLIENT step only. A member's step carries their address too, and
+        // staff sign in the app — the link must never sign for them.
+        ...CLIENT_STEP_WHERE,
         document: {
           organizationId: data.organizationId,
           status: { in: [...CUSTOMER_LINK_STATUSES] },
@@ -117,6 +126,7 @@ export class DocumentCustomerSigningService {
       where: {
         id: data.signerId,
         email: data.email,
+        ...CLIENT_STEP_WHERE,
         /*
           ⚠️ The same statuses the link LISTS. This asked only the organization,
           so a document revoked (or superseded) after the email went out still

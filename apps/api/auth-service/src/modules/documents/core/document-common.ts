@@ -15,6 +15,7 @@ export {
   type RequestContext,
   MAX_DOCUMENT_BYTES,
   CUSTOMER_LINK_STATUSES,
+  CLIENT_STEP_WHERE,
   ABANDONED_DRAFT_DAYS,
   ALLOWED_MIME,
   type SignerCandidate,

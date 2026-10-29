@@ -13,6 +13,7 @@ import {
   normalizeEmail,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
+import { CLIENT_STEP_WHERE } from '../common/actor';
 
 /**
  * The one way in for a client who has no login here.
@@ -187,7 +188,9 @@ export class CustomerSignLinkService {
       thing that was actually addressed, so it is the thing to search.
     */
     const row = await this.prisma.documentSigner.findFirst({
-      where: { email: addr },
+      // A CLIENT step only: a member whose address is on a staff step signs in
+      // the app and is never mailed a link (nor told whether they are known).
+      where: { email: addr, ...CLIENT_STEP_WHERE },
       select: {
         customerId: true,
         document: { select: { organizationId: true, organization: { select: { name: true } } } },
