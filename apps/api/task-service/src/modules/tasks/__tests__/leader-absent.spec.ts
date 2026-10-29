@@ -20,7 +20,7 @@ describe('LeaderAbsentService.sweep', () => {
       timeOff: { findMany: jest.fn().mockResolvedValue([{ technicianId: 'tobias', startDate: new Date('2026-10-01T00:00:00Z'), endDate: new Date('2026-10-02T00:00:00Z') }]) },
       task: {
         findMany: jest.fn().mockResolvedValue([{
-          id: 'job1', title: 'Install rooftop AC', organizationId: 'org1', assignedToId: 'tobias', createdById: 'anna', leadNoticeOn: null,
+          id: 'job1', title: 'Install rooftop AC', organizationId: 'org1', spaceId: 'ws1', assignedToId: 'tobias', createdById: 'anna', leadNoticeOn: null,
           space: { timezone: 'America/Los_Angeles' }, organization: { timezone: 'Europe/Vienna' }, assignedTo: { firstName: 'Tobias', lastName: 'Okafor' },
         }]),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
@@ -70,5 +70,19 @@ describe('LeaderAbsentService.sweep', () => {
     routing.resolveWatchers.mockResolvedValue({ ids: [], emails: [] });
     prisma.task.findMany.mockResolvedValue([{ ...(await prisma.task.findMany())[0], createdById: 'tobias' }]);
     await expect(service.sweep(now)).resolves.toBe(0);
+  });
+
+  it('jobs already told today are left out IN THE QUERY (they never fill the batch), by the job’s own day', async () => {
+    await service.sweep(now);
+    expect(prisma.task.findMany).toHaveBeenCalledTimes(2);
+    const where = prisma.task.findMany.mock.calls[1][0].where;
+    expect(where.AND[1]).toEqual({
+      OR: [{ spaceId: 'ws1', organizationId: 'org1', OR: [{ leadNoticeOn: null }, { leadNoticeOn: { not: '2026-10-01' } }] }],
+    });
+  });
+
+  it('before the local morning everywhere: the jobs are not even read', async () => {
+    await service.sweep(new Date('2026-10-01T11:00:00Z'));
+    expect(prisma.task.findMany).toHaveBeenCalledTimes(1); // only the places
   });
 });

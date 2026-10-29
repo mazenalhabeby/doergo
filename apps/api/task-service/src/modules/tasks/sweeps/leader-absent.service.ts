@@ -78,17 +78,44 @@ export class LeaderAbsentService {
       });
     }
 
-    const jobs = await this.prisma.task.findMany({
-      where: {
-        assignedToId: { in: [...offBy.keys()] },
-        status: OPEN,
-        // Today's work, or work already under way.
-        OR: [
-          { dueDate: { gte: new Date(now.getTime() - dayMs), lte: new Date(now.getTime() + dayMs) } },
-          { pausedAt: { not: null } },
-          { status: { in: [TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED] } },
-        ],
+    const base = {
+      assignedToId: { in: [...offBy.keys()] },
+      status: OPEN,
+      // Today's work, or work already under way.
+      OR: [
+        { dueDate: { gte: new Date(now.getTime() - dayMs), lte: new Date(now.getTime() + dayMs) } },
+        { pausedAt: { not: null } },
+        { status: { in: [TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED] } },
+      ],
+    };
+    /*
+      ⚠️ Jobs already told TODAY are left out in the query, not after it: they
+      used to fill the batch below, soonest first, so a busy day's later jobs
+      were never reached. "Today" is the job's own zone — so first the few
+      places the work is (one narrow distinct read), each with its local day,
+      and only those already past the morning.
+    */
+    const places = await this.prisma.task.findMany({
+      where: base,
+      distinct: ['spaceId', 'organizationId'],
+      select: {
+        spaceId: true,
+        organizationId: true,
+        space: { select: { timezone: true } },
+        organization: { select: { timezone: true } },
       },
+      take: 1000,
+    });
+    const notToldToday = places.flatMap((p) => {
+      const { dateStr, minutesOfDay } = localPartsIn(now, zoneOf(p.space?.timezone, p.organization?.timezone));
+      if (minutesOfDay < MORNING_HOUR * 60) return [];
+      const place = { spaceId: p.spaceId ?? null, organizationId: p.organizationId };
+      return [{ ...place, OR: [{ leadNoticeOn: null }, { leadNoticeOn: { not: dateStr } }] }];
+    });
+    if (!notToldToday.length) return 0;
+
+    const jobs = await this.prisma.task.findMany({
+      where: { AND: [base, { OR: notToldToday }] },
       select: {
         id: true,
         title: true,
