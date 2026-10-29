@@ -81,6 +81,10 @@ export class CrmReachService {
    * A manage-level action (portal residents, reassigning, deleting) on one
    * client: manage where it is filed. Out of reach is a 404 like everywhere
    * else; within reach but without manage, a 403.
+   *
+   * ⚠️ Reach FIRST: manage is an action on the clients the caller can see, not
+   * a key to the whole book. A rep with own-book view + manage could take or
+   * delete anybody's client when manage was checked before reach.
    */
   assertManage(
     reach: CrmReach,
@@ -89,8 +93,8 @@ export class CrmReachService {
     message = 'Not allowed',
   ): CrmCaps {
     const caps = crmCapsIn(reach, client.spaceId);
-    if (caps.manage) return caps;
     if (!caps.canAccess || !this.canReach(reach, client, caller)) throw notFound();
+    if (caps.manage) return caps;
     throw new ForbiddenException(message);
   }
 

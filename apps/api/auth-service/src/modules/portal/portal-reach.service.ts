@@ -176,12 +176,12 @@ export class PortalReachService {
     const reach = await this.customers.crmReachFor(caller, organizationId);
     const caps = crmCapsIn(reach, c.spaceId);
     const reachable = caps.canAccess && this.customers.canReach(reach, c, caller);
+    // Reach first, for a resident too — manage acts on the clients the caller reaches.
+    if (!reachable) throw new NotFoundException('Customer not found');
     if (c.isPortalResident) {
       if (caps.manage) return;
-      if (!reachable) throw new NotFoundException('Customer not found');
       throw new ForbiddenException('Not allowed');
     }
-    if (!reachable) throw new NotFoundException('Customer not found');
     if (!(caps.editInfo || caps.manage)) throw new ForbiddenException('Not allowed to edit client info');
   }
 
