@@ -35,7 +35,7 @@ export interface OvertimeRequest {
   /** A later round on the same shift took over — this one's window is over. */
   superseded?: boolean;
   approverNotes?: string | null;
-  timeEntry?: { clockInAt: string; clockOutAt: string | null };
+  timeEntry?: { clockInAt: string; clockOutAt: string | null; shift?: { flagToleranceMin: number | null } | null };
 }
 
 /** One round in full (GET /overtime/:id): its shift's other rounds and the signature. */

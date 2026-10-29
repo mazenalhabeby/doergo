@@ -16,6 +16,7 @@
  *
  * Pure: no IO.
  */
+import { SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '../utils/attendance-flags';
 
 export type OvertimeRoundState =
   | 'RUNNING' // agreed, the person is still on the clock inside the agreed time
@@ -51,6 +52,12 @@ export interface OvertimeRoundFacts {
   clockOutAt?: string | Date | null;
   /** A later round on the same shift exists — this one's window is over. */
   superseded?: boolean;
+  /**
+   * The shift's tolerance (`Shift.flagToleranceMin`); the counted-time default
+   * when the shift is unknown. A clock-out inside it snaps to the agreed end —
+   * what `computeCountedTime` does — so this page and the counted time agree.
+   */
+  toleranceMin?: number | null;
 }
 
 const ms = (v: string | Date | null | undefined): number | null => {
@@ -98,7 +105,16 @@ export function overtimeRoundMinutes(
   const start = ms(r.overtimeStartAt);
   const agreedEnd = ms(r.overtimeEndAt) ?? (start != null && agreed ? start + agreed * 60_000 : null);
   // Where the person actually stopped: the clock-out, else now while they are still on.
-  const stopped = ms(r.clockOutAt) ?? (r.superseded ? agreedEnd : now.getTime());
+  let stopped = ms(r.clockOutAt) ?? (r.superseded ? agreedEnd : now.getTime());
+  /*
+    Inside the tolerance the agreed end is the truth, both ways — the counted
+    time's own snap (counted-time.ts). Out at 17:27 on a round to 17:30 counted
+    the whole round there and 27 minutes of it here.
+  */
+  const tol = Math.max(0, r.toleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN) * 60_000;
+  if (ms(r.clockOutAt) != null && stopped != null && agreedEnd != null && Math.abs(stopped - agreedEnd) <= tol) {
+    stopped = agreedEnd;
+  }
   if (typeof r.overtimeMinutes === 'number' && r.overtimeMinutes >= 0 && r.status === 'COMPLETED') {
     return { agreed, worked: r.overtimeMinutes, overBy: 0 };
   }

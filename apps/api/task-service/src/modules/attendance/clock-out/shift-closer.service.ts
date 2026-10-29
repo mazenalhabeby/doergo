@@ -1,4 +1,5 @@
-import { closedHowOfBasis, endRunningRests, provisionalClockOut, type RestRow } from '../core/open-shift-close';
+import { closedHowOfBasis, endRunningRests, provisionalClockOut, reaskOutsideAtRealClose } from '../core/open-shift-close';
+import type { RestRow } from '../core/open-shift-close';
 import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, personNameOf, personName, zoneOf, TimeEntryStatus, SERVICE_NAMES } from '@hbcfield/shared';
@@ -54,6 +55,7 @@ export class ShiftCloser {
     const { at, basis } = provisionalClockOut({
       clockInAt: entry.clockInAt,
       expectedClockOutAt: entry.endIsDailyLimit ? null : entry.expectedClockOutAt, // a marker is not an end (B5)
+      dailyLimitAt: entry.endIsDailyLimit ? entry.expectedClockOutAt : null, // …but the fallback stops at it
       leftSiteAt: entry.geofenceExcursions[0]?.leftRingAt ?? null,
       lastSeenOnSiteAt: evidence.lastSeenOnSiteAt ?? null,
       // The member's own hours a day there when set (clock review D1), else the workspace's.
@@ -124,23 +126,16 @@ export class ShiftCloser {
       this.autoClock && entry.locationId
         ? await this.autoClock.autoRestAtClose({ ...entry, locationId: entry.locationId }, at)
         : null;
-    const restRows: RestRow[] = autoRest
-      ? [
-          ...(entry.breaks ?? []),
-          {
-            id: '',
-            startedAt: autoRest.startedAt,
-            endedAt: autoRest.endedAt,
-            durationMinutes: autoRest.minutes,
-            isPaid: false,
-          },
-        ]
-      : (entry.breaks ?? []);
+    const auto: RestRow[] = autoRest
+      ? [{ id: '', startedAt: autoRest.startedAt, endedAt: autoRest.endedAt, durationMinutes: autoRest.minutes, isPaid: false }]
+      : [];
+    const restRows: RestRow[] = [...(entry.breaks ?? []), ...auto];
     const rests = endRunningRests(restRows, at, now);
     const counted = await this.countedTime.columnsFor(
       { ...entry, breakMinutes: rests.breakMinutes, unpaidBreakMinutes: rests.unpaidBreakMinutes },
       at,
       spec.toleranceMin,
+      rests.rows, // only an unpaid rest's part inside the counted window comes off
     );
     const excursionIds = (entry.geofenceExcursions ?? []).map((x) => x.id);
     // A required rest due and not taken — or too short, on a new entry (B7) — is MISSED at the close: flagged,
@@ -190,6 +185,7 @@ export class ShiftCloser {
           ...closingLabelColumns(entry, spec.labels),
           ...(flagsChanged ? { flagReasons: closeFlags, approvalStatus: closeApproval } : {}),
           ...handHold,
+          ...reaskOutsideAtRealClose(entry, spec.from, at), // the real time outside is asked about again
         },
       });
       if (claim.count === 0) return null;

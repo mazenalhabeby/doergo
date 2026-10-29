@@ -50,6 +50,7 @@ describe('ShiftRematchService', () => {
   beforeEach(() => {
     prisma = {
       timeEntry: { findMany: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      break: { findMany: jest.fn().mockResolvedValue([]) },
       shift: { findUnique: jest.fn().mockResolvedValue({ flagToleranceMin: 10, name: 'Night Shift' }) },
       activityLog: { create: jest.fn().mockResolvedValue({}) },
     };

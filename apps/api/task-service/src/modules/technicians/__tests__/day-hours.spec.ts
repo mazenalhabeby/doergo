@@ -119,10 +119,11 @@ describe('DayHoursReshapeService — through the same rule as a clock-in', () =>
     };
   }
 
-  function make(rows: unknown[], overtime: unknown[] = []) {
+  function make(rows: unknown[], overtime: unknown[] = [], roundMinutes: number | null = null) {
     const updates: Array<{ where: { id: string }; data: Record<string, unknown> }> = [];
     const prisma = {
       timeEntry: { findMany: jest.fn().mockResolvedValue(rows), update: jest.fn((a) => (updates.push(a), a)) },
+      overtimeRequest: { aggregate: jest.fn().mockResolvedValue({ _sum: { maxDurationMinutes: roundMinutes } }) },
       timeOff: { findMany: jest.fn().mockResolvedValue(overtime) },
       shift: { findUnique: jest.fn().mockResolvedValue({ graceMin: 10 }) },
       activityLog: { create: jest.fn() },
@@ -197,6 +198,33 @@ describe('DayHoursReshapeService — through the same rule as a clock-in', () =>
     const { svc, updates } = make([entry()], ot);
     await svc.reshapeDay(change(request('17:00')));
     expect(updates[0].data.expectedClockOutAt).toEqual(at('2026-10-24T15:30:00Z')); // 17:30 Vienna
+  });
+
+  it('approved overtime rounds go on after a replaced end (630, not 510)', async () => {
+    // 08–16 Vienna, 120 min approved (end moved to 18:00), out at 18:30; the office sets 08:00–16:30.
+    const worked = entry({ clockOutAt: at('2026-10-24T16:30:00Z'), expectedClockOutAt: at('2026-10-24T16:00:00Z') });
+    const { svc, updates, prisma } = make([worked], [], 120);
+    await svc.reshapeDay(change(request('16:30', '08:00')));
+    expect(prisma.overtimeRequest.aggregate.mock.calls[0][0].where.status.in).toEqual(['APPROVED', 'COMPLETED']);
+    expect(updates[0].data.expectedClockOutAt).toEqual(at('2026-10-24T16:30:00Z')); // 16:30 + 120 = 18:30 Vienna
+    expect(updates[0].data.paidMinutes).toBe(630);
+    // Out at 18:00 instead: the agreed 120 still count — 600, not 510.
+    const { svc: svc2, updates: u2 } = make([entry({ expectedClockOutAt: at('2026-10-24T16:00:00Z') })], [], 120);
+    await svc2.reshapeDay(change(request('16:30', '08:00')));
+    expect(u2[0].data.paidMinutes).toBe(600);
+  });
+
+  it('time counted before the start stays before a replaced start', async () => {
+    // Counted from 07:30 (30 min before the 08:00 start decided once); the office sets 08:00–17:00.
+    const early = entry({
+      outsideBeforeMinutes: 30,
+      clockInAt: at('2026-10-24T05:30:00Z'),
+      expectedClockInAt: at('2026-10-24T05:30:00Z'),
+    });
+    const { svc, updates } = make([early]);
+    await svc.reshapeDay(change(request('17:00', '08:00')));
+    expect(updates[0].data.expectedClockInAt).toEqual(at('2026-10-24T05:30:00Z')); // still 07:30 Vienna, not 08:00
+    expect(updates[0].data.expectedClockOutAt).toEqual(at('2026-10-24T15:00:00Z'));
   });
 
   it('a night set by the office ends the next morning, and counts to it', async () => {

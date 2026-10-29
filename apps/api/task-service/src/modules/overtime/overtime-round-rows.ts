@@ -46,6 +46,7 @@ function roundFacts(r: RoundRow, latest: Map<string, number>) {
     actualEndAt: r.actualEndAt,
     overtimeMinutes: r.overtimeMinutes,
     clockOutAt: r.timeEntry?.clockOutAt ?? null,
+    toleranceMin: r.timeEntry?.shift?.flagToleranceMin ?? null,
     superseded: (latest.get(r.timeEntryId) ?? r.cycle) > r.cycle,
   };
 }

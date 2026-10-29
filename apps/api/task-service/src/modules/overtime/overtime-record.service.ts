@@ -111,6 +111,7 @@ export class OvertimeRecordService {
         ...overtimeRoundMinutes({
           ...s,
           clockOutAt: r.timeEntry?.clockOutAt ?? null,
+          toleranceMin: r.timeEntry?.shift?.flagToleranceMin ?? null,
           superseded: s.cycle < latest.get(r.timeEntryId)!,
         }),
       })),

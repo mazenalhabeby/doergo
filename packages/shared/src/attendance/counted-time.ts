@@ -34,8 +34,29 @@ export interface CountedTimeInput {
    * light. Outside it, the real time is used and the entry is flagged.
    */
   toleranceMin?: number;
-  /** Minutes of break that do not count as work. Paid breaks are not in here. */
+  /**
+   * Minutes of break that do not count as work. Paid breaks are not in here.
+   * Only read when `rests` is absent — a row without rest rows (an entry from
+   * before rests were rows, the live figure on the phone).
+   */
   unpaidBreakMinutes?: number;
+  /**
+   * The rests themselves, when the caller has the rows. ⚠️ Preferred over the
+   * total: only the part of an unpaid rest INSIDE the counted window comes off.
+   * A rest taken before the shift began (in at 08:00, rest 08:00–08:30, shift
+   * from 09:00) was never counted, so taking it off again docked 30 minutes
+   * twice. Paid rests and rests still running are ignored.
+   */
+  rests?: readonly CountedRest[];
+}
+
+/** A rest as the count reads it — structurally a break row. */
+export interface CountedRest {
+  startedAt: Date;
+  endedAt?: Date | null;
+  isPaid?: boolean | null;
+  /** When shorter than the two times say, the shorter figure is what was rested. */
+  durationMinutes?: number | null;
 }
 
 export interface CountedTime {
@@ -65,7 +86,6 @@ function snap(actual: Date, boundary: Date, toleranceMin: number): Date {
 
 export function computeCountedTime(input: CountedTimeInput): CountedTime {
   const tol = Math.max(0, input.toleranceMin ?? 0);
-  const unpaid = Math.max(0, Math.round(input.unpaidBreakMinutes ?? 0));
 
   /*
     The start: the LATER of arriving and the shift beginning.
@@ -101,13 +121,44 @@ export function computeCountedTime(input: CountedTimeInput): CountedTime {
   const paidMinutes =
     countedEndAt === null
       ? null
-      : Math.max(0, Math.round((countedEndAt.getTime() - countedStartAt.getTime()) / MIN) - unpaid);
+      : input.rests
+        ? Math.max(
+            0,
+            Math.round(
+              (countedEndAt.getTime() - countedStartAt.getTime() - unpaidRestMs(input.rests, countedStartAt, countedEndAt)) /
+                MIN,
+            ),
+          )
+        : Math.max(
+            0,
+            Math.round((countedEndAt.getTime() - countedStartAt.getTime()) / MIN) -
+              Math.max(0, Math.round(input.unpaidBreakMinutes ?? 0)),
+          );
 
   const clamped =
     countedStartAt.getTime() !== input.clockInAt.getTime() ||
     (!!input.clockOutAt && !!countedEndAt && countedEndAt.getTime() !== input.clockOutAt.getTime());
 
   return { countedStartAt, countedEndAt, paidMinutes, clamped };
+}
+
+/**
+ * The unpaid rest INSIDE [from, to], in exact milliseconds — rounded once, by
+ * the caller, with the window it comes off. Rests are clipped one by one; two
+ * rows that overlap each other (a hand-added duplicate) still cannot take off
+ * more than the window holds, because the result is capped at it.
+ */
+export function unpaidRestMs(rests: readonly CountedRest[], from: Date, to: Date): number {
+  let ms = 0;
+  for (const r of rests) {
+    if (r.isPaid || !r.endedAt) continue;
+    const start = Math.max(r.startedAt.getTime(), from.getTime());
+    const end = Math.min(r.endedAt.getTime(), to.getTime());
+    if (end <= start) continue;
+    const cap = r.durationMinutes != null ? Math.max(0, r.durationMinutes) * MIN : Infinity;
+    ms += Math.min(end - start, cap);
+  }
+  return Math.min(ms, Math.max(0, to.getTime() - from.getTime()));
 }
 
 /**

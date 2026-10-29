@@ -129,6 +129,9 @@ describe('deciding time outside the shift', () => {
     await expect(
       make({ row: entry({ clockOutAt: at('16:05'), clockInAt: at('07:55') }) }).svc.decide(decide(10)),
     ).rejects.toMatchObject({ response: { code: 'OUTSIDE_NOTHING' } });
+    await expect(make({ row: entry({ clockOutProvisional: true }) }).svc.decide(decide(10))).rejects.toMatchObject({
+      response: { code: 'OUTSIDE_NOTHING' },
+    });
     await expect(make({ row: null }).svc.decide(decide(10))).rejects.toBeInstanceOf(NotFoundException);
     await expect(make({ mayApprove: false }).svc.decide(decide(10))).rejects.toBeInstanceOf(ForbiddenException);
     await expect(make({ self: true }).svc.decide(decide(10))).rejects.toBeInstanceOf(ForbiddenException);
@@ -155,6 +158,7 @@ describe('the lists', () => {
       userId: { not: 'anna' },
       outsideDecidedAt: null,
       endIsDailyLimit: false,
+      clockOutProvisional: false, // a temporary close's clock-out is a guess — never asked about
     });
   });
 

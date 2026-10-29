@@ -71,6 +71,18 @@ describe('a wall time in a zone, and back', () => {
     expect(len('2026-10-25', '2026-10-26', 'America/Bahia_Banderas')).toBe(24);
   });
 
+  it('a wall time in the spring gap is the first instant after it; one in the autumn overlap is the first', () => {
+    const iso = (day: string, h: number, m: number, tz: string) => zonedWallTimeToUtc(day, h, m, tz).toISOString();
+    expect(iso('2026-03-29', 2, 30, 'Europe/Vienna')).toBe('2026-03-29T01:00:00.000Z'); // 03:00 CEST
+    expect(iso('2026-03-08', 2, 30, 'America/New_York')).toBe('2026-03-08T07:00:00.000Z'); // 03:00 EDT
+    expect(iso('2026-10-25', 2, 30, 'Europe/Vienna')).toBe('2026-10-25T00:30:00.000Z'); // the first 02:30 (CEST)
+    expect(iso('2026-11-01', 1, 30, 'America/New_York')).toBe('2026-11-01T05:30:00.000Z'); // the first 01:30 (EDT)
+    // Either side of a change is untouched, and a zone without one is plain arithmetic.
+    expect(iso('2026-03-29', 1, 59, 'Europe/Vienna')).toBe('2026-03-29T00:59:00.000Z');
+    expect(iso('2026-03-29', 3, 0, 'Europe/Vienna')).toBe('2026-03-29T01:00:00.000Z');
+    expect(iso('2026-03-29', 2, 30, 'Asia/Kolkata')).toBe('2026-03-28T21:00:00.000Z');
+  });
+
   it('a night shift across the autumn change counts the extra hour (22:00 → 06:00 = 9 h in Vienna)', () => {
     const start = zonedWallTimeToUtc('2026-10-24', 22, 0, 'Europe/Vienna');
     const end = zonedWallTimeToUtc('2026-10-25', 6, 0, 'Europe/Vienna');

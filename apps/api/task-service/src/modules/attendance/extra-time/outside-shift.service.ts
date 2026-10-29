@@ -34,10 +34,13 @@ const LIST_MAX = 300;
 
 /*
   The rows the inbox asks about: closed, on a shift's plan (never a daily limit), undecided,
-  not rejected, and not already an extra-time / overtime question of their own.
+  not rejected, and not already an extra-time / overtime question of their own. Never a TEMPORARY
+  close: its clock-out is a guess, and a decision about it would be about time nobody knows was worked
+  (the real clock-out asks again — `reaskOutsideAtRealClose`).
 */
 const pendingWhere = (since: Date) => ({
   status: TimeEntryStatus.CLOCKED_OUT,
+  clockOutProvisional: false,
   outsideDecidedAt: null,
   expectedClockInAt: { not: null },
   expectedClockOutAt: { not: null },
@@ -233,7 +236,8 @@ export class OutsideShiftService {
       throw new ConflictException({ code: 'OUTSIDE_ALREADY_DECIDED', message: 'This time was already decided.' });
     }
     const outside = outsideShift(entry, await this.countedTime.toleranceFor(entry.shiftId));
-    if (entry.status !== TimeEntryStatus.CLOCKED_OUT || !outside) {
+    // A temporary close's clock-out is a guess: nothing to decide until the real one (pendingWhere).
+    if (entry.status !== TimeEntryStatus.CLOCKED_OUT || entry.clockOutProvisional || !outside) {
       throw new ConflictException({
         code: 'OUTSIDE_NOTHING',
         message: 'There is no time outside the shift to decide.',

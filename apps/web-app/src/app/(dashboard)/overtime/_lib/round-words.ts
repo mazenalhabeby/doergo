@@ -31,6 +31,7 @@ function factsOf(r: OvertimeRequest) {
     actualEndAt: r.actualEndAt ?? null,
     overtimeMinutes: r.overtimeMinutes ?? null,
     clockOutAt: r.timeEntry?.clockOutAt ?? null,
+    toleranceMin: r.timeEntry?.shift?.flagToleranceMin ?? null,
     superseded: r.superseded ?? false,
   }
 }

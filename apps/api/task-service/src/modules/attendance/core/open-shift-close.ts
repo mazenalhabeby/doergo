@@ -18,7 +18,10 @@ import {
  *     clock's no-shift close passes it.
  *  3. SHIFT_END — the planned end. Nothing past it is counted without approval.
  *  4. CLOCK_IN_PLUS_8H — no planned end and no better evidence: clock-in + the
- *     workspace's hours without a shift (8 unless it set another; the name is history).
+ *     workspace's hours without a shift (8 unless it set another; the name is history),
+ *     or the session's daily-limit marker when that comes FIRST — a second session
+ *     the same day has only what is left of the day's hours (360 of 480 already
+ *     worked, in at 13:00 → closed at 15:00 with 120, never at 21:00 with 480).
  * Always between clock-in and now, and never past the planned end.
  */
 type ClockOutBasis = 'LEFT_SITE' | 'LAST_SEEN' | 'SHIFT_END' | 'CLOCK_IN_PLUS_8H';
@@ -32,6 +35,8 @@ export function provisionalClockOut(input: {
   lastSeenOnSiteAt?: Date | null;
   /** The workspace's hours without a shift (`noShiftDailyMinutes`); the fallback's length. */
   fallbackMinutes?: number | null;
+  /** A no-shift session's daily-limit marker (`endIsDailyLimit`): the fallback never runs past it. */
+  dailyLimitAt?: Date | null;
   now: Date;
 }): { at: Date; basis: ClockOutBasis } {
   const { clockInAt, expectedClockOutAt, leftSiteAt, lastSeenOnSiteAt, now } = input;
@@ -44,7 +49,10 @@ export function provisionalClockOut(input: {
   if (leftSiteAt && leftSiteAt >= clockInAt) return { at: clamp(leftSiteAt), basis: 'LEFT_SITE' };
   if (lastSeenOnSiteAt && lastSeenOnSiteAt >= clockInAt) return { at: clamp(lastSeenOnSiteAt), basis: 'LAST_SEEN' };
   if (expectedClockOutAt) return { at: clamp(expectedClockOutAt), basis: 'SHIFT_END' };
-  return { at: clamp(noShiftReminderAt(clockInAt, input.fallbackMinutes)), basis: 'CLOCK_IN_PLUS_8H' };
+  const hoursEnd = noShiftReminderAt(clockInAt, input.fallbackMinutes);
+  const limit = input.dailyLimitAt;
+  const fallback = limit && limit >= clockInAt && limit < hoursEnd ? limit : hoursEnd;
+  return { at: clamp(fallback), basis: 'CLOCK_IN_PLUS_8H' };
 }
 
 /** Is this open shift due to be closed provisionally? The same rule as the sweep's query. */
@@ -99,11 +107,18 @@ export function endRunningRests(
   rests: RestRow[],
   closeAt: Date,
   now: Date,
-): { ends: { id: string; endedAt: Date; minutes: number }[]; breakMinutes: number; unpaidBreakMinutes: number } {
+): {
+  ends: { id: string; endedAt: Date; minutes: number }[];
+  /** Every rest as it stands after the close — what the counted time clips to its window. */
+  rows: RestRow[];
+  breakMinutes: number;
+  unpaidBreakMinutes: number;
+} {
   // The shared rest rules (break-totals.ts): end what is still running, recount from the rows.
   const { rows, ended } = endRunningBreaks(rests, new Date(Math.min(closeAt.getTime(), now.getTime())));
   return {
     ends: ended.map((r) => ({ id: r.id, endedAt: r.endedAt, minutes: r.durationMinutes })),
+    rows,
     ...breakTotals(rows),
   };
 }
@@ -131,4 +146,20 @@ export function clockOutTimeFlags(
 /** How a temporary close is recorded in the label facts. */
 export function closedHowOfBasis(basis: string): 'LEFT_SITE' | 'LAST_SEEN' | 'SHIFT_END' | 'SESSION_HOURS' {
   return basis === 'LEFT_SITE' || basis === 'LAST_SEEN' || basis === 'SHIFT_END' ? basis : 'SESSION_HOURS';
+}
+
+/**
+ * A REAL clock-out replacing a temporary one at another moment: the time outside the shift that was
+ * decided against the guess is asked about again (decided columns cleared). What was counted stays —
+ * the plan already moved for it (outside-shift.ts reads what is still outside the moved plan), so only
+ * the rest is asked. Nothing changed (the same minute, or never decided) → nothing to clear.
+ */
+export function reaskOutsideAtRealClose(
+  entry: { clockOutAt?: Date | null; outsideDecidedAt?: Date | null },
+  from: 'OPEN' | 'PROVISIONAL',
+  at: Date,
+): { outsideDecidedAt: null; outsideDecidedById: null; outsideCountedMinutes: null } | Record<string, never> {
+  if (from !== 'PROVISIONAL' || !entry.outsideDecidedAt) return {};
+  if (entry.clockOutAt && entry.clockOutAt.getTime() === at.getTime()) return {};
+  return { outsideDecidedAt: null, outsideDecidedById: null, outsideCountedMinutes: null };
 }

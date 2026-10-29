@@ -155,3 +155,42 @@ describe('counted time', () => {
     });
   });
 });
+
+describe('counted time — rests outside the counted window', () => {
+  const rest = (from: string, to: string, isPaid = false) => ({ startedAt: at(from), endedAt: at(to), isPaid });
+  const day = {
+    clockInAt: at('08:00'),
+    clockOutAt: at('18:00'),
+    expectedStartAt: at('09:00'),
+    expectedEndAt: at('17:00'),
+    toleranceMin: 5,
+  };
+
+  it('a rest taken before the shift began is not taken off again (480, not 450)', () => {
+    expect(computeCountedTime({ ...day, rests: [rest('08:00', '08:30')] }).paidMinutes).toBe(480);
+    // The old total-based reading — kept for rows without rest rows — still subtracts it.
+    expect(computeCountedTime({ ...day, unpaidBreakMinutes: 30 }).paidMinutes).toBe(450);
+  });
+
+  it('only the part inside the window comes off; paid and running rests never do', () => {
+    const r = computeCountedTime({
+      ...day,
+      rests: [rest('08:45', '09:15'), rest('12:00', '12:30'), rest('14:00', '14:15', true), { startedAt: at('16:50') }],
+    });
+    expect(r.paidMinutes).toBe(480 - 15 - 30);
+  });
+
+  it('rounds once over exact durations', () => {
+    const sec = (hhmm: string, s: number) => new Date(at(hhmm).getTime() + s * 1000);
+    const r = computeCountedTime({
+      clockInAt: at('09:00'),
+      clockOutAt: at('10:00'),
+      rests: [
+        { startedAt: at('09:10'), endedAt: sec('09:10', 20) },
+        { startedAt: at('09:20'), endedAt: sec('09:20', 20) },
+      ],
+    });
+    // 40 s of rest, rounded with the window once: 59.33 → 59 (rounded per rest it would be 60).
+    expect(r.paidMinutes).toBe(59);
+  });
+});

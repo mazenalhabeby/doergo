@@ -51,6 +51,9 @@ interface ClosableEntry {
   isEdited?: boolean | null;
   originalClockIn?: Date | null;
   originalClockOut?: Date | null;
+  /** A temporary close's guess, and whether time outside the shift was decided against it. */
+  clockOutAt?: Date | null;
+  outsideDecidedAt?: Date | null;
 }
 
 /** How a shift is being closed. Everything the close itself works out is NOT here. */

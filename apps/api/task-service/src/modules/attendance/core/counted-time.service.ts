@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
+import { computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, type CountedRest } from '@hbcfield/shared';
 
 /** The row shape the calculation needs — nothing more, so any caller can supply it. */
 interface CountableEntry {
+  /** With an id and no rests given, the entry's rest rows are read (`restsOf`). */
+  id?: string;
   clockInAt: Date;
   expectedClockInAt?: Date | null;
   expectedClockOutAt?: Date | null;
@@ -51,15 +53,35 @@ export class CountedTimeService {
     return shift?.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
   }
 
+  /** An entry's rest rows as they stand — inside `tx` when the caller just wrote one. */
+  async restsOf(entryId: string, tx?: PrismaWriter): Promise<CountedRest[]> {
+    const db = tx ?? (this.prisma as unknown as PrismaWriter);
+    return ((await db.break.findMany({
+      where: { timeEntryId: entryId },
+      select: { startedAt: true, endedAt: true, isPaid: true, durationMinutes: true },
+    })) as CountedRest[] | null) ?? [];
+  }
+
   /**
    * The three counted columns for an entry being closed.
    *
    * Pass `knownToleranceMin` when the caller already looked it up — the
    * clock-out path needs it for the flags anyway, and asking the database twice
    * for the same integer on the hottest write in the product is a waste.
+   *
+   * ⚠️ `rests` are the entry's rest ROWS as they now stand (the closer's, with
+   * the running ones ended). Only an unpaid rest's part INSIDE the counted window
+   * comes off — a rest before the shift began was never counted. Not given, they
+   * are read; an entry with no rows at all (older than rest rows) keeps its total.
    */
-  async columnsFor(entry: CountableEntry, clockOutAt: Date, knownToleranceMin?: number): Promise<CountedColumns> {
+  async columnsFor(
+    entry: CountableEntry,
+    clockOutAt: Date,
+    knownToleranceMin?: number,
+    rests?: readonly CountedRest[],
+  ): Promise<CountedColumns> {
     const toleranceMin = knownToleranceMin ?? (await this.toleranceFor(entry.shiftId ?? null));
+    const rows = rests ?? (entry.id ? await this.restsOf(entry.id) : []);
     const { countedStartAt, countedEndAt, paidMinutes } = computeCountedTime({
       clockInAt: entry.clockInAt,
       clockOutAt,
@@ -80,6 +102,7 @@ export class CountedTimeService {
         old row keeps reporting the number it always did.
       */
       unpaidBreakMinutes: entry.unpaidBreakMinutes ?? entry.breakMinutes ?? 0,
+      ...(rows.length ? { rests: rows } : {}),
     });
     return { countedStartAt, countedEndAt, paidMinutes };
   }
@@ -107,7 +130,8 @@ export class CountedTimeService {
     tx?: PrismaWriter,
   ): Promise<void> {
     if (!entry.clockOutAt) return;
-    const counted = await this.columnsFor(entry, entry.clockOutAt);
+    // The rows are read here, inside `tx`: the caller's own copy predates the rest it just wrote.
+    const counted = await this.columnsFor(entry, entry.clockOutAt, undefined, await this.restsOf(entry.id, tx));
     await (tx ?? this.prisma).timeEntry.update({ where: { id: entry.id }, data: counted });
     this.logger.debug(`Recounted entry ${entry.id}: paid=${counted.paidMinutes}m (breaks ${entry.breakMinutes ?? 0}m)`);
   }
@@ -120,4 +144,5 @@ export class CountedTimeService {
  */
 type PrismaWriter = {
   timeEntry: { update: (args: unknown) => Promise<unknown> };
+  break: { findMany: (args: { where: { timeEntryId: string }; select: Record<string, true> }) => PromiseLike<unknown> };
 };

@@ -8,6 +8,7 @@ import {
   flagsWithMissedRest,
   breakTotals,
   endRunningBreaks,
+  type CountedRest,
 } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { scopeWhere, hoursRuleFacts, type AttendanceScope } from '@hbcfield/shared';
@@ -195,9 +196,11 @@ export class EntryEditService {
     // clock-out — what the open-shift close does with a forgotten one.
     let totals = { breakMinutes: entry.breakMinutes ?? 0, unpaidBreakMinutes: entry.unpaidBreakMinutes ?? 0 };
     let endedBreaks: Array<{ id: string; endedAt: Date; durationMinutes: number }> = [];
+    let restRows: readonly CountedRest[] = entry.breaks; // what the counted window clips (counted-time.ts)
     if (closingOpen && entry.breaks.some((b) => !b.endedAt)) {
       const closed = endRunningBreaks(entry.breaks, newClockOut!);
       endedBreaks = closed.ended;
+      restRows = closed.rows;
       totals = breakTotals(closed.rows);
       updateData.breakMinutes = totals.breakMinutes;
       updateData.unpaidBreakMinutes = totals.unpaidBreakMinutes;
@@ -236,6 +239,7 @@ export class EntryEditService {
         { ...entry, clockInAt: newClockIn, ...totals },
         newClockOut,
         toleranceMin,
+        restRows,
       );
       updateData.countedStartAt = counted.countedStartAt;
       updateData.countedEndAt = counted.countedEndAt;

@@ -77,6 +77,7 @@ describe('re-match of an OLD entry on a split-shift day', () => {
 
   beforeEach(() => {
     prisma = {
+      break: { findMany: jest.fn().mockResolvedValue([]) },
       timeEntry: {
         findMany: jest.fn(),
         findFirst: jest.fn().mockResolvedValue(null),

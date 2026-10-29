@@ -7,7 +7,7 @@ import { ShiftCloseSweepService } from '../clock-out/shift-close-sweep.service';
 import { DecidedCloseService } from '../clock-out/decided-close.service';
 import { ShiftCloser } from '../clock-out/shift-closer.service';
 import { ExtraTimeDecisionService } from '../extra-time/extra-time-decision.service';
-import { isAbandoned, provisionalClockOut } from '../core/open-shift-close';
+import { isAbandoned, provisionalClockOut, reaskOutsideAtRealClose } from '../core/open-shift-close';
 
 const at = (iso: string) => new Date(`2026-09-${iso}:00.000Z`);
 const H = 3_600_000;
@@ -31,6 +31,32 @@ describe('the temporary clock-out', () => {
 
   it('with no planned end, clock-in + 8 hours', () => {
     expect(provisionalClockOut({ clockInAt, expectedClockOutAt: null, leftSiteAt: null, now })).toEqual({ at: at('14T16:00'), basis: 'CLOCK_IN_PLUS_8H' });
+  });
+
+  it('a second no-shift session stops at what is left of the day, not a whole day more', () => {
+    // LIMIT 480, 360 already worked today, in at 13:00 → the marker is 15:00 (120 left).
+    const in13 = at('14T13:00');
+    const out = provisionalClockOut({
+      clockInAt: in13, expectedClockOutAt: null, leftSiteAt: null, fallbackMinutes: 480, dailyLimitAt: at('14T15:00'), now,
+    });
+    expect(out).toEqual({ at: at('14T15:00'), basis: 'CLOCK_IN_PLUS_8H' });
+    expect((out.at.getTime() - in13.getTime()) / 60_000).toBe(120);
+    // A marker later than clock-in + the day's hours never stretches the close.
+    expect(provisionalClockOut({
+      clockInAt: in13, expectedClockOutAt: null, leftSiteAt: null, fallbackMinutes: 480, dailyLimitAt: at('15T02:00'), now,
+    }).at).toEqual(at('14T21:00'));
+  });
+
+  it('a real clock-out at another moment asks about the time outside again; the same minute does not', () => {
+    const decided = { clockOutAt: end, outsideDecidedAt: at('15T08:00') };
+    expect(reaskOutsideAtRealClose(decided, 'PROVISIONAL', at('14T18:30'))).toEqual({
+      outsideDecidedAt: null,
+      outsideDecidedById: null,
+      outsideCountedMinutes: null,
+    });
+    expect(reaskOutsideAtRealClose(decided, 'PROVISIONAL', end)).toEqual({});
+    expect(reaskOutsideAtRealClose({ ...decided, outsideDecidedAt: null }, 'PROVISIONAL', at('14T18:30'))).toEqual({});
+    expect(reaskOutsideAtRealClose(decided, 'OPEN', at('14T18:30'))).toEqual({});
   });
 
   it('is never before clock-in', () => {

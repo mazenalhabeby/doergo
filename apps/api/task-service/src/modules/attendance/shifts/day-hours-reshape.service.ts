@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
+  COUNTED_ROUND_STATUSES,
   PrismaService,
   SERVICE_NAMES,
   judgedByLabelRules,
@@ -15,7 +16,7 @@ import type { Prisma } from '@prisma/client';
 import { CountedTimeService } from '../core/counted-time.service';
 import { approvalFor } from '../core/attendance-occurrence';
 import { approvedRequestsAround, dayRequestEffect, type DayRequestRow } from '../core/approved-requests';
-import { reshapeForDayHours } from './day-hours-reshape';
+import { reshapeForDayHours, withAgreedOutside } from './day-hours-reshape';
 
 const DAY_MS = 86_400_000;
 const DECIDED = new Set(['APPROVED', 'REJECTED']);
@@ -158,12 +159,15 @@ export class DayHoursReshapeService {
       expectedClockOutAt: change.request.endTime ? null : entry.expectedClockOutAt,
     });
     const toleranceMin = await this.countedTime.toleranceFor(entry.shiftId);
-    const next = reshapeForDayHours(
-      { ...entry, flagReasons: entry.flagReasons as string[] },
+    const window = withAgreedOutside(
       { start: effect.expectedClockInAt, end: effect.expectedClockOutAt },
-      toleranceMin,
-      new Date(),
+      {
+        roundMinutes: change.request.endTime ? await this.agreedRoundMinutes(entry.id) : 0,
+        beforeMinutes: entry.outsideBeforeMinutes ?? 0,
+      },
+      { start: !!change.request.startTime, end: !!change.request.endTime },
     );
+    const next = reshapeForDayHours({ ...entry, flagReasons: entry.flagReasons as string[] }, window, toleranceMin, new Date());
     if (!next.startMoved && !next.endMoved) return false;
 
     const counted = entry.clockOutAt
@@ -220,6 +224,15 @@ export class DayHoursReshapeService {
       this.logger.warn(`Day-hours history write failed for entry=${entry.id}: ${err}`);
     }
     return true;
+  }
+
+  /** The shift's approved overtime rounds, in minutes (shared `COUNTED_ROUND_STATUSES`) — each moved the end once. */
+  private async agreedRoundMinutes(entryId: string): Promise<number> {
+    const sum = await this.prisma.overtimeRequest.aggregate({
+      where: { timeEntryId: entryId, status: { in: [...COUNTED_ROUND_STATUSES] } },
+      _sum: { maxDurationMinutes: true },
+    });
+    return sum._sum.maxDurationMinutes ?? 0;
   }
 }
 

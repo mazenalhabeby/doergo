@@ -23,18 +23,25 @@ export interface BreakTotals {
   unpaidBreakMinutes: number;
 }
 
-/** Totals over the COMPLETED rows; a rest still running counts for nothing yet. */
+/**
+ * Totals over the COMPLETED rows; a rest still running counts for nothing yet.
+ *
+ * Summed from the EXACT durations (the two times) and rounded ONCE: rounding
+ * each row first let three 20-second taps add up to a minute, or to none,
+ * depending on how they fell. A row's stored `durationMinutes` is itself a
+ * rounding of those times; it is read only when the times say nothing.
+ */
 export function breakTotals(rows: readonly BreakRowLike[]): BreakTotals {
-  let breakMinutes = 0;
-  let unpaidBreakMinutes = 0;
+  let allMs = 0;
+  let unpaidMs = 0;
   for (const b of rows) {
     if (!b.endedAt) continue;
-    // Older rows may carry no duration; their two times still say how long the rest was.
-    const m = b.durationMinutes ?? Math.max(0, Math.round((b.endedAt.getTime() - b.startedAt.getTime()) / 60_000));
-    breakMinutes += m;
-    if (!b.isPaid) unpaidBreakMinutes += m;
+    const span = b.endedAt.getTime() - b.startedAt.getTime();
+    const ms = span > 0 ? span : Math.max(0, b.durationMinutes ?? 0) * 60_000;
+    allMs += ms;
+    if (!b.isPaid) unpaidMs += ms;
   }
-  return { breakMinutes, unpaidBreakMinutes };
+  return { breakMinutes: Math.round(allMs / 60_000), unpaidBreakMinutes: Math.round(unpaidMs / 60_000) };
 }
 
 /**

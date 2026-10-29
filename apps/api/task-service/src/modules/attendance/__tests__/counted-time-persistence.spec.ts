@@ -21,6 +21,7 @@ describe('counted time, persisted', () => {
     prisma = {
       shift: { findUnique: jest.fn() },
       timeEntry: { update: jest.fn().mockResolvedValue({}) },
+      break: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const mod = await Test.createTestingModule({
       providers: [CountedTimeService, { provide: PrismaService, useValue: prisma }],
@@ -60,7 +61,16 @@ describe('counted time, persisted', () => {
     expect(c.paidMinutes).toBe(690); // 12h − 30m
   });
 
-  it('writes the recount from the row it is handed, with no extra read', async () => {
+  it('a rest before the shift began is not taken off the counted time (rows, not the total)', async () => {
+    // In 08:00, out 18:00, shift 09:00–17:00, rest 08:00–08:30: 480 counted, not 450.
+    prisma.break.findMany.mockResolvedValue([{ startedAt: at('08:00'), endedAt: at('08:30'), isPaid: false }]);
+    const row = { ...entry, clockInAt: at('08:00'), expectedClockInAt: at('09:00'), expectedClockOutAt: at('17:00') };
+    const c = await service.columnsFor({ ...row, unpaidBreakMinutes: 30 }, at('18:00'), 5);
+    expect(prisma.break.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { timeEntryId: 'e1' } }));
+    expect(c.paidMinutes).toBe(480);
+  });
+
+  it('writes the recount from the row it is handed (only its rest rows are read)', async () => {
     await service.recomputeClosed({ ...entry, breakMinutes: 60 });
     expect(prisma.timeEntry.update).toHaveBeenCalledWith({
       where: { id: 'e1' },

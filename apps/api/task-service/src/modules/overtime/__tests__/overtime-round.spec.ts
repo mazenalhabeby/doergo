@@ -34,6 +34,14 @@ describe('a round of overtime', () => {
     expect(overtimeRoundMinutes(r, NOW)).toEqual({ agreed: 90, worked: 40, overBy: 0 });
   });
 
+  it('a clock-out inside the tolerance counts to the agreed end, as the counted time does', () => {
+    const r = agreed({ clockOutAt: '2026-10-14T17:25:00Z' });
+    expect(overtimeRoundMinutes(r, NOW)).toEqual({ agreed: 90, worked: 90, overBy: 0 }); // default 10 min
+    expect(overtimeRoundMinutes({ ...r, toleranceMin: 3 }, NOW)).toEqual({ agreed: 90, worked: 85, overBy: 0 });
+    const over = agreed({ clockOutAt: '2026-10-14T17:34:00Z', toleranceMin: 5 });
+    expect(overtimeRoundMinutes(over, NOW)).toEqual({ agreed: 90, worked: 90, overBy: 0 });
+  });
+
   it('a later round took over: this one counted its whole agreed window', () => {
     const r = agreed({ superseded: true });
     expect(overtimeRoundState(r, new Date('2026-10-14T18:00:00Z'))).toBe('DONE');

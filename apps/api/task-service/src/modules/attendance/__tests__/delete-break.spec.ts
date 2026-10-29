@@ -43,7 +43,9 @@ describe('deleteBreak', () => {
     jest.clearAllMocks();
     prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
     // The query selects completed rests only, so every row carries its end.
-    prisma.break.findMany.mockResolvedValue([{ durationMinutes: 15, endedAt: new Date('2026-08-31T10:15:00Z') }]);
+    prisma.break.findMany.mockResolvedValue([
+      { startedAt: new Date('2026-08-31T10:00:00Z'), durationMinutes: 15, endedAt: new Date('2026-08-31T10:15:00Z') },
+    ]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

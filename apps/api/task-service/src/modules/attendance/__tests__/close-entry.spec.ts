@@ -174,9 +174,10 @@ describe('a close by decision (the legacy overtime flow)', () => {
     expect(t.prisma.timeEntry.findFirst.mock.calls[0][0].where).toEqual({ id: 'e1', organizationId: 'org-1', status: TimeEntryStatus.CLOCKED_IN });
     const data = t.claim().data;
     expect(data).toMatchObject({ status: TimeEntryStatus.AUTO_OUT, clockOutAt: at('17:30'), approvalStatus: 'PENDING' });
-    // The recorded time is the evidence; what counts stops at 16:00: 480 − the 30-minute rest.
+    // The recorded time is the evidence; what counts stops at 16:00: 480 − the 30-minute rest at noon.
+    // The rest 17:00–17:30 falls after the counted end, so it is not taken off again (it was 420).
     expect(data.countedEndAt).toEqual(at('16:00'));
-    expect(data.paidMinutes).toBe(480 - 30 - 30);
+    expect(data.paidMinutes).toBe(480 - 30);
     // The rest that was running ends at the decision.
     expect(t.prisma.break.update).toHaveBeenCalledWith({ where: { id: 'b2' }, data: { endedAt: at('17:30'), durationMinutes: 30 } });
     expect(data).toMatchObject({ breakMinutes: 60, unpaidBreakMinutes: 60, reminderState: 'RESOLVED', nextRemindAt: null, nextBreakRemindAt: null });
@@ -263,7 +264,7 @@ describe('the pure rules', () => {
       { id: 'a', startedAt: at('10:00'), endedAt: at('10:15'), durationMinutes: 15, isPaid: true },
       { id: 'b', startedAt: at('12:00'), endedAt: null, durationMinutes: null, isPaid: false },
     ];
-    expect(endRunningRests(rests, at('12:30'), at('20:00'))).toEqual({
+    expect(endRunningRests(rests, at('12:30'), at('20:00'))).toMatchObject({
       ends: [{ id: 'b', endedAt: at('12:30'), minutes: 30 }], breakMinutes: 45, unpaidBreakMinutes: 30,
     });
     // A reported time a little ahead of the server is capped at now.

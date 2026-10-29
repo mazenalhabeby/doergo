@@ -32,7 +32,8 @@ const ROUND_SELECT = {
   technician: PERSON,
   approvedBy: { select: { id: true, firstName: true, lastName: true } },
   location: { select: { id: true, name: true, timezone: true } },
-  timeEntry: { select: { clockInAt: true, clockOutAt: true } },
+  // The shift's tolerance: the round's minutes snap like the counted time (overtime-round.ts).
+  timeEntry: { select: { clockInAt: true, clockOutAt: true, shift: { select: { flagToleranceMin: true } } } },
 } as const;
 
 type RoundRow = {
@@ -57,7 +58,11 @@ type RoundRow = {
   technician: { id: string; firstName: string; lastName: string; avatarUrl: string | null } | null;
   approvedBy: { id: string; firstName: string; lastName: string } | null;
   location: { id: string; name: string; timezone: string | null } | null;
-  timeEntry: { clockInAt: Date; clockOutAt: Date | null } | null;
+  timeEntry: {
+    clockInAt: Date;
+    clockOutAt: Date | null;
+    shift?: { flagToleranceMin: number | null } | null;
+  } | null;
 };
 
 const name = (p: { firstName?: string | null; lastName?: string | null } | null | undefined) => personName(p);
