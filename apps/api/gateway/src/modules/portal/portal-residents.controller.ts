@@ -9,8 +9,7 @@ import {
   listCustomers,
   portalListAvailableUnits,
   portalListAssignableCustomers,
-  updateCustomer,
-  createCustomer,
+  portalAdmitResident,
   portalUpdateUnit,
   portalCreateUnit,
   createInvitation,
@@ -107,25 +106,21 @@ export class PortalResidentsController {
       customerId: body.customerId,
       unitId: body.unitId,
     });
-    // Promote an EXISTING CRM customer into the portal, or create a new one.
-    // Name is optional for new — the resident sets their own name on register.
-    let customer: any;
-    if (body.customerId) {
-      const updRes: any = await this.portalAuth.ask(updateCustomer, {
-        id: body.customerId,
-        organizationId: orgId,
-        actorId: req.user.id,
-        dto: { isPortalResident: true, portalId: body.portalId, ...(body.email ? { email: body.email } : {}) },
-      });
-      customer = updRes?.data ?? updRes;
-    } else {
-      const initialName = body.name?.trim() || body.unitName?.trim() || 'Pending client';
-      const customerRes: any = await this.portalAuth.ask(createCustomer, {
-        organizationId: orgId,
-        dto: { name: initialName, email: body.email, isPortalResident: true, portalId: body.portalId },
-      });
-      customer = customerRes?.data ?? customerRes;
-    }
+    // Promote an EXISTING client of the portal's workspace, or create a new one
+    // filed there. Name is optional for new — the resident sets their own on
+    // register. Authorised by the PORTAL's manage reach (the service re-checks
+    // it): the CRM's own create/update answered a caller-less call with
+    // "Not allowed to create clients", so every invite failed.
+    const admitted: any = await this.portalAuth.ask(portalAdmitResident, {
+      organizationId: orgId,
+      portalId: body.portalId,
+      customerId: body.customerId,
+      name: body.name?.trim() || body.unitName?.trim() || undefined,
+      email: body.email,
+      actorId: req.user.id,
+      scopeSpaceIds,
+    });
+    const customer: any = admitted?.data ?? admitted;
     // Assign an EXISTING vacant apartment, or create a new one from free text.
     const unit: any = body.unitId
       ? await this.portalAuth.ask(portalUpdateUnit, {

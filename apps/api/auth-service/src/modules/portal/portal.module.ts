@@ -10,6 +10,7 @@ import { PortalClientsService } from './portal-clients.service';
 import { PortalCategoriesService } from './portal-categories.service';
 import { PortalReachService } from './portal-reach.service';
 import { UnitResidentsService } from './unit-residents.service';
+import { PortalAdmitService } from './portal-admit.service';
 
 @Module({
   imports: [CustomersModule],
@@ -23,6 +24,7 @@ import { UnitResidentsService } from './unit-residents.service';
     PortalCategoriesService,
     PortalReachService,
     UnitResidentsService,
+    PortalAdmitService,
   ],
   exports: [
     PortalService,

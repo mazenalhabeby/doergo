@@ -113,6 +113,21 @@ export const portalDeleteUnit = rpc<
   { id: string; organizationId: string; customerId?: string; scopeSpaceId?: string; crmCaller?: CrmCaller } & Scoped
 >('portal_delete_unit');
 export const portalRemoveClient = rpc<{ organizationId: string; customerId: string } & Scoped>('portal_remove_client');
+/**
+ * Admit a client into a portal (the invite form): an existing client of the
+ * portal's workspace, or a new one filed there. Authorised by the portal's
+ * manage authority (`scopeSpaceIds`), not by the CRM's create rule.
+ */
+export const portalAdmitResident = rpc<
+  {
+    organizationId: string;
+    portalId: string;
+    customerId?: string;
+    name?: string;
+    email?: string;
+    actorId?: string;
+  } & Scoped
+>('portal_admit_resident');
 export const portalListAvailableUnits = rpc<{ organizationId: string; portalId: string } & Scoped>(
   'portal_list_available_units',
 );

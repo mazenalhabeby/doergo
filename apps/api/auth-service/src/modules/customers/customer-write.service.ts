@@ -13,6 +13,8 @@ import {
   capText,
   sanitizeIds,
   withContactKeys,
+  EXISTING_SELECT,
+  type ExistingClient,
 } from './customers-helpers';
 import { CrmReachService } from './crm-reach.service';
 import { CustomerRefsService } from './customer-refs.service';
@@ -53,7 +55,14 @@ export class CustomerWriteService {
       if (!this.reach.canReach(reach, prior, caller)) throw notFound();
       return { data: prior };
     }
+    return this.insertClient(organizationId, dto, clientId);
+  }
 
+  /**
+   * Write a new client — the caller has ALREADY been authorised (the CRM's create
+   * rule above, or the portal's manage authority in `PortalClientsService`).
+   */
+  async insertClient(organizationId: string, dto: CustomerInput, clientId?: string) {
     const name = (dto.name || '').trim();
     if (!name) throw new BadRequestException('Customer name is required');
     const locale = clientLocaleFrom(dto.locale) ?? null;
@@ -103,7 +112,7 @@ export class CustomerWriteService {
     // `spaceId` is read so a move can be told from a no-op — see the guard below.
     const existing = await this.prisma.customer.findFirst({
       where: { id, organizationId },
-      select: { id: true, status: true, isPortalResident: true, ownerId: true, managerIds: true, spaceId: true },
+      select: EXISTING_SELECT,
     });
     if (!existing) throw new NotFoundException('Customer not found');
 
@@ -160,6 +169,15 @@ export class CustomerWriteService {
       }
     }
 
+    return this.writeClient(existing, organizationId, dto, actorId);
+  }
+
+  /**
+   * Apply a change to one client — the caller has ALREADY been authorised (the
+   * CRM's rules in `update`, or the portal's manage authority).
+   */
+  async writeClient(existing: ExistingClient, organizationId: string, dto: CustomerInput, actorId?: string) {
+    const id = existing.id;
     const data: Record<string, unknown> = {};
     if (dto.name !== undefined) {
       const name = dto.name.trim();

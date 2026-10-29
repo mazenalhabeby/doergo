@@ -181,3 +181,25 @@ export {
   sanitizeIds,
   reachSql,
 };
+
+/** A client as a change is judged against it — the update path and the portal's admission read the same row. */
+export const EXISTING_SELECT = {
+  id: true,
+  status: true,
+  isPortalResident: true,
+  ownerId: true,
+  managerIds: true,
+  spaceId: true,
+  portalId: true,
+} as const;
+
+/** What a change is judged against: the client as it is now. */
+export type ExistingClient = {
+  id: string;
+  status: string;
+  isPortalResident: boolean;
+  ownerId: string | null;
+  managerIds: string[];
+  spaceId: string | null;
+  portalId: string | null;
+};

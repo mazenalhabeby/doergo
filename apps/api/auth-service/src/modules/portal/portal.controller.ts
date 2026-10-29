@@ -6,6 +6,7 @@ import { PortalUnitsService } from './portal-units.service';
 import { UnitWriteService } from './unit-write.service';
 import { PortalClientsService } from './portal-clients.service';
 import { PortalCategoriesService } from './portal-categories.service';
+import { PortalAdmitService } from './portal-admit.service';
 
 import {
   pattern,
@@ -32,6 +33,7 @@ import {
   portalSetMemberApartment,
   portalDeleteUnit,
   portalRemoveClient,
+  portalAdmitResident,
   portalListAvailableUnits,
   portalListAssignableCustomers,
   portalAssertReach,
@@ -55,6 +57,7 @@ export class PortalController {
     private readonly portalService: PortalService,
     private readonly categories: PortalCategoriesService,
     private readonly portalClients: PortalClientsService,
+    private readonly admit: PortalAdmitService,
     private readonly unitWrite: UnitWriteService,
     private readonly units: PortalUnitsService,
     private readonly spacePortals: SpacePortalService,
@@ -179,6 +182,12 @@ export class PortalController {
   @MessagePattern(pattern(portalRemoveClient))
   removePortalClient(@Payload() data: RpcRequest<typeof portalRemoveClient>) {
     return this.portalClients.removePortalClient(data);
+  }
+
+  /** Admit a client into a portal — authorised by the portal's manage reach (see the service). */
+  @MessagePattern(pattern(portalAdmitResident))
+  admitResident(@Payload() data: RpcRequest<typeof portalAdmitResident>) {
+    return this.admit.admitResident(data);
   }
 
   @MessagePattern(pattern(portalListAvailableUnits))
