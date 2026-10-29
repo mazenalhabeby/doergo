@@ -72,10 +72,16 @@ export class DocumentSupplyService {
 
     const prior = await findPrior({
       id: data.id,
-      find: (id) => this.prisma.document.findUnique({ where: { id } }),
-      isSame: (d) => d.userId === data.actor.userId && d.organizationId === data.actor.organizationId,
+      // Looked up in the caller's organization only: another organization's row is never read here.
+      find: (id) => this.prisma.document.findFirst({ where: { id, organizationId: data.actor.organizationId } }),
+      isSame: (d) => d.userId === data.actor.userId,
     });
     if (prior) return prior;
+    // An id taken OUTSIDE this organization cannot be filed under — answered as
+    // not found (never ID_IN_USE), and before the upload leaves staging.
+    if (data.id && (await this.prisma.document.count({ where: { id: data.id } })) > 0) {
+      throw new NotFoundException('Document not found');
+    }
     assertStagingKey(data.stagingKey, ownStagingPrefix(data.actor.organizationId, data.actor.userId));
     const type = await this.assertMemberSuppliableType(data.typeId, data.actor.organizationId);
 
