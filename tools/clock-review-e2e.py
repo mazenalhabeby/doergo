@@ -112,7 +112,11 @@ def main():
     site = pinned[0]
     every = data(call('GET', '/locations?limit=100', owner)[1]) or []
     every = every.get('items', every) if isinstance(every, dict) else every
-    other = next((l for l in every if l.get('id') not in {p['id'] for p in places} and not l.get('isRemote')), None)
+    def tracks_time(l):  # a workspace with time tracking off refuses with 402 before it asks about the assignment
+        mods = data(call('GET', f"/locations/{l['id']}/modules", owner)[1]) or {}
+        return 'time_tracking' in (mods.get('enabledModules') or [])
+    other = next((l for l in every if l.get('id') not in {p['id'] for p in places}
+                  and not l.get('isRemote') and tracks_time(l)), None)
     if other:
         s, b = call('POST', '/attendance/clock-in', mike, {'locationId': other['id'], **FAR})
         check('C1 a workspace he is not assigned to says NOT_ASSIGNED_HERE', s >= 400 and code(b) == 'NOT_ASSIGNED_HERE', (s, b))

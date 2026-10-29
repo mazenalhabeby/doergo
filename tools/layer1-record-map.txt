@@ -1707,7 +1707,7 @@ other-org POST   /tasks/{id}/crew/issue  400
 other-org POST   /tasks/{id}/crew/join  404
 other-org POST   /tasks/{id}/crew/leave  404
 other-org POST   /tasks/{id}/crew/resume  404
-other-org POST   /tasks/{id}/decline  403
+other-org POST   /tasks/{id}/decline  404
 other-org POST   /tasks/{id}/dependencies  402
 other-org POST   /tasks/{id}/handover  400
 other-org POST   /tasks/{id}/resume  404
@@ -1739,6 +1739,6 @@ other-org PUT    /space-roles/{roleId}/day-rate  400
 other-org PUT    /spaces/{spaceId}/members/{assignmentId}/permissions  400
 other-org PUT    /spaces/{spaceId}/roles/{roleId}/day-rate  400
 other-org PUT    /spaces/{spaceId}/work-roles/{roleId}  404
-other-org PUT    /tasks/{id}  403
+other-org PUT    /tasks/{id}  404
 other-org PUT    /tasks/{id}/lead  400
 other-org PUT    /tasks/{id}/open-role  404
