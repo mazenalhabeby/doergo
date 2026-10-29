@@ -15,6 +15,7 @@ import { assertMayAssign, assertTargetIsInSpace } from '../core/task-scope';
 import { TaskSupportService } from '../core/task-support.service';
 import { assertAssigneesAreQualified as assertQualified } from './assignee-credentials';
 import { TaskCrewChangeService } from './task-crew-change.service';
+import { TaskEventType as DbEventType } from '@prisma/client';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /**
@@ -195,12 +196,13 @@ export class TaskAssignmentService {
         select: { id: true },
       });
       if (staysOnCrew) {
-        await this.support.createTaskEvent(data.id, data.userId, TaskEventType.LEAD_CHANGED, {
-          from: previousAssignee,
-          to: data.workerId,
-          toName: personName(worker),
-          scope: 'PERMANENT',
-          by: 'OFFICE',
+        await this.prisma.taskEvent.create({
+          data: {
+            taskId: data.id,
+            userId: data.userId,
+            eventType: DbEventType.LEAD_CHANGED,
+            metadata: { from: previousAssignee, to: data.workerId, toName: personName(worker), scope: 'PERMANENT', by: 'OFFICE' },
+          },
         });
       } else {
         await this.support.createTaskEvent(data.id, data.userId, TaskEventType.UNASSIGNED, {

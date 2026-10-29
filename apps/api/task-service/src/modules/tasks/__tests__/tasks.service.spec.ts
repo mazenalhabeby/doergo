@@ -584,7 +584,7 @@ describe('TasksService', () => {
       };
       const types = () => mockPrismaService.taskEvent.create.mock.calls.map((c: any) => c[0].data.eventType);
       await assign({}, { id: 'row-old' });
-      expect(types()).toContain(TaskEventType.LEAD_CHANGED);
+      expect(types()).toContain('LEAD_CHANGED');
       expect(types()).not.toContain(TaskEventType.UNASSIGNED);
       // An old lead with no crew row (assigned the legacy way) does leave.
       await assign({}, null);
