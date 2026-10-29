@@ -99,7 +99,10 @@ describe('status change recorded offline', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
-        { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
+        {
+          provide: WorkflowConfigCache,
+          useValue: { getWorkflow: jest.fn().mockResolvedValue(null), getOrgWorkflows: jest.fn().mockResolvedValue([]) },
+        },
         {
           provide: NotificationRoutingService,
           useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },

@@ -82,7 +82,7 @@ describe('TasksService', () => {
   const mockPrismaService = {
     task: {
       create: jest.fn(),
-      findMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn(),
       update: jest.fn(),
       findUniqueOrThrow: jest.fn(),
@@ -182,7 +182,10 @@ describe('TasksService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: 'NOTIFICATION_SERVICE', useValue: mockNotificationClient },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
-        { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
+        {
+          provide: WorkflowConfigCache,
+          useValue: { getWorkflow: jest.fn().mockResolvedValue(null), getOrgWorkflows: jest.fn().mockResolvedValue([]) },
+        },
         {
           provide: NotificationRoutingService,
           useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },

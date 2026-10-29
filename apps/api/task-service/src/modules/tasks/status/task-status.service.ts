@@ -17,7 +17,6 @@ import { PresenceService } from '../../attendance/presence/presence.service';
 import { PrismaService } from '@hbcfield/shared';
 import { prepareStepSubmission, type PreparedStepSubmission } from './step-submission';
 import {
-  TaskStatus,
   TaskEventType,
   success,
   type ResolvedAccess,
@@ -29,6 +28,7 @@ import { TaskSupportService } from '../core/task-support.service';
 import { TASK_WITH_PEOPLE_INCLUDE, type OfficeStart, type UpdateStatusInput } from './task-status.types';
 import { assertMayMoveStatus, assertTransitionAllowed, managesBoard, previousChangeAt } from './task-status-gates';
 import { assertAtJobSite, assertDueBySiteDay, assertNoOtherActiveTask, officeStartFor } from './task-status-checks';
+import { stepSetsOff } from './step-checks';
 import { statusUpdateData, writeStatusMove } from './task-status-write';
 import { afterStatusMove, type AfterMoveDeps } from './task-status-after';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
@@ -230,11 +230,10 @@ export class TaskStatusService {
     if (officeStart?.at) occurredAt = officeStart.at;
 
     // ── Assigned user execution enforcement ──
-    if (isAssignedUser) await assertAtJobSite(this.prisma, task, data, occurredAt, occurrenceFlags);
-    if (isAssignedUser && data.status === TaskStatus.EN_ROUTE) assertDueBySiteDay(task, occurredAt);
-    if (isAssignedUser && data.status === TaskStatus.ACCEPTED) {
-      await assertNoOtherActiveTask(this.prisma, data.userId, data.id);
-    }
+    // Which moves each check asks about is read from the flow's capabilities (step-checks.ts).
+    if (isAssignedUser) await assertAtJobSite(this.prisma, task, data, occurredAt, occurrenceFlags, wf);
+    if (isAssignedUser && stepSetsOff(wf, data.status)) assertDueBySiteDay(task, occurredAt);
+    if (isAssignedUser) await assertNoOtherActiveTask(this.prisma, this.workflowCache, task, wf, data.status, data.userId);
 
     /*
       ── What this step asks ──

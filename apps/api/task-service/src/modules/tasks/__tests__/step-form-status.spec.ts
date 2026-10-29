@@ -134,7 +134,7 @@ describe('status change into a step with a form', () => {
     spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
     $transaction: jest.fn(async (fn: (t: unknown) => unknown) => fn(tx)),
   };
-  const workflowCache = { getWorkflow: jest.fn() };
+  const workflowCache = { getWorkflow: jest.fn(), getOrgWorkflows: jest.fn().mockResolvedValue([]) };
 
   beforeEach(async () => {
     jest.clearAllMocks();

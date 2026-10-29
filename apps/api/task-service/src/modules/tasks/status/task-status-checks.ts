@@ -2,13 +2,11 @@ import { BadRequestException } from '@nestjs/common';
 import {
   personName,
   zoneOf,
-  TaskStatus,
   isAtSite,
   formatDistance,
   ATTENDANCE_CONSTANTS,
   endOfSiteDay,
   tzOffsetMs,
-  ONE_AT_A_TIME_STATUSES,
   OFFICE_START_CODES,
   OFFICE_START_REASON_MAX,
   personNameOf,
@@ -16,6 +14,9 @@ import {
 import type { PrismaService } from '@hbcfield/shared';
 import { fixOfTap } from '../../../common/occurrence.util';
 import type { OfficeStart, StatusTask, UpdateStatusInput } from './task-status.types';
+import type { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { effectiveWorkflowIds } from '../../workflows/effective-workflow';
+import { stepArrives, stepHoldsSlot, stepNeedsSite, slotKeysOf, type FlowSteps } from './step-checks';
 
 /**
  * The execution gates of `TaskStatusService.updateStatus` — the office starting
@@ -83,15 +84,10 @@ export async function assertAtJobSite(
   data: UpdateStatusInput,
   occurredAt: Date,
   occurrenceFlags: Parameters<typeof fixOfTap>[2],
+  flow: FlowSteps,
 ): Promise<void> {
-  const locationRequiredStatuses = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
-  if (
-    !locationRequiredStatuses.includes(data.status as TaskStatus) ||
-    task.locationLat == null ||
-    task.locationLng == null
-  ) {
-    return;
-  }
+  // Which steps ask is the flow's (step-checks.ts) — the canonical ARRIVED / IN_PROGRESS and their equivalents.
+  if (!stepNeedsSite(flow, data.status) || task.locationLat == null || task.locationLng == null) return;
   /*
     The position of the TAP when the phone recorded one — a change synced
     from a basement must not be judged by where the phone is at sync time.
@@ -137,7 +133,7 @@ export async function assertAtJobSite(
       read here.
     */
     const away = Math.round(at.distanceToCentre ?? at.metresOutside);
-    const arriving = data.status === TaskStatus.ARRIVED;
+    const arriving = stepArrives(flow, task.status);
     throw new BadRequestException({
       message:
         `You are ${formatDistance(away)} from the job site. You need to be within ${formatDistance(radius)} ` +
@@ -203,30 +199,35 @@ export function assertDueBySiteDay(task: StatusTask, occurredAt: Date): void {
 }
 
 /**
- * (b) Single Active Task — only one task in execution state at a time.
- * BLOCKED is excluded, so blocking a task frees the slot.
+ * (b) Single Active Task — only one job holding the slot at a time, judged on each
+ * job's OWN flow (step-checks.ts): taking a job on, or any step where work time
+ * runs. BLOCKED is excluded, so blocking a task frees the slot. Asked when THIS
+ * move takes the job from not holding the slot to holding it.
  */
-export async function assertNoOtherActiveTask(prisma: PrismaService, userId: string, taskId: string): Promise<void> {
-  const activeTaskCount = await prisma.task.count({
+export async function assertNoOtherActiveTask(
+  prisma: PrismaService,
+  workflows: Pick<WorkflowConfigCache, 'getWorkflow' | 'getOrgWorkflows'>,
+  task: StatusTask,
+  flow: FlowSteps,
+  target: string,
+  userId: string,
+): Promise<void> {
+  if (stepHoldsSlot(flow, task.status) || !stepHoldsSlot(flow, target)) return;
+  // One query over every step that could hold the slot in this organization, then each job by its own flow.
+  const candidates = await prisma.task.findMany({
     where: {
       assignedToId: userId,
-      // The one list, shared with the phone (it says this before the tap).
-      status: { in: [...ONE_AT_A_TIME_STATUSES] as TaskStatus[] },
-      id: { not: taskId },
+      id: { not: task.id },
+      status: { in: slotKeysOf(await workflows.getOrgWorkflows(task.organizationId)) },
     },
+    select: { title: true, status: true, organizationId: true, workflowId: true, spaceId: true },
   });
-
-  if (activeTaskCount > 0) {
-    const activeTask = await prisma.task.findFirst({
-      where: {
-        assignedToId: userId,
-        status: { in: [...ONE_AT_A_TIME_STATUSES] as TaskStatus[] },
-        id: { not: taskId },
-      },
-      select: { title: true },
-    });
+  const flowIds = await effectiveWorkflowIds(prisma, candidates);
+  for (const other of candidates) {
+    const otherFlow = await workflows.getWorkflow(other.organizationId, flowIds.get(other) ?? null);
+    if (!stepHoldsSlot(otherFlow, other.status)) continue;
     throw new BadRequestException(
-      `You already have an active task: "${activeTask?.title || 'Unknown'}". Complete or block it before accepting another.`,
+      `You already have an active task: "${other.title || 'Unknown'}". Complete or block it before accepting another.`,
     );
   }
 }
