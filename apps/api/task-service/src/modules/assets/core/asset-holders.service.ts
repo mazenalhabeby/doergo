@@ -45,6 +45,12 @@ export class AssetHoldersService {
     holders: HolderInput[] | undefined,
     organizationId: string,
     kindConfig: unknown,
+    /**
+     * Only people / clients of this workspace (a workspace-scoped manager — the
+     * same `within` rule as the handover button, `holderReach`); null = none
+     * qualify; undefined = anyone in the organization.
+     */
+    withinSpaceId?: string | null,
   ): Promise<Array<{ userId: string | null; customerId: string | null }>> {
     const shape = normalizeKindShape(kindConfig);
     const limit = maxHolders(shape);
@@ -89,16 +95,25 @@ export class AssetHoldersService {
 
     // Two queries, whatever the count. Both scoped to the organization, so an
     // id guessed from another tenant comes back missing rather than accepted.
+    const scoped = withinSpaceId !== undefined;
     const [members, clients] = await Promise.all([
-      userIds.size ? peopleIds(this.prisma, [...userIds], { organizationId }) : Promise.resolve([]),
-      customerIds.size ? clientIds(this.prisma, [...customerIds], organizationId) : Promise.resolve([]),
+      userIds.size
+        ? peopleIds(this.prisma, [...userIds], { organizationId, ...(scoped ? { inWorkspace: withinSpaceId } : {}) })
+        : Promise.resolve([]),
+      customerIds.size
+        ? clientIds(this.prisma, [...customerIds], organizationId, withinSpaceId)
+        : Promise.resolve([]),
     ]);
 
     if (members.length !== userIds.size) {
-      throw new BadRequestException('Someone on that list is not in this organization');
+      throw new BadRequestException(
+        scoped ? 'Someone on that list does not work in this workspace' : 'Someone on that list is not in this organization',
+      );
     }
     if (clients.length !== customerIds.size) {
-      throw new BadRequestException('A client on that list is not in this organization');
+      throw new BadRequestException(
+        scoped ? 'A client on that list is not filed in this workspace' : 'A client on that list is not in this organization',
+      );
     }
 
     return [
@@ -139,6 +154,15 @@ export class AssetHoldersService {
     // Neither key present at all means "leave it alone"; an explicit null means
     // "clear it", and those must not collapse into each other.
     return input.holderUserId === undefined && input.customerId === undefined ? undefined : [];
+  }
+
+  /**
+   * The `within` a holder list is checked against: a workspace-scoped manager
+   * (`manageSpaceIds` is a list) gives a record only to the people and clients
+   * of the workspace it lives in; an org-wide one (null/undefined) is not narrowed.
+   */
+  static holderReach(actor: { manageSpaceIds?: string[] | null }, kindSpaceId: string | null): string | null | undefined {
+    return Array.isArray(actor.manageSpaceIds) ? kindSpaceId : undefined;
   }
 
   /** How many a kind allows — for callers that only need the number. */

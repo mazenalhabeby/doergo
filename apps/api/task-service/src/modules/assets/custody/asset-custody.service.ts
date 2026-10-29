@@ -13,6 +13,7 @@ import { AssetAccessService, type AssetActor } from '../core/asset-access.servic
 import { AssetNotifier } from '../core/asset-notifier.service';
 import { Db } from './asset-custody-helpers';
 import { CustodyWriterService } from './custody-writer.service';
+import { AssetHoldersService } from '../core/asset-holders.service';
 
 /**
  * Who held a thing, and when.
@@ -97,7 +98,7 @@ export class AssetCustodyService {
       cannot even see. An org-wide manager (manageSpaceIds null/undefined) is
       not narrowed.
     */
-    const within = Array.isArray(data.manageSpaceIds) ? (asset.category?.spaceId ?? null) : undefined;
+    const within = AssetHoldersService.holderReach(data, asset.category?.spaceId ?? null);
     const to = await this.validateParties(data.to ?? [], data.organizationId, shape, within);
 
     const plan = await this.prisma.$transaction((tx) =>

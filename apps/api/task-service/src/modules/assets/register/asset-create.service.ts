@@ -101,6 +101,7 @@ export class AssetCreateService {
       AssetHoldersService.fromLegacy(data),
       data.organizationId,
       kindConfig,
+      AssetHoldersService.holderReach(data, kindSpaceId),
     );
 
     const asset = await this.prisma.asset.create({

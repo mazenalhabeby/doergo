@@ -143,23 +143,24 @@ export class AssetUpdateService {
       const owner = await this.prisma.asset.findFirst({
         where: { id: data.id, organizationId: data.organizationId },
         select: {
-          category: { select: { config: true } },
+          category: { select: { config: true, spaceId: true } },
           holders: { select: { userId: true, customerId: true } },
         },
       });
       if (!owner) throw new NotFoundException('Asset not found in this organization');
 
-      const kindConfig =
+      // The kind the record ENDS UP in decides how many, which, and from which workspace.
+      const kind =
         data.categoryId !== undefined && data.categoryId
-          ? ((
-              await this.prisma.assetCategory.findFirst({
-                where: { id: data.categoryId, organizationId: data.organizationId },
-                select: { config: true },
-              })
-            )?.config ?? null)
-          : (owner.category?.config ?? null);
+          ? await this.prisma.assetCategory.findFirst({
+              where: { id: data.categoryId, organizationId: data.organizationId },
+              select: { config: true, spaceId: true },
+            })
+          : owner.category;
+      const kindConfig = kind?.config ?? null;
+      const within = AssetHoldersService.holderReach(data, kind?.spaceId ?? null);
 
-      holderRows = await this.holderService.resolve(wanted, data.organizationId, kindConfig);
+      holderRows = await this.holderService.resolve(wanted, data.organizationId, kindConfig, within);
       holderLimit = this.holderService.limitFor(kindConfig);
       before = owner.holders;
     }
