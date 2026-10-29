@@ -18,6 +18,7 @@
  */
 
 import { addDaysStr, localPartsIn, zonedWallTimeToUtc } from '../../attendance/zoned-time';
+import { zoneOf } from '../../utils/workspace-zone';
 
 /** The period fields this module reads (structural, so periods.ts can import it without a loop). */
 interface CustodyPeriod {
@@ -32,7 +33,7 @@ const ms = (v: Date | string | null | undefined): number =>
 /** The local day `when` falls on, as the half-open instant range [from, to). */
 export function custodyDayWindow(when: Date | string, timeZone?: string | null): { from: Date; to: Date } {
   const at = when instanceof Date ? when : new Date(when);
-  const tz = timeZone || 'UTC';
+  const tz = zoneOf(timeZone);
   try {
     const day = localPartsIn(at, tz).dateStr;
     return { from: zonedWallTimeToUtc(day, 0, 0, tz), to: zonedWallTimeToUtc(addDaysStr(day, 1), 0, 0, tz) };
