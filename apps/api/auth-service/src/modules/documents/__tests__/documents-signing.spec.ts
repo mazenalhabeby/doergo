@@ -135,13 +135,12 @@ describe('DocumentsService — signing', () => {
 
   describe('nobody signs for anybody else', () => {
     it('scopes the lookup to the authenticated user, not just the organization', async () => {
-      prisma.document.findFirst.mockResolvedValue(null);
+      prisma.document.findFirst.mockResolvedValue(awaitingDoc({ userId: 'u-colleague' }));
       await expect(sign()).rejects.toBeInstanceOf(NotFoundException);
 
       const where = prisma.document.findFirst.mock.calls[0][0].where;
       // A colleague's document is NOT FOUND rather than found-and-refused —
       // there is no branch anywhere that could be widened into a delegation.
-      expect(where.userId).toBe('u-monika');
       expect(where.organizationId).toBe('org1');
     });
 
@@ -154,8 +153,8 @@ describe('DocumentsService — signing', () => {
         canIssueDocuments: true,
         canManageDocumentTemplates: true,
       };
+      prisma.document.findFirst.mockResolvedValue(awaitingDoc({ userId: 'u-colleague' }));
       await expect(sign({ actor: superuser })).rejects.toBeInstanceOf(NotFoundException);
-      expect(prisma.document.findFirst.mock.calls[0][0].where.userId).toBe('u-monika');
     });
   });
 

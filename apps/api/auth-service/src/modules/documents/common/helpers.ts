@@ -1,5 +1,5 @@
 /** Small pure helpers: a signature image, keys and ids, inline display, names, event context. */
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { documentTypeKey } from '@hbcfield/shared';
 import { ALLOWED_MIME, type RequestContext } from './actor';
 
@@ -116,4 +116,12 @@ export function sameIdSet(a: readonly string[], b: readonly string[]): boolean {
   const left = new Set(a);
   const right = new Set(b);
   return left.size === right.size && [...left].every((id) => right.has(id));
+}
+
+/** The loser of two signatures on one step (or one document) at the same moment. */
+export function alreadySigned() {
+  return new ConflictException({
+    message: 'Somebody already signed this step. Open the document again to see where it stands.',
+    code: 'DOCUMENT_STEP_ALREADY_SIGNED',
+  });
 }

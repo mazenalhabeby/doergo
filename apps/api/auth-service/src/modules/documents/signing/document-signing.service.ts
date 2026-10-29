@@ -245,24 +245,16 @@ export class DocumentSigningService {
    * order on the page a decoration.
    */
   private async findSignableOr404(actor: DocumentActor, documentId: string) {
-    const steps = await this.lookup.signerSteps(documentId);
-
-    if (steps.length > 0) {
-      const next = nextPendingStep(steps);
-      if (!next) throw new BadRequestException('This document has already been signed.');
-      if (!maySignStep(next, actor.userId)) {
-        throw new ForbiddenException('This document is waiting for somebody else to sign.');
-      }
-    }
-
+    /*
+      The document FIRST, in the caller's organization. Reading the chain
+      before this answered "already signed" / "somebody else's turn" for any
+      id at all — another organization's included — which is an existence
+      oracle. Anything the caller is not part of is simply not found.
+    */
     const document = await this.prisma.document.findFirst({
       where: {
         id: documentId,
         organizationId: actor.organizationId,
-        // With a route, turn decides who may sign and the chain was just
-        // checked. Without one, the caller must be the subject — scoped here so
-        // a colleague's id is not found rather than found-and-refused.
-        ...(steps.length > 0 ? {} : { userId: actor.userId }),
         // Hidden from its member means not signable by them either — whatever
         // the route says. Another signer on the route is unaffected.
         NOT: { userId: actor.userId, hiddenFromMember: true },
@@ -274,6 +266,22 @@ export class DocumentSigningService {
       },
     });
     if (!document) throw new NotFoundException('Document not found');
+
+    const steps = await this.lookup.signerSteps(document.id);
+    if (steps.length === 0) {
+      // No route: the subject signs it, and nobody else — a colleague's id is
+      // not found rather than found-and-refused.
+      if (document.userId !== actor.userId) throw new NotFoundException('Document not found');
+    } else {
+      // A route: only somebody ON it learns anything about its state.
+      const onRoute = document.userId === actor.userId || steps.some((s) => maySignStep(s, actor.userId));
+      if (!onRoute) throw new NotFoundException('Document not found');
+      const next = nextPendingStep(steps);
+      if (!next) throw new BadRequestException('This document has already been signed.');
+      if (!maySignStep(next, actor.userId)) {
+        throw new ForbiddenException('This document is waiting for somebody else to sign.');
+      }
+    }
 
     if (document.status === 'SIGNED') {
       throw new BadRequestException('This document has already been signed.');

@@ -1,8 +1,15 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { personName, signatureStrength, type SignerStep, PrismaService } from '@hbcfield/shared';
 import { documentKey, sha256 } from '@hbcfield/shared/storage';
 import { sealSignedPdf } from '../core/contract-pdf';
-import { type RequestContext, type SealSigner, CONSENT_TEXT, roleLabel, eventContext } from '../core/document-common';
+import {
+  type RequestContext,
+  type SealSigner,
+  CONSENT_TEXT,
+  roleLabel,
+  eventContext,
+  alreadySigned,
+} from '../core/document-common';
 import { DocumentStorageService } from '../core/document-storage.service';
 
 /** Sealing a signature: the evidence (who, when, where from), the stamped file, the chain moved on. */
@@ -284,12 +291,4 @@ export class DocumentSealService {
       lng: event?.lng ?? null,
     };
   }
-}
-
-/** The loser of two signatures on one step (or one document) at the same moment. */
-function alreadySigned() {
-  return new ConflictException({
-    message: 'Somebody already signed this step. Open the document again to see where it stands.',
-    code: 'DOCUMENT_STEP_ALREADY_SIGNED',
-  });
 }

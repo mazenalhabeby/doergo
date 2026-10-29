@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { ForbiddenException, BadRequestException } from '@nestjs/common';
+import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { MrzOcrService } from '../reading/mrz-ocr.service';
@@ -82,21 +82,30 @@ describe('DocumentsService — the signing chain', () => {
   });
 
   describe('whose turn it is', () => {
+    /** The worker's time sheet, in the caller's organization, waiting for signatures. */
+    const theirDoc = {
+      id: 'doc1',
+      organizationId: 'org1',
+      userId: 'worker',
+      title: 'Time sheet',
+      status: 'AWAITING_SIGNATURE',
+      type: { label: 'Time sheet', signatureMode: 'IN_APP' },
+    };
+    beforeEach(() => prisma.document.findFirst.mockResolvedValue(theirDoc));
+
     it('lets the person being waited on sign, even though the document is not theirs', async () => {
       // The whole point of Phase 2: a manager signs a document issued to
       // somebody else. Before this, the query was scoped to the caller and
       // their own id was the only one that could ever be found.
       prisma.documentSigner.findMany.mockResolvedValue(chain(1));
-      prisma.document.findFirst.mockResolvedValue(null); // stops after authorization
 
+      // Gets past authorization (storage is null here, so it stops there).
       await expect(sign('anna')).rejects.not.toBeInstanceOf(ForbiddenException);
     });
 
     it('refuses somebody whose turn has not come', async () => {
       prisma.documentSigner.findMany.mockResolvedValue(chain(0));
       await expect(sign('anna')).rejects.toBeInstanceOf(ForbiddenException);
-      // Refused before the document is even read.
-      expect(prisma.document.findFirst).not.toHaveBeenCalled();
     });
 
     it('refuses somebody who has already signed', async () => {
@@ -104,9 +113,17 @@ describe('DocumentsService — the signing chain', () => {
       await expect(sign('worker')).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('refuses a stranger to the chain', async () => {
+    it('a stranger to the chain is told nothing — not found', async () => {
       prisma.documentSigner.findMany.mockResolvedValue(chain(1));
-      await expect(sign('someone-else')).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(sign('someone-else')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it("another organization's document is not found, and its chain is never read", async () => {
+      prisma.document.findFirst.mockResolvedValue(null);
+      prisma.documentSigner.findMany.mockResolvedValue(chain(3));
+      await expect(sign('worker')).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.document.findFirst.mock.calls[0][0].where.organizationId).toBe('org1');
+      expect(prisma.documentSigner.findMany).not.toHaveBeenCalled();
     });
 
     it('refuses when every step is done', async () => {
@@ -120,13 +137,11 @@ describe('DocumentsService — the signing chain', () => {
       // Every document issued before Phase 2 is this shape, and none of them
       // may become signable by a colleague.
       prisma.documentSigner.findMany.mockResolvedValue([]);
-      prisma.document.findFirst.mockResolvedValue(null);
+      prisma.document.findFirst.mockResolvedValue({ id: 'doc1', userId: 'u-colleague', status: 'AWAITING_SIGNATURE' });
 
-      await expect(sign('u-monika')).rejects.toBeTruthy();
+      await expect(sign('u-monika')).rejects.toBeInstanceOf(NotFoundException);
       expect(prisma.document.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ userId: 'u-monika', organizationId: 'org1' }),
-        }),
+        expect.objectContaining({ where: expect.objectContaining({ organizationId: 'org1' }) }),
       );
     });
   });
