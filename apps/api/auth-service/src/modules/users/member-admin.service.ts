@@ -105,6 +105,9 @@ export class MemberAdminService {
       messages,
       timeEntries,
       overtime,
+      custodyPeriods,
+      assetsHeld,
+      assetMoney,
       invoices,
     ] = await this.prisma.$transaction([
       ...memberWorkFootprint(this.prisma, memberId),
@@ -125,7 +128,19 @@ export class MemberAdminService {
       messages,
       timeEntries,
       overtime,
+      custodyPeriods,
+      assetsHeld,
+      assetMoney,
     ].some((n) => n > 0);
+
+    /*
+      Released FIRST, whichever way they go: open jobs, workspace assignments
+      and the equipment they hold (closed through AssetCustodyService, so the
+      period ends and the holder mirror goes with it). The hard delete used to
+      skip this, so somebody with no other history kept a van "held by nobody"
+      — and a refusal here leaves them exactly as they were.
+    */
+    await this.offboarding?.release(organizationId, memberId, requesterId);
 
     if (!hasHistory) {
       try {
@@ -147,9 +162,7 @@ export class MemberAdminService {
     }
 
     // Soft delete: detach from org + deactivate, keeping the row so historical
-    // FKs stay valid. Their open jobs, workspace assignments and equipment are
-    // released by task-service FIRST (it owns those tables) — see MemberOffboarding.
-    await this.offboarding?.release(organizationId, memberId, requesterId);
+    // FKs stay valid (task-service already released their work above — MemberOffboarding).
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: memberId },

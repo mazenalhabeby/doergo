@@ -45,7 +45,7 @@ describe('UsersService members audit (M-B1, M-B2)', () => {
         'task', 'comment', 'attachment', 'taskEvent', 'serviceReport',
         'reportDefinition', 'reportSchedule', 'recurringTaskTemplate', 'invoice',
         'supportTicket', 'message', 'timeEntry', 'overtimeRequest', 'invitation',
-        'spaceAssignment', 'technicianSchedule',
+        'spaceAssignment', 'technicianSchedule', 'assetCustody', 'assetHolder', 'assetMoney',
       ].map((m) => [m, { count: jest.fn(), deleteMany: jest.fn(), updateMany: jest.fn() }]),
     ),
     $transaction: jest.fn(),

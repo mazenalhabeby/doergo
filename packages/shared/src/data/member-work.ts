@@ -148,13 +148,20 @@ type Counted =
   | 'supportTicket'
   | 'message'
   | 'timeEntry'
-  | 'overtimeRequest';
+  | 'overtimeRequest'
+  | 'assetCustody'
+  | 'assetHolder'
+  | 'assetMoney';
 
 /**
  * Everything a member left in task-service's tables, as count QUERIES (not awaited) — the caller runs
  * them in one `$transaction` with its own, so "no history" is one snapshot. Order: jobs created, jobs
  * assigned, comments, attachments, job events, reports, report definitions, report schedules,
- * recurring templates, support tickets, messages, time entries, overtime.
+ * recurring templates, support tickets, messages, time entries, overtime, custody periods (held or
+ * handed), equipment held now, money filed or reviewed on equipment.
+ *
+ * ⚠️ Equipment IS history: a member who held a van has periods its ledger is attributed by, and one
+ * who holds it now must give it back (offboarding) — a hard delete would drop both silently.
  */
 export function memberWorkFootprint(db: { [K in Counted]: On<K, 'count'>[K] }, memberId: string) {
   return [
@@ -171,5 +178,10 @@ export function memberWorkFootprint(db: { [K in Counted]: On<K, 'count'>[K] }, m
     db.message.count({ where: { senderId: memberId } }),
     db.timeEntry.count({ where: { userId: memberId } }),
     db.overtimeRequest.count({ where: { technicianId: memberId } }),
+    db.assetCustody.count({
+      where: { OR: [{ userId: memberId }, { openedById: memberId }, { closedById: memberId }] },
+    }),
+    db.assetHolder.count({ where: { userId: memberId } }),
+    db.assetMoney.count({ where: { OR: [{ authorId: memberId }, { reviewedById: memberId }] } }),
   ] as const;
 }
