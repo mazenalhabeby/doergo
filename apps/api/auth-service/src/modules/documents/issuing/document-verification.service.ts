@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { isBlocking, credentialStanding, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 import { readingOf } from '../reading/document-read-queue.service';
 import { PrismaService } from '@hbcfield/shared';
@@ -163,8 +163,9 @@ export class DocumentVerificationService {
 
     const verifiedAt = new Date();
     const updated = await this.prisma.$transaction(async (tx) => {
-      const row = await tx.document.update({
-        where: { id: document.id },
+      // Conditional: two reviewers acting at once — exactly one decides.
+      const claimed = await tx.document.updateMany({
+        where: { id: document.id, status: 'PENDING_VERIFICATION' },
         data: {
           // A supplied document with a signature mode still has to be signed —
           // approving it decides only that the file is genuine.
@@ -179,6 +180,7 @@ export class DocumentVerificationService {
           rejectionReason: null,
         },
       });
+      if (claimed.count === 0) throw alreadyReviewed();
       await tx.documentEvent.create({
         data: {
           documentId: document.id,
@@ -187,7 +189,7 @@ export class DocumentVerificationService {
           ...eventContext(data.ctx),
         },
       });
-      return row;
+      return tx.document.findUnique({ where: { id: document.id } });
     });
 
     this.notifier.notifyReviewed(document.id, document.user, document.type.label, true, null);
@@ -218,10 +220,11 @@ export class DocumentVerificationService {
     const document = await this.findPendingOr404(data.actor, data.documentId);
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const row = await tx.document.update({
-        where: { id: document.id },
+      const claimed = await tx.document.updateMany({
+        where: { id: document.id, status: 'PENDING_VERIFICATION' },
         data: { status: 'REJECTED', rejectionReason: reason },
       });
+      if (claimed.count === 0) throw alreadyReviewed();
       await tx.documentEvent.create({
         data: {
           documentId: document.id,
@@ -231,7 +234,7 @@ export class DocumentVerificationService {
           ...eventContext(data.ctx),
         },
       });
-      return row;
+      return tx.document.findUnique({ where: { id: document.id } });
     });
 
     this.notifier.notifyReviewed(document.id, document.user, document.type.label, false, reason);
@@ -266,4 +269,12 @@ export class DocumentVerificationService {
     assertNotOwnReview(actor, document.userId);
     return document;
   }
+}
+
+/** The second of two reviewers deciding the same upload at once. */
+function alreadyReviewed() {
+  return new ConflictException({
+    message: 'Somebody already reviewed this document.',
+    code: 'DOCUMENT_ALREADY_REVIEWED',
+  });
 }

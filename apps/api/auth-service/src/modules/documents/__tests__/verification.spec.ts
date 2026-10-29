@@ -27,7 +27,7 @@ describe('DocumentsService — reviewing a supplied document', () => {
   let service: DocumentsService;
 
   const prisma: Record<string, any> = {
-    document: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+    document: { findFirst: jest.fn(), findMany: jest.fn(), updateMany: jest.fn(), findUnique: jest.fn() },
     documentEvent: { create: jest.fn() },
     $transaction: jest.fn(),
   };
@@ -67,11 +67,12 @@ describe('DocumentsService — reviewing a supplied document', () => {
 
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
-        document: { update: prisma.document.update },
+        document: { updateMany: prisma.document.updateMany, findUnique: prisma.document.findUnique },
         documentEvent: { create: prisma.documentEvent.create },
       }),
     );
-    prisma.document.update.mockImplementation(({ data }: any) => ({ id: 'doc1', ...data }));
+    prisma.document.updateMany.mockResolvedValue({ count: 1 });
+    prisma.document.findUnique.mockImplementation(async ({ where }: any) => ({ id: where.id }));
   });
 
   // ── The queue ─────────────────────────────────────────────────────────────
@@ -181,13 +182,13 @@ describe('DocumentsService — reviewing a supplied document', () => {
     it('moves it to ISSUED — the one thing the dispatch gate reads', async () => {
       prisma.document.findFirst.mockResolvedValue(PENDING);
       await service.verifyDocument({ actor: actor(), documentId: 'doc1' });
-      expect(prisma.document.update.mock.calls[0][0].data.status).toBe('ISSUED');
+      expect(prisma.document.updateMany.mock.calls[0][0].data.status).toBe('ISSUED');
     });
 
     it('records who checked it and when', async () => {
       prisma.document.findFirst.mockResolvedValue(PENDING);
       await service.verifyDocument({ actor: actor(), documentId: 'doc1' });
-      const data = prisma.document.update.mock.calls[0][0].data;
+      const data = prisma.document.updateMany.mock.calls[0][0].data;
       expect(data.verifiedById).toBe('reviewer');
       expect(data.verifiedAt).toBeInstanceOf(Date);
       expect(prisma.documentEvent.create.mock.calls[0][0].data.type).toBe('VERIFIED');
@@ -200,13 +201,13 @@ describe('DocumentsService — reviewing a supplied document', () => {
         ...PENDING, type: { label: 'Agreement', signatureMode: 'IN_APP' },
       });
       await service.verifyDocument({ actor: actor(), documentId: 'doc1' });
-      expect(prisma.document.update.mock.calls[0][0].data.status).toBe('AWAITING_SIGNATURE');
+      expect(prisma.document.updateMany.mock.calls[0][0].data.status).toBe('AWAITING_SIGNATURE');
     });
 
     it('clears an earlier refusal, so an approved resubmission carries no reason', async () => {
       prisma.document.findFirst.mockResolvedValue(PENDING);
       await service.verifyDocument({ actor: actor(), documentId: 'doc1' });
-      expect(prisma.document.update.mock.calls[0][0].data.rejectionReason).toBeNull();
+      expect(prisma.document.updateMany.mock.calls[0][0].data.rejectionReason).toBeNull();
     });
 
     it('will not touch anything that is not waiting for review', async () => {
@@ -265,7 +266,7 @@ describe('DocumentsService — reviewing a supplied document', () => {
       await expect(
         service.rejectDocument({ actor: actor(), documentId: 'doc1', reason: '   ' }),
       ).rejects.toThrow(BadRequestException);
-      expect(prisma.document.update).not.toHaveBeenCalled();
+      expect(prisma.document.updateMany).not.toHaveBeenCalled();
     });
 
     it('checks the reason BEFORE looking the document up', async () => {
@@ -283,7 +284,7 @@ describe('DocumentsService — reviewing a supplied document', () => {
       await service.rejectDocument({
         actor: actor(), documentId: 'doc1', reason: '  The photo is too blurred  ',
       });
-      const data = prisma.document.update.mock.calls[0][0].data;
+      const data = prisma.document.updateMany.mock.calls[0][0].data;
       expect(data.status).toBe('REJECTED');
       expect(data.rejectionReason).toBe('The photo is too blurred');
     });

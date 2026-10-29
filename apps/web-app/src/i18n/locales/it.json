@@ -8389,7 +8389,8 @@
     "CLOCK_OUT_IN_FUTURE": "Una timbratura di uscita non può essere nel futuro.",
     "OVERTIME_ALREADY_DECIDED": "Qualcuno ha già deciso su questi straordinari.",
     "TIME_OFF_DECIDED": "Questa richiesta è già stata decisa.",
-    "DOCUMENT_STEP_ALREADY_SIGNED": "Qualcuno ha già firmato questo passaggio. Riapra il documento per vedere a che punto è."
+    "DOCUMENT_STEP_ALREADY_SIGNED": "Qualcuno ha già firmato questo passaggio. Riapra il documento per vedere a che punto è.",
+    "DOCUMENT_ALREADY_REVIEWED": "Qualcuno ha già esaminato questo documento."
   },
   "signLink": {
     "tabs": {
