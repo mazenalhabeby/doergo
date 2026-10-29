@@ -8368,6 +8368,8 @@
     "LOCATION_REQUIRED": "Choisissez le lieu de travail où vous pointez.",
     "NOT_ASSIGNED_HERE": "Vous n'êtes pas affecté à ce lieu de travail. Demandez à votre bureau de vous ajouter.",
     "WORKSPACE_ARCHIVED": "Ce lieu de travail a été archivé. Demandez à votre bureau où pointer.",
+    "CLOCK_OUT_AFTER_NEXT_SHIFT": "Cette heure de sortie est après le début de votre prochain service. Choisissez une heure plus tôt ou demandez à votre bureau.",
+    "REMOTE_BUCKET_NOT_ASSIGNABLE": "Impossible d'ajouter des personnes à Distance. Choisissez un espace de travail.",
     "NOT_ON_THE_CLOCK": "Vous n'avez pas pointé votre arrivée.",
     "ALREADY_ON_REST": "Vous êtes déjà en pause. Terminez-la d'abord.",
     "REMOTE_NOT_ALLOWED": "Pointer hors d'un lieu de travail n'est pas autorisé pour votre compte. Demandez à votre bureau.",

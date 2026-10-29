@@ -8368,6 +8368,8 @@
     "LOCATION_REQUIRED": "Elija el lugar de trabajo en el que ficha.",
     "NOT_ASSIGNED_HERE": "No está asignado a este lugar de trabajo. Pida a su oficina que le añada.",
     "WORKSPACE_ARCHIVED": "Este lugar de trabajo se ha archivado. Pregunte a su oficina dónde fichar.",
+    "CLOCK_OUT_AFTER_NEXT_SHIFT": "Esta hora de salida es posterior al inicio de tu siguiente turno. Elige una hora anterior o pregunta a tu oficina.",
+    "REMOTE_BUCKET_NOT_ASSIGNABLE": "No se puede añadir personas a Remoto. Elige un espacio de trabajo.",
     "NOT_ON_THE_CLOCK": "No ha fichado la entrada.",
     "ALREADY_ON_REST": "Ya está en un descanso. Termínelo primero.",
     "REMOTE_NOT_ALLOWED": "Fichar fuera de un lugar de trabajo no está permitido en su cuenta. Consulte a su oficina.",
