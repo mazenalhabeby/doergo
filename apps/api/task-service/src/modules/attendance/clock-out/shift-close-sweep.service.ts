@@ -1,16 +1,15 @@
-import { Prisma } from '@prisma/client';
 import { isAbandoned } from '../core/open-shift-close';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
   success,
   TimeEntryStatus,
   OPEN_SHIFT_CLOSE,
-  AUTO_CLOCK_LIMITS,
   clocksByPresence,
   presenceCloseDue,
   presenceSessionEnd,
-  NO_SHIFT_LIMIT,
+  seenOnSiteRecently,
 } from '@hbcfield/shared';
+import { autoShiftsPastEnd, presencePastHours } from './auto-close-candidates';
 import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
 import { PrismaService } from '@hbcfield/shared';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
@@ -83,70 +82,50 @@ export class ShiftCloseSweepService {
    * the phone's own automatic clock-out, arriving later with the moment they
    * really left, replaces it exactly as any real clock-out does.
    *
-   * Two cheap reads: the open shifts at workspaces that have settings at all,
-   * past the SHORTEST threshold the settings allow (narrow columns), then the
-   * full rows of only those actually due — never a full row per candidate.
+   * ⚠️ Not somebody the phone still reports ON SITE (`seenOnSiteRecently`):
+   * they are there, the leader has been told, and a shift truly forgotten is the
+   * abandoned-shift close's. Only rows already eligible are read
+   * (`auto-close-candidates.ts`), so rows never due cannot starve the due ones.
    */
   private async closeAutoShiftsPastEnd(now: Date): Promise<number> {
     if (!this.autoClock) return 0;
-    const candidates = await this.prisma.timeEntry.findMany({
-      where: {
-        status: TimeEntryStatus.CLOCKED_IN,
-        expectedClockOutAt: { lte: new Date(now.getTime() - AUTO_CLOCK_LIMITS.closeAfterMinutes[0] * 60_000) },
-        // A daily-hours marker is not an end (B5): such a session closes only with evidence they left.
-        endIsDailyLimit: false,
-        location: { autoClock: { not: Prisma.DbNull } },
-      },
-      orderBy: { expectedClockOutAt: 'asc' },
-      take: OPEN_SHIFT_CLOSE.BATCH * 5,
-      select: { id: true, userId: true, locationId: true, clockInAt: true, expectedClockOutAt: true },
-    });
-    if (!candidates.length) return this.closePresencePastHours(now);
-    const settings = await this.autoClock.settingsForEntries(candidates, now);
-    const dueIds = candidates
-      .filter((c) => {
-        const s = settings.get(c.id);
-        return (
-          !!s &&
-          !!c.expectedClockOutAt &&
-          now.getTime() - c.expectedClockOutAt.getTime() >= s.closeAfterMinutes * 60_000
-        );
-      })
-      .slice(0, OPEN_SHIFT_CLOSE.BATCH)
-      .map((c) => c.id);
+    const candidates = await autoShiftsPastEnd(this.prisma, now);
     let closed = 0;
-    if (dueIds.length) {
-      const due = await this.prisma.timeEntry.findMany({
-        where: { id: { in: dueIds }, status: TimeEntryStatus.CLOCKED_IN },
-        include: { ...CLOSE_ENTRY_INCLUDE, location: { select: { name: true, noShiftDailyMinutes: true } } },
-      });
-      for (const entry of due) if (await this.closer.closeProvisionally(entry, now)) closed++;
+    if (candidates.length) {
+      const settings = await this.autoClock.settingsForEntries(candidates, now);
+      const dueIds = candidates
+        .filter((c) => {
+          const s = settings.get(c.id);
+          return (
+            !!s && !!c.expectedClockOutAt && now.getTime() - c.expectedClockOutAt.getTime() >= s.closeAfterMinutes * 60_000
+          );
+        })
+        .map((c) => c.id);
+      const due = dueIds.length
+        ? await this.prisma.timeEntry.findMany({
+            where: { id: { in: dueIds }, status: TimeEntryStatus.CLOCKED_IN },
+            include: { ...CLOSE_ENTRY_INCLUDE, location: { select: { name: true, noShiftDailyMinutes: true } } },
+          })
+        : [];
+      for (const entry of due) {
+        if (seenOnSiteRecently(entry, settings.get(entry.id)!, now)) continue;
+        if (await this.closer.closeProvisionally(entry, now)) closed++;
+      }
     }
     return closed + (await this.closePresencePastHours(now));
   }
 
   /**
-   * The same for a member clocked by ARRIVING AND LEAVING with no shift: past
-   * the workspace's hours (read now — a change on the workspace applies at once)
-   * + `closeAfterMinutes`, and only with evidence they are gone (`presenceCloseDue`).
-   * Ends at when they left, else the last moment the phone saw them on site.
-   * Same two cheap reads as above, bounded by the batch.
+   * The same for a member clocked by ARRIVING AND LEAVING with no shift — free,
+   * or up to a number of hours a day (LIMIT, whose end is only the marker):
+   * past their hours (their own, else the workspace's, read now — a change
+   * applies at once) + `closeAfterMinutes`, and only with evidence they are gone
+   * (`presenceCloseDue`). Ends at when they left — seen leaving, else the moment
+   * presence moved off site, else the last moment the phone saw them there.
    */
   private async closePresencePastHours(now: Date): Promise<number> {
     if (!this.autoClock) return 0;
-    const shortest = (NO_SHIFT_LIMIT.MIN_MINUTES + AUTO_CLOCK_LIMITS.closeAfterMinutes[0]) * 60_000;
-    const candidates = await this.prisma.timeEntry.findMany({
-      where: {
-        status: TimeEntryStatus.CLOCKED_IN,
-        expectedClockOutAt: null,
-        expectedClockInAt: null,
-        clockInAt: { lte: new Date(now.getTime() - shortest) },
-        location: { autoClock: { not: Prisma.DbNull } },
-      },
-      orderBy: { clockInAt: 'asc' },
-      take: OPEN_SHIFT_CLOSE.BATCH * 5,
-      select: { id: true, userId: true, locationId: true, clockInAt: true, expectedClockInAt: true },
-    });
+    const candidates = await presencePastHours(this.prisma, now);
     if (!candidates.length) return 0;
     const settings = await this.autoClock.settingsForEntries(candidates, now);
     const presenceIds = candidates
@@ -158,7 +137,6 @@ export class ShiftCloseSweepService {
           now.getTime() >= presenceSessionEnd(c.clockInAt, s).getTime() + s.closeAfterMinutes * 60_000
         );
       })
-      .slice(0, OPEN_SHIFT_CLOSE.BATCH)
       .map((c) => c.id);
     if (!presenceIds.length) return 0;
     const rows = await this.prisma.timeEntry.findMany({
@@ -175,6 +153,7 @@ export class ShiftCloseSweepService {
         leftSiteAt: entry.geofenceExcursions[0]?.leftRingAt ?? null,
         lastSeenAt: entry.lastSeenAt ?? null,
         presence: entry.presence ?? null,
+        presenceAt: entry.presenceAt ?? null,
       });
       if (
         verdict.due &&

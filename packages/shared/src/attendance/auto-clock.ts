@@ -52,6 +52,7 @@ export {
   decidePresenceClockIn,
   presenceSessionEnd,
   presenceCloseDue,
+  seenOnSiteRecently,
   clocksByPresence,
   START_WINDOW_MIN_SAMPLES,
   suggestStartWindow,

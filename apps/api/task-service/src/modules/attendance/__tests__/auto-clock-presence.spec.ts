@@ -14,6 +14,7 @@ import {
   presenceClockInAllowed,
   presenceCloseDue,
   presenceSessionEnd,
+  seenOnSiteRecently,
   startWindowAround,
   suggestStartWindow,
   type MemberAutoClockSettings,
@@ -135,6 +136,38 @@ describe('closing for review — only when he is gone', () => {
   });
   it('not before his hours + the grace', () => {
     expect(presenceCloseDue({ ...base, now: local('2026-10-13', '07:30'), leftSiteAt: null, lastSeenAt: null, presence: null }).due).toBe(false);
+  });
+  it('on a job (FIELD) with a fresh heartbeat is not gone: never closed', () => {
+    const now = local('2026-10-13', '08:30');
+    const v = presenceCloseDue({
+      ...base, now, leftSiteAt: null, lastSeenAt: local('2026-10-13', '08:25'), presence: 'FIELD',
+      presenceAt: local('2026-10-13', '06:10'),
+    });
+    expect(v.due).toBe(false);
+  });
+  it('REMOTE is gone: closed at the moment presence moved off site', () => {
+    const now = local('2026-10-13', '08:30');
+    const v = presenceCloseDue({
+      ...base, now, leftSiteAt: null, lastSeenAt: local('2026-10-13', '08:25'), presence: 'REMOTE',
+      presenceAt: local('2026-10-13', '06:10'),
+    });
+    expect(v).toEqual({ due: true, lastSeenOnSiteAt: local('2026-10-13', '06:10') });
+  });
+  it('FIELD and the phone silent: gone, ending when they left the site', () => {
+    const now = local('2026-10-13', '08:30');
+    const v = presenceCloseDue({
+      ...base, now, leftSiteAt: null, lastSeenAt: local('2026-10-13', '07:00'), presence: 'FIELD',
+      presenceAt: local('2026-10-13', '06:10'),
+    });
+    expect(v).toEqual({ due: true, lastSeenOnSiteAt: local('2026-10-13', '06:10') });
+  });
+  it('seenOnSiteRecently: ON_SITE heard within closeAfterMinutes, nothing else', () => {
+    const now = local('2026-10-13', '08:30');
+    const s = S({ closeAfterMinutes: 60 });
+    expect(seenOnSiteRecently({ presence: 'ON_SITE', lastSeenAt: local('2026-10-13', '08:00') }, s, now)).toBe(true);
+    expect(seenOnSiteRecently({ presence: 'ON_SITE', lastSeenAt: local('2026-10-13', '07:00') }, s, now)).toBe(false);
+    expect(seenOnSiteRecently({ presence: 'FIELD', lastSeenAt: local('2026-10-13', '08:25') }, s, now)).toBe(false);
+    expect(seenOnSiteRecently({ presence: 'ON_SITE', lastSeenAt: null }, s, now)).toBe(false);
   });
   it('seen leaving beats last seen', () => {
     expect(provisionalClockOut({ clockInAt, expectedClockOutAt: null, leftSiteAt: local('2026-10-13', '06:40'), lastSeenOnSiteAt: local('2026-10-13', '07:00'), now: local('2026-10-13', '09:00') }).basis).toBe('LEFT_SITE');

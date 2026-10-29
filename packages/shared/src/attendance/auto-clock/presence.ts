@@ -161,14 +161,43 @@ export function presenceCloseDue(input: {
   /** The last position heard (`TimeEntry.lastSeenAt`) and where it put them (`presence`). */
   lastSeenAt: Date | null;
   presence: string | null;
+  /** When `presence` last changed (`TimeEntry.presenceAt`) — off ON_SITE, the moment they left. */
+  presenceAt?: Date | null;
 }): { due: boolean; lastSeenOnSiteAt: Date | null } {
   const graceMs = input.settings.closeAfterMinutes * 60_000;
-  const lastSeenOnSiteAt = input.presence === 'ON_SITE' ? input.lastSeenAt : null;
+  /*
+    The last moment on site: still ON_SITE → the last position heard; moved off
+    it (FIELD / REMOTE) → the moment it changed, which is when they left.
+  */
+  const lastSeenOnSiteAt =
+    input.presence === 'ON_SITE' ? input.lastSeenAt : input.presence ? (input.presenceAt ?? null) : null;
   if (input.now.getTime() < presenceSessionEnd(input.clockInAt, input.settings).getTime() + graceMs)
     return { due: false, lastSeenOnSiteAt };
   const silent = !input.lastSeenAt || input.now.getTime() - input.lastSeenAt.getTime() >= graceMs;
-  const gone = !!input.leftSiteAt || input.presence !== 'ON_SITE' || silent;
+  /*
+    Gone = seen leaving, the phone silent, or REMOTE. Not merely "not ON_SITE":
+    somebody on a job (FIELD) whose phone is still heard is working, not gone.
+  */
+  const gone = !!input.leftSiteAt || input.presence === 'REMOTE' || silent;
   return { due: gone, lastSeenOnSiteAt };
+}
+
+/**
+ * Is the phone still reporting this person ON SITE, heard within the
+ * workspace's `closeAfterMinutes`? Then nobody closes their shift
+ * automatically — they are there; the leader has been told, and a shift truly
+ * forgotten is left to the abandoned-shift close.
+ */
+export function seenOnSiteRecently(
+  entry: { presence?: string | null; lastSeenAt?: Date | null },
+  settings: Pick<MemberAutoClockSettings, 'closeAfterMinutes'>,
+  now: Date,
+): boolean {
+  return (
+    entry.presence === 'ON_SITE' &&
+    !!entry.lastSeenAt &&
+    now.getTime() - entry.lastSeenAt.getTime() < settings.closeAfterMinutes * 60_000
+  );
 }
 
 /**
