@@ -10,6 +10,9 @@ import { emitEvent, taskDeletedEvent, taskUpdatedEvent } from '@hbcfield/shared/
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 import type { TaskUpdateJob } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { effectiveWorkflowOf } from '../../workflows/effective-workflow';
+import { stepState } from './task-step-state';
 
 /** Changing a task's fields (never its open-role columns or its status), and deleting one. */
 @Injectable()
@@ -20,6 +23,7 @@ export class TaskUpdateService {
     private readonly support: TaskSupportService,
     // A client request deleted half-way through an office rule: its approvals end with it.
     private readonly rules: ApprovalRulesService,
+    private readonly workflows: WorkflowConfigCache,
   ) {}
 
   /**
@@ -113,8 +117,9 @@ export class TaskUpdateService {
       (updateData.spaceId || null) !== existingTask.spaceId &&
       !!existingTask.openRoleId;
 
-    // Don't allow updating completed/closed tasks
-    if ([TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(existingTask.status as TaskStatus)) {
+    // A finished or canceled job is a record — by ITS flow's own marks, not the canonical names.
+    const at = stepState(existingTask.status, await effectiveWorkflowOf(this.prisma, this.workflows, existingTask));
+    if (at.finished || at.canceled) {
       throw new BadRequestException('Cannot update a completed, closed, or canceled task');
     }
 
@@ -208,8 +213,9 @@ export class TaskUpdateService {
     // Authorization: an ADMIN may delete any task in their organization.
     assertFoundInOrg(task, data.organizationId, 'Task');
 
-    // Don't allow deleting in-progress or completed tasks
-    if ([TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, TaskStatus.CLOSED].includes(task.status as TaskStatus)) {
+    // Never a job somebody is working on or that was finished — by ITS flow (task-step-state.ts).
+    const at = stepState(task.status, await effectiveWorkflowOf(this.prisma, this.workflows, task));
+    if (at.working || at.finished) {
       throw new BadRequestException('Cannot delete a task that is in progress or completed');
     }
 
