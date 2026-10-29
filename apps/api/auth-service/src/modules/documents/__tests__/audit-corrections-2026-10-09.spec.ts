@@ -140,7 +140,10 @@ describe('documents — audit corrections 2026-10-09', () => {
     it('lets an administrator review their own', async () => {
       prisma.document.findFirst.mockResolvedValue(pendingOf('me'));
       prisma.$transaction.mockImplementation(async (fn: any) =>
-        fn({ document: { update: jest.fn().mockResolvedValue({ id: 'doc1' }) }, documentEvent: { create: jest.fn() } }),
+        fn({
+          document: { updateMany: async () => ({ count: 1 }), findUnique: async () => ({ id: 'doc1' }) },
+          documentEvent: { create: jest.fn() },
+        }),
       );
       await expect(service.verifyDocument({ actor: actor({ isAdmin: true }), documentId: 'doc1' })).resolves.toBeTruthy();
     });
