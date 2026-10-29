@@ -235,6 +235,18 @@ describe('CrewService.changeLead — this job only', () => {
     await expect(s.service.changeLead({ ...actor('conor'), taskId: 'job1', toUserId: 'conor', scope: 'PERMANENT' })).rejects.toBeInstanceOf(ForbiddenException);
   });
 
+  it('a stand-in for TODAY cannot make themselves the lead for good', async () => {
+    const s = setup({ task: { leadOverrideId: 'priya', leadOverrideUntil: new Date(Date.now() + 3_600_000) } });
+    await expect(s.service.changeLead({ ...actor('priya'), taskId: 'job1', toUserId: 'priya', scope: 'PERMANENT' }))
+      .rejects.toMatchObject({ response: { code: CREW_CODES.LEAD_NOT_YOURS } });
+    expect(s.prisma.taskAssignee.upsert).not.toHaveBeenCalled();
+    // For today, they still may pass it on.
+    await s.service.changeLead({ ...actor('priya'), taskId: 'job1', toUserId: 'conor', scope: 'TODAY' });
+    // The office still may make them lead for good.
+    await s.service.changeLead({ ...actor('anna', { canAssignTasks: true }), taskId: 'job1', toUserId: 'priya', scope: 'PERMANENT' });
+    expect(s.prisma.taskAssignee.upsert).toHaveBeenCalled();
+  });
+
   it('two hand-overs at once: the job row is locked first', async () => {
     const s = setup();
     await s.service.changeLead({ ...actor('tobias'), taskId: 'job1', toUserId: 'priya', scope: 'PERMANENT' });

@@ -65,8 +65,12 @@ export class CrewLeadService {
       });
     }
     const scope: LeadScope = data.scope === 'PERMANENT' ? 'PERMANENT' : 'TODAY';
-    // A member standing in for an absent leader hands over for today — never takes the job from them for good.
-    if (scope === 'PERMANENT' && !office && leader.acting) {
+    /*
+      A member standing in — acting for an absent leader, or handed the lead for
+      today — hands over for today only: never takes the job for good. Only the
+      PERMANENT lead (source LEAD) or the office moves the LEAD row.
+    */
+    if (scope === 'PERMANENT' && !office && (leader.acting || leader.source !== 'LEAD')) {
       throw new ForbiddenException({
         message: 'Standing in, you can hand the lead over for today only.',
         code: CREW_CODES.LEAD_NOT_YOURS,
