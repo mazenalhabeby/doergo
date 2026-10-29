@@ -25,6 +25,9 @@ import {
 /** Filled in by `emit` from the entry itself. */
 type BreakEntryFields = 'entryId' | 'userId' | 'userName' | 'locationId' | 'locationName' | 'organizationId';
 
+/** What a claim is conditional on: the row as the sweep read it. */
+type ClaimedEntry = { id: string; nextBreakRemindAt: Date | null };
+
 /** How many entries one tick may touch. A backlog drains over later ticks. */
 const SWEEP_LIMIT = 500;
 
@@ -64,6 +67,8 @@ export class BreakReminderService {
       select: {
         id: true,
         userId: true,
+        // The value read is the claim: every write below is conditional on it.
+        nextBreakRemindAt: true,
         organizationId: true,
         locationId: true,
         breakPlan: true,
@@ -91,7 +96,7 @@ export class BreakReminderService {
       if (plan.length === 0) {
         // Nothing to remind about: clear the deadline so this row stops being
         // selected every minute forever.
-        await this.clear(entry.id);
+        await this.clear(entry);
         continue;
       }
 
@@ -102,17 +107,17 @@ export class BreakReminderService {
         const item = plan.find((i) => i.ruleId === openBreak.ruleId && i.state === 'TAKEN' && isRemindable(i));
         const overAt = item ? new Date(openBreak.startedAt.getTime() + item.durationMinutes * 60_000) : null;
         if (overAt && overAt.getTime() <= now.getTime()) {
+          // Asked once. The next deadline is whatever comes after this rest —
+          // nagging somebody to come back is not this system's job.
+          if (!(await this.rearm(entry, plan, now))) continue;
           this.emit(attendanceBreakOverEvent, entry, {
             breakId: openBreak.id,
             name: item!.name,
             durationMinutes: item!.durationMinutes,
           });
           ended += 1;
-          // Asked once. The next deadline is whatever comes after this rest —
-          // nagging somebody to come back is not this system's job.
-          await this.rearm(entry.id, plan, now);
         } else {
-          await this.setDeadline(entry.id, overAt ?? this.in(now, 5));
+          await this.setDeadline(entry, overAt ?? this.in(now, 5));
         }
         continue;
       }
@@ -126,27 +131,17 @@ export class BreakReminderService {
       const nextUp = breakNeedingAttention(plan, now);
       if (!nextUp) {
         // Woken early or for nothing: point the index at the real next moment.
-        await this.rearm(entry.id, plan, now);
+        await this.rearm(entry, plan, now);
         continue;
       }
 
       if (isExpired(nextUp, now)) {
         const updated = markMissed(plan, nextUp.ruleId);
+        if (!(await this.write(entry, updated, nextBreakRemindAt(updated, now)))) continue;
         missed += 1;
         this.logger.log(`Rest window closed unmet: entry=${entry.id} rest=${nextUp.name}`);
-        await this.write(entry.id, updated, nextBreakRemindAt(updated, now), entry.flagReasons);
         continue;
       }
-
-      this.emit(attendanceBreakDueEvent, entry, {
-        ruleId: nextUp.ruleId,
-        name: nextUp.name,
-        durationMinutes: nextUp.durationMinutes,
-        isPaid: nextUp.isPaid,
-        expiresAt: nextUp.expiresAt,
-        snoozeCount: nextUp.snoozeCount,
-      });
-      asked += 1;
 
       /*
         An ask that goes unanswered COUNTS.
@@ -168,12 +163,22 @@ export class BreakReminderService {
         maxSnoozes: nextUp.maxSnoozes,
         now,
       });
+      // Claimed first: a rest started, "Later" tapped or a clock-out meanwhile wins, and nothing is sent.
+      if (!(await this.write(entry, after, nextBreakRemindAt(after, now)))) continue;
+      this.emit(attendanceBreakDueEvent, entry, {
+        ruleId: nextUp.ruleId,
+        name: nextUp.name,
+        durationMinutes: nextUp.durationMinutes,
+        isPaid: nextUp.isPaid,
+        expiresAt: nextUp.expiresAt,
+        snoozeCount: nextUp.snoozeCount,
+      });
+      asked += 1;
       const item = after.find((i) => i.ruleId === nextUp.ruleId);
       if (item?.state === 'MISSED') {
         missed += 1;
         this.logger.log(`Rest unanswered and recorded missed: entry=${entry.id} rest=${nextUp.name}`);
       }
-      await this.write(entry.id, after, nextBreakRemindAt(after, now), entry.flagReasons);
     }
 
     if (asked || ended || missed) {
@@ -184,7 +189,22 @@ export class BreakReminderService {
 
   // ── writes ──────────────────────────────────────────────────────────────
 
-  private write(id: string, plan: BreakPlanItem[], deadline: Date | null, priorFlags?: string[] | null) {
+  /**
+   * Every write is a CLAIM on the row as read: still clocked in, deadline
+   * unchanged. Two ticks overlap (the sweep queue runs 20 at once), and a rest
+   * started, "Later" tapped or a clock-out committed between the read and the
+   * write must never be overwritten — the plan or the flags it wrote (an
+   * AUTO_CLOCK_OUT flag included) would be lost. Resolves true when it won.
+   */
+  private async claim(entry: ClaimedEntry, data: Record<string, unknown>): Promise<boolean> {
+    const res = await this.prisma.timeEntry.updateMany({
+      where: { id: entry.id, status: 'CLOCKED_IN', nextBreakRemindAt: entry.nextBreakRemindAt },
+      data,
+    });
+    return res.count === 1;
+  }
+
+  private write(entry: ClaimedEntry & { flagReasons?: string[] | null }, plan: BreakPlanItem[], deadline: Date | null) {
     /*
       The plan and the indexed deadline move in ONE statement. Two writes could
       leave a row whose JSON says a rest is pending and whose index says nothing
@@ -195,24 +215,26 @@ export class BreakReminderService {
       (`flagsWithMissedRest`) — and deducts nothing. Unchanged flags are not
       rewritten.
     */
+    const priorFlags = entry.flagReasons;
     const flags = flagsWithMissedRest(priorFlags, plan);
     const flagged = flags.length !== (priorFlags ?? []).length;
-    return this.prisma.timeEntry.update({
-      where: { id },
-      data: { breakPlan: plan as never, nextBreakRemindAt: deadline, ...(flagged ? { flagReasons: flags } : {}) },
+    return this.claim(entry, {
+      breakPlan: plan as never,
+      nextBreakRemindAt: deadline,
+      ...(flagged ? { flagReasons: flags } : {}),
     });
   }
 
-  private setDeadline(id: string, at: Date | null) {
-    return this.prisma.timeEntry.update({ where: { id }, data: { nextBreakRemindAt: at } });
+  private setDeadline(entry: ClaimedEntry, at: Date | null) {
+    return this.claim(entry, { nextBreakRemindAt: at });
   }
 
-  private clear(id: string) {
-    return this.setDeadline(id, null);
+  private clear(entry: ClaimedEntry) {
+    return this.setDeadline(entry, null);
   }
 
-  private rearm(id: string, plan: BreakPlanItem[], now: Date) {
-    return this.setDeadline(id, nextBreakRemindAt(plan, now));
+  private rearm(entry: ClaimedEntry, plan: BreakPlanItem[], now: Date) {
+    return this.setDeadline(entry, nextBreakRemindAt(plan, now));
   }
 
   private in(now: Date, minutes: number): Date {

@@ -17,6 +17,9 @@ describe('rest sweep', () => {
   let notify: { emit: jest.Mock };
 
   const now = new Date('2026-09-06T10:00:00Z');
+  // The deadline the sweep read — every write is conditional on it.
+  const READ_AT = new Date('2026-09-06T09:30:00Z');
+  const claimWhere = { id: 'e1', status: 'CLOCKED_IN', nextBreakRemindAt: READ_AT };
   const lunch: BreakRuleLike = {
     id: 'r1', name: 'Lunch', trigger: 'LOCAL_WINDOW', earliestLocal: '11:30', latestLocal: '13:30',
     durationMinutes: 30, isPaid: false, isRequired: true, remind: true, snoozeMin: 15, maxSnoozes: null,
@@ -30,6 +33,7 @@ describe('rest sweep', () => {
 
   const entry = (over: Partial<any> = {}) => ({
     id: 'e1', userId: 'u1', organizationId: 'org1', locationId: 'loc1',
+    nextBreakRemindAt: READ_AT, flagReasons: ['AUTO_CLOCK_OUT'],
     breakPlan: plan, timezone: 'Europe/Vienna',
     location: { id: 'loc1', name: 'Main Office', timezone: 'Europe/Vienna' },
     user: { id: 'u1', firstName: 'Mike', lastName: 'Weber' },
@@ -38,7 +42,7 @@ describe('rest sweep', () => {
   });
 
   beforeEach(async () => {
-    prisma = { timeEntry: { findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({}) } };
+    prisma = { timeEntry: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn().mockResolvedValue({ count: 1 }) } };
     notify = { emit: jest.fn() };
     const mod = await Test.createTestingModule({
       providers: [
@@ -75,7 +79,7 @@ describe('rest sweep', () => {
     prisma.timeEntry.findMany.mockResolvedValue([entry()]);
     await service.sweep(new Date('2026-09-06T09:31:00Z'));
     // The only write is the deadline; no break row is created anywhere.
-    for (const call of prisma.timeEntry.update.mock.calls) {
+    for (const call of prisma.timeEntry.updateMany.mock.calls) {
       expect(Object.keys(call[0].data)).not.toContain('breaks');
     }
   });
@@ -92,8 +96,8 @@ describe('rest sweep', () => {
     expect(r.ended).toBe(1);
     expect(notify.emit).toHaveBeenCalledWith('attendance_break_over', expect.objectContaining({ breakId: 'b1' }));
     // Re-armed to whatever is next — which is nothing, so the row stops being read.
-    expect(prisma.timeEntry.update).toHaveBeenCalledWith({
-      where: { id: 'e1' },
+    expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({
+      where: claimWhere,
       data: { nextBreakRemindAt: null },
     });
   });
@@ -113,7 +117,7 @@ describe('rest sweep', () => {
     const r = await service.sweep(new Date('2026-09-06T12:00:00Z')); // past 13:30 local
     expect(r.missed).toBe(1);
     expect(notify.emit).not.toHaveBeenCalled();
-    const written = prisma.timeEntry.update.mock.calls[0][0].data;
+    const written = prisma.timeEntry.updateMany.mock.calls[0][0].data;
     expect(written.breakPlan[0].state).toBe('MISSED');
     expect(written.nextBreakRemindAt).toBeNull();
   });
@@ -121,8 +125,8 @@ describe('rest sweep', () => {
   it('clears the deadline on an entry with no plan, so it is never read again', async () => {
     prisma.timeEntry.findMany.mockResolvedValue([entry({ breakPlan: null })]);
     await service.sweep(now);
-    expect(prisma.timeEntry.update).toHaveBeenCalledWith({
-      where: { id: 'e1' },
+    expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({
+      where: claimWhere,
       data: { nextBreakRemindAt: null },
     });
   });
@@ -130,6 +134,36 @@ describe('rest sweep', () => {
   it('does nothing at all when nothing is due', async () => {
     const r = await service.sweep(now);
     expect(r).toEqual({ asked: 0, ended: 0, missed: 0 });
-    expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+    expect(prisma.timeEntry.updateMany).not.toHaveBeenCalled();
+  });
+
+  describe('every write is a CLAIM on the row as read (two ticks overlap)', () => {
+    it('a rest started / "Later" tapped / a clock-out meanwhile: nothing is overwritten and nobody is asked', async () => {
+      prisma.timeEntry.findMany.mockResolvedValue([entry()]);
+      prisma.timeEntry.updateMany.mockResolvedValue({ count: 0 });
+      const r = await service.sweep(new Date('2026-09-06T09:31:00Z'));
+      expect(prisma.timeEntry.updateMany.mock.calls[0][0].where).toEqual(claimWhere);
+      expect(r.asked).toBe(0);
+      expect(notify.emit).not.toHaveBeenCalled();
+    });
+
+    it('a lost claim on "your rest is over" sends nothing', async () => {
+      const taken = plan.map((i) => ({ ...i, state: 'TAKEN' as const, breakId: 'b1' }));
+      prisma.timeEntry.findMany.mockResolvedValue([
+        entry({ breakPlan: taken, breaks: [{ id: 'b1', startedAt: new Date('2026-09-06T09:30:00Z'), ruleId: 'r1' }] }),
+      ]);
+      prisma.timeEntry.updateMany.mockResolvedValue({ count: 0 });
+      const r = await service.sweep(new Date('2026-09-06T10:01:00Z'));
+      expect(r.ended).toBe(0);
+      expect(notify.emit).not.toHaveBeenCalled();
+    });
+
+    it('a missed rest keeps the flags already on the entry (AUTO_CLOCK_OUT is never dropped)', async () => {
+      prisma.timeEntry.findMany.mockResolvedValue([entry()]);
+      await service.sweep(new Date('2026-09-06T12:00:00Z'));
+      const { where, data } = prisma.timeEntry.updateMany.mock.calls[0][0];
+      expect(where).toEqual(claimWhere);
+      expect(data.flagReasons).toEqual(expect.arrayContaining(['AUTO_CLOCK_OUT']));
+    });
   });
 });

@@ -29,7 +29,13 @@ const quiet: BreakRuleLike = {
 
 function prismaMock() {
   const prisma: any = {
-    timeEntry: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn().mockResolvedValue({}) },
+    timeEntry: {
+      findFirst: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({}),
+      // The rest sweep's writes are claims (conditional on the row as read).
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
     break: {
       findUnique: jest.fn().mockResolvedValue(null),
       findFirst: jest.fn(),
@@ -132,7 +138,7 @@ describe('the rest sweep', () => {
     prisma.timeEntry.findMany.mockResolvedValue([due(resolveBreakPlan([quiet], ctx))]);
     await new BreakReminderService(prisma, notify as any).sweep(t('10:01'));
     expect(notify.emit).not.toHaveBeenCalled();
-    expect(prisma.timeEntry.update.mock.calls[0][0].data.nextBreakRemindAt).toEqual(t('11:00'));
+    expect(prisma.timeEntry.updateMany.mock.calls[0][0].data.nextBreakRemindAt).toEqual(t('11:00'));
   });
 
   it('a required rest whose window closed is recorded missed and flagged', async () => {
@@ -140,7 +146,7 @@ describe('the rest sweep', () => {
     prisma.timeEntry.findMany.mockResolvedValue([due(resolveBreakPlan([quiet], ctx), ['UNSCHEDULED_DAY'])]);
     const r = await new BreakReminderService(prisma, { emit: jest.fn() } as any).sweep(t('11:00'));
     expect(r.missed).toBe(1);
-    const data = prisma.timeEntry.update.mock.calls[0][0].data;
+    const data = prisma.timeEntry.updateMany.mock.calls[0][0].data;
     expect(data.breakPlan[0].state).toBe('MISSED');
     expect(data.flagReasons).toEqual(['UNSCHEDULED_DAY', 'MISSED_BREAK']);
   });
@@ -150,7 +156,7 @@ describe('the rest sweep', () => {
     const plan = resolveBreakPlan([lunch], ctx).map((i) => ({ ...i, state: 'SNOOZED', snoozeCount: 1, dueAt: t('12:10').toISOString() }));
     prisma.timeEntry.findMany.mockResolvedValue([due(plan)]);
     await new BreakReminderService(prisma, { emit: jest.fn() } as any).sweep(t('12:10'));
-    expect(prisma.timeEntry.update.mock.calls[0][0].data.flagReasons).toEqual(['MISSED_BREAK']);
+    expect(prisma.timeEntry.updateMany.mock.calls[0][0].data.flagReasons).toEqual(['MISSED_BREAK']);
   });
 });
 

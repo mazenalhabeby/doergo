@@ -52,10 +52,12 @@ describe('an ignored rest prompt stops asking', () => {
             row.nextBreakRemindAt && row.nextBreakRemindAt <= where.nextBreakRemindAt.lte ? [row] : [],
           ),
         ),
-        update: jest.fn(({ data }: any) => {
+        // A claim: written only while the deadline is still the one read.
+        updateMany: jest.fn(({ where, data }: any) => {
+          if (where.nextBreakRemindAt?.getTime() !== row.nextBreakRemindAt?.getTime()) return Promise.resolve({ count: 0 });
           if ('breakPlan' in data) row.breakPlan = data.breakPlan;
           if ('nextBreakRemindAt' in data) row.nextBreakRemindAt = data.nextBreakRemindAt;
-          return Promise.resolve(row);
+          return Promise.resolve({ count: 1 });
         }),
       },
     };
