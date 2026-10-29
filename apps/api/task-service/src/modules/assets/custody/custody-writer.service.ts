@@ -123,6 +123,14 @@ export class CustodyWriterService {
       strict?: boolean;
     },
   ): Promise<HandoverPlan> {
+    /*
+      ⚠️ ONE HANDOVER AT A TIME PER ASSET. Two handovers at once each read the
+      same open periods, each planned "close Ahmed, open X", and both wrote —
+      two open periods on a one-at-a-time van. The asset row is locked first, so
+      the second transaction waits and then plans from what the first wrote.
+    */
+    await db.$queryRaw`SELECT id FROM "assets" WHERE id = ${input.assetId} FOR UPDATE`;
+
     // The periods AND the row that mirrors them, together: a no-op plan still
     // has to be able to notice that the two disagree. See below.
     const [periods, held] = await Promise.all([

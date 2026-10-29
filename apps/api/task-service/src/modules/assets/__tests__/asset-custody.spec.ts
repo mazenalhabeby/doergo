@@ -45,7 +45,7 @@ describe('AssetCustodyService.handOver', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    tx = {
+    tx = { $queryRaw: jest.fn(),
       assetCustody: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn(), createMany: jest.fn() },
       assetHolder: {
         // Read alongside the periods, so a no-op plan can still notice that the
