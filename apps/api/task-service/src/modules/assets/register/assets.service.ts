@@ -216,19 +216,10 @@ export class AssetsService {
       );
     }
 
-    /*
-      Costs and custody are history too (decision 2026-10-29): the money rows
-      and the periods they are attributed by CASCADE with the record, so a
-      delete would erase what a van cost and who had it — with nothing on any
-      screen to say so. Retired keeps both and stops the billing.
-    */
+    // Costs and custody CASCADE with the record — deleting would erase what it cost and who had it (2026-10-29).
     if (asset._count.money > 0 || asset._count.custody > 0) {
-      throw new BadRequestException({
-        message:
-          'This asset has costs or a custody history and cannot be deleted. ' +
-          'Set its status to Retired instead — the record and its history stay, and it stops being billed.',
-        code: 'ASSET_HAS_HISTORY',
-      });
+      const message = 'This asset has costs or a custody history and cannot be deleted. Set its status to Retired instead.';
+      throw new BadRequestException({ message, code: 'ASSET_HAS_HISTORY' });
     }
 
     await this.prisma.asset.delete({ where: { id: data.id } });
