@@ -33,10 +33,11 @@ function build(
         .mockResolvedValue(
           opts.member === undefined ? { id: 'mike', allowRemote: true, role: 'EMPLOYEE' } : opts.member,
         ),
-      findUnique: jest.fn().mockResolvedValue({ timezone: opts.zone ?? null, organization: null, spaceAssignments: [] }),
+      findUnique: jest.fn().mockResolvedValue({ timezone: opts.zone ?? null, organization: null }),
     },
     spaceAssignment: {
       findMany: jest.fn().mockResolvedValue(opts.assignments ?? [{ allowRemote: null, space: space() }]),
+      findFirst: jest.fn().mockResolvedValue(null),
     },
     companyLocation: { findFirst: jest.fn().mockResolvedValue(opts.foreignSpace ?? null) },
     timeOff: {

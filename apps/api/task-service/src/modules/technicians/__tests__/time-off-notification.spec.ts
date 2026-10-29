@@ -52,7 +52,7 @@ describe('who is told about a leave request', () => {
         findFirst: jest.fn().mockResolvedValue({ id: 'mike', organizationId: 'org1' }),
         findUnique: jest.fn().mockResolvedValue(null),
       },
-      spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
+      spaceAssignment: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
       timeOff: {
         findFirst: jest.fn().mockResolvedValue(null),
         findMany: jest.fn().mockResolvedValue([]),

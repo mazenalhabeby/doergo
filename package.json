@@ -104,6 +104,7 @@
     "layer0:check": "bash tools/layer0-check.sh",
     "layer1:check": "bash tools/layer1-check.sh",
     "layer2:check": "bash tools/layer2-check.sh",
+    "layer3:check": "bash tools/layer3-check.sh",
     "size:update": "node tools/size-ratchet.mjs --update",
     "structure:check": "node tools/structure-check.mjs",
     "structure:update": "node tools/structure-check.mjs --update",

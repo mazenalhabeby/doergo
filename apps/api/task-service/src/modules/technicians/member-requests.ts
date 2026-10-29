@@ -10,6 +10,7 @@ import {
   activeAssignmentWhere,
   localDateKey,
   memberDayZone,
+  memberZoneSources,
   type PrismaService,
 } from '@hbcfield/shared';
 import type { CalendarRulesService } from '../calendar/calendar-rules.service';
@@ -129,19 +130,13 @@ export async function memberToday(
   spaceId?: string | null,
   now = new Date(),
 ): Promise<string> {
-  const u = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      timezone: true,
-      organization: { select: { timezone: true } },
-      spaceAssignments: {
-        where: { ...activeAssignmentWhere(userId, now), ...(spaceId ? { spaceId } : {}) },
-        select: { space: { select: { timezone: true } } },
-        orderBy: { effectiveFrom: 'asc' },
-        take: 1,
-      },
-    },
-  });
-  const workspaceTz = u?.spaceAssignments?.[0]?.space?.timezone;
-  return localDateKey(now, memberDayZone(u?.timezone, u?.organization?.timezone, workspaceTz));
+  const [zones, here] = await Promise.all([
+    memberZoneSources(prisma, userId),
+    prisma.spaceAssignment.findFirst({
+      where: { ...activeAssignmentWhere(userId, now), ...(spaceId ? { spaceId } : {}) },
+      select: { space: { select: { timezone: true } } },
+      orderBy: { effectiveFrom: 'asc' },
+    }),
+  ]);
+  return localDateKey(now, memberDayZone(zones.member, zones.organization, here?.space?.timezone));
 }

@@ -109,3 +109,13 @@ export function operatorSocketFacts(db: On<'platformUser', 'findUnique'>, platfo
 export function sharedSpacesFor(db: On<'spaceShare', 'findMany'>, guestOrgId: string) {
   return db.spaceShare.findMany({ where: { guestOrgId, status: 'ACTIVE' }, select: { spaceId: true } });
 }
+
+/** One member's own zone and their organization's, KEPT APART — for an order that puts a workspace between them. */
+export async function memberZoneSources(
+  db: On<'user', 'findUnique'>,
+  id: string,
+): Promise<{ member: string | null; organization: string | null }> {
+  const u: { timezone: string | null; organization: { timezone: string | null } | null } | null =
+    await db.user.findUnique({ where: { id }, select: { timezone: true, organization: { select: { timezone: true } } } });
+  return { member: u?.timezone ?? null, organization: u?.organization?.timezone ?? null };
+}
