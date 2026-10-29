@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { notEndedWhere, zoneOf, rotaFor, dowOfDay, workspaceSchedulesShifts } from '@hbcfield/shared';
+import { SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
 // Wall time ↔ UTC comes from ONE place. This service used to carry a verbatim
 // private copy of all of it; two copies of "what time is 06:00 in Vienna" are
 // two chances to be an hour wrong twice a year.
@@ -21,6 +22,16 @@ export { type ResolverSpace } from './shift-resolver-helpers';
  *   2. Legacy TechnicianSchedule (FIXED weekly schedule) for that weekday
  *   3. null (no expectation → no reminders; e.g. TASK/NONE spaces)
  */
+/** One planned shift of a member on one local day, as `plannedWindows` answers it. */
+export interface PlannedWindow {
+  dateStr: string;
+  shiftId: string | null;
+  expectedClockInAt: Date;
+  expectedClockOutAt: Date;
+  /** How long after its end a clock-in still belongs to it (`endedBefore`, the clock-in's own rule). */
+  toleranceMin: number;
+}
+
 @Injectable()
 export class ShiftResolverService {
   constructor(private readonly prisma: PrismaService) {}
@@ -96,13 +107,8 @@ export class ShiftResolverService {
     userId: string,
     spaces: readonly ResolverSpace[],
     days: (space: ResolverSpace) => string[],
-  ): Promise<
-    Map<string, Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }>>
-  > {
-    const out = new Map<
-      string,
-      Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }>
-    >();
+  ): Promise<Map<string, PlannedWindow[]>> {
+    const out = new Map<string, PlannedWindow[]>();
     const scheduling = spaces.filter((s) => workspaceSchedulesShifts(s.workModel));
     if (!scheduling.length) return out;
     const daysBySpace = new Map(scheduling.map((s) => [s.id, days(s)]));
@@ -128,12 +134,7 @@ export class ShiftResolverService {
     ]);
     for (const space of scheduling) {
       const tz = zoneOf(space.timezone);
-      const windows: Array<{
-        dateStr: string;
-        shiftId: string | null;
-        expectedClockInAt: Date;
-        expectedClockOutAt: Date;
-      }> = [];
+      const windows: PlannedWindow[] = [];
       for (const dateStr of daysBySpace.get(space.id) ?? []) {
         // The shared rota rule (`rotaFor`: priority, then most recently effective, in force, runs that day).
         const a = rotaFor(
@@ -141,7 +142,12 @@ export class ShiftResolverService {
           dateStr,
         );
         let found: (typeof windows)[number] | null = a?.shift
-          ? { dateStr, shiftId: a.shift.id, ...shiftWindowOn(a.shift, tz, dateStr) }
+          ? {
+              dateStr,
+              shiftId: a.shift.id,
+              toleranceMin: a.shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+              ...shiftWindowOn(a.shift, tz, dateStr),
+            }
           : null;
         if (!found) {
           const dow = dowOfDay(dateStr);
@@ -150,6 +156,7 @@ export class ShiftResolverService {
             found = {
               dateStr,
               shiftId: null,
+              toleranceMin: SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, // legacy schedules use the default
               ...shiftWindowOn(
                 { startLocal: legacy.startTime, endLocal: legacy.endTime!, crossesMidnight: false },
                 tz,

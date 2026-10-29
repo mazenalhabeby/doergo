@@ -2,6 +2,7 @@ import {
   assessFix,
   isAtSite,
   noShiftAllowanceNow,
+  tagShiftAt,
   parseGeofencePolygon,
   siteEnforcesZone,
   type CompanyLocation,
@@ -50,8 +51,19 @@ export function checkClockInLocally(input: {
     leader on the server (docs/plans/time-counting-model.md) — refusing it here stopped the person at
     the door with every hour they then worked lost.
   */
-  const allowance = noShiftAllowanceNow(input.location?.noShift, input.now ?? new Date());
-  if (allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY') return { ok: false, code: 'NO_SHIFT_TODAY' };
+  /*
+    ⚠️ "Is there a shift" is judged at the TAP from the planned windows on the tag (`tagShiftAt`), never from
+    `hasShiftNow` — that was true when the list was read, perhaps yesterday. When the tag cannot say (an older
+    server, a list older than its windows) the phone does not refuse: the server keeps an offline clock-in with
+    no shift and flags it for the leader, so a refusal here would only lose hours worked.
+  */
+  const now = input.now ?? new Date();
+  const tag = input.location?.noShift;
+  const allowance = noShiftAllowanceNow(tag, now);
+  const knownNoShift = !!tag && tagShiftAt(tag, now) === false;
+  if (allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY' && knownNoShift) {
+    return { ok: false, code: 'NO_SHIFT_TODAY' };
+  }
 
   const checked = assessFix(input.fix, input.fixCheckedAt ?? input.now ?? new Date());
   // A mock location is flagged by the server, not refused — mirror that.

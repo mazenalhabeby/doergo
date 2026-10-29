@@ -219,11 +219,38 @@ export interface NoShiftTag {
   extraMinutes?: number;
   /** End of that day in the MEMBER's zone (`memberDayZone`) — after it, nothing is used up yet. */
   dayEndsAt: string;
+  /**
+   * The member's planned shifts here, yesterday to tomorrow (workspace days), so "is there a shift NOW" is judged
+   * at the tap and not when the list was read. Absent on older servers and where nothing is limited.
+   */
+  shiftWindows?: PlannedShiftWindow[];
+  /** The windows say nothing past this instant (the end of tomorrow): a tag older than that knows nothing. */
+  shiftWindowsUntil?: string;
+}
+
+/** One planned shift as the tag carries it: from local midnight of the day it STARTS to its end + tolerance. */
+export interface PlannedShiftWindow {
+  dayFrom: string;
+  end: string;
+  toleranceMin: number;
+}
+
+/**
+ * Does a planned shift cover `now` — the clock-in's own rule (`shiftFromRota`): an instance whose start DAY has
+ * begun and which has not ended (past its tolerance). Null = the tag cannot say (no windows, or read too long ago).
+ */
+export function tagShiftAt(tag: NoShiftTag, now: Date): boolean | null {
+  if (!tag.shiftWindows || !tag.shiftWindowsUntil) return null;
+  if (now.getTime() >= new Date(tag.shiftWindowsUntil).getTime()) return null;
+  const t = now.getTime();
+  return tag.shiftWindows.some(
+    (w) => t >= new Date(w.dayFrom).getTime() && t <= new Date(w.end).getTime() + w.toleranceMin * 60_000,
+  );
 }
 
 /** The allowance at `now` from a tag that may have been read a while ago (the phone without signal). */
 export function noShiftAllowanceNow(tag: NoShiftTag | null | undefined, now: Date): NoShiftAllowance {
-  if (!tag || tag.hasShiftNow) return { kind: 'free' };
+  if (!tag || (tagShiftAt(tag, now) ?? tag.hasShiftNow)) return { kind: 'free' };
   const newDay = now.getTime() >= new Date(tag.dayEndsAt).getTime();
   return noShiftAllowance({
     policy: tag.policy,

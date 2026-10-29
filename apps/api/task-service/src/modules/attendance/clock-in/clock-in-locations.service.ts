@@ -21,6 +21,7 @@ import {
 } from '../core/approved-requests';
 import { ClockInContextService } from './clock-in-context.service';
 import { pickNextShift, type NextShift } from './next-shift';
+import { limitsNoShift, shiftWindowsTag } from './no-shift-tag';
 
 /**
  * Where the caller may clock in right now, each workspace tagged with whether away
@@ -52,25 +53,37 @@ export class ClockInLocationsService {
     primarySpaceIds: ReadonlySet<string>,
   ): Promise<(T & { noShift: NoShiftTag | null; shiftToday: boolean; isPrimary: boolean })[]> {
     /*
-      ONE day for the person, whichever workspace asks (memberDayZone): today's
-      hours are read once, in their zone, and only if some workspace limits them.
-      With no zone of their own, the zone of their main workspace (else the first).
+      The day a no-shift limit counts is the one the clock-in will count (`memberDayZone`): the member's own zone,
+      else the zone of the workspace they would clock in AT — never their main workspace's for every row (a list
+      read in one zone told a member in another the wrong hours left). Their zones are read once; today's hours
+      once per distinct day zone, and only where some workspace limits them.
     */
-    const homeTz = (spaces.find((s) => primarySpaceIds.has(s.id)) ?? spaces[0])?.timezone ?? null;
-    let dayTz: Promise<string> | null = null;
-    let worked: Promise<number> | null = null;
+    let person: ReturnType<typeof personZones> | null = null;
+    const worked = new Map<string, Promise<number>>();
     let overtimeRows: Promise<DayRequestRow[]> | null = null;
     // Asked by every workspace at once (Promise.all), so the promise is shared, not the answer.
-    const memberDay = (): Promise<string> =>
-      (dayTz ??= personZones(this.prisma, userId).then((u) =>
-        memberDayZone(u?.timezone, u?.organization?.timezone, homeTz),
-      ));
+    const dayZoneAt = async (space: T): Promise<string> => {
+      const u = await (person ??= personZones(this.prisma, userId));
+      return memberDayZone(u?.timezone, u?.organization?.timezone, space.timezone);
+    };
+    // The planned shifts of every limited workspace, yesterday → tomorrow, in TWO queries (`plannedWindows`).
+    const limitedSpaces = spaces.filter((s) => limitsNoShift(s));
+    const planned = limitedSpaces.length
+      ? await Promise.resolve()
+          .then(() =>
+            this.shiftResolver.plannedWindows(userId, limitedSpaces, (s) => {
+              const today = localPartsIn(now, zoneOf(s.timezone)).dateStr;
+              return [addDaysStr(today, -1), today, addDaysStr(today, 1)];
+            }),
+          )
+          .catch(() => null) // without them the tag is what it was: the phone never refuses on a guess
+      : null;
     return Promise.all(
       spaces.map(async (space) => {
         const tz = zoneOf(space.timezone);
         // The rule that APPLIES here: SHIFT_ONLY where nothing is scheduled is no rule at all.
         const policy = effectiveNoShiftPolicy(space.noShiftPolicy, space.workModel);
-        const limited = policy === 'LIMIT' || policy === 'SHIFT_ONLY';
+        const limited = limitsNoShift(space);
         /*
           A shift is only worth resolving where it changes something: ordering a
           choice (more than one workspace) or a no-shift rule. A member with one
@@ -87,21 +100,24 @@ export class ClockInLocationsService {
             : false;
         const isPrimary = primarySpaceIds.has(space.id);
         if (!limited) return { ...space, noShift: null, shiftToday: hasShiftNow, isPrimary };
-        const day = await memberDay();
+        const day = await dayZoneAt(space);
         let workedTodayMinutes = 0;
         let extraMinutes = 0;
         if (policy === 'LIMIT' && !hasShiftNow) {
           overtimeRows ??= approvedRequestsAround(this.prisma, userId, now, ['OVERTIME']);
           extraMinutes = agreedOvertimeMinutes(await overtimeRows, space.id, now, day);
-          worked ??= this.context
-            .noShiftAllowanceFor(
-              userId,
-              { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel },
-              now,
-              day,
-            )
-            .then((a) => a.workedTodayMinutes);
-          workedTodayMinutes = await worked;
+          if (!worked.has(day)) {
+            const read = this.context
+              .noShiftAllowanceFor(
+                userId,
+                { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel },
+                now,
+                day,
+              )
+              .then((a) => a.workedTodayMinutes);
+            worked.set(day, read);
+          }
+          workedTodayMinutes = await worked.get(day)!;
         }
         const noShift: NoShiftTag = {
           policy,
@@ -110,6 +126,7 @@ export class ClockInLocationsService {
           workedTodayMinutes,
           extraMinutes,
           dayEndsAt: endOfDayIn(now, day).toISOString(),
+          ...(planned ? shiftWindowsTag(planned.get(space.id) ?? [], tz, now) : {}),
         };
         return { ...space, noShift, shiftToday: hasShiftNow, isPrimary };
       }),

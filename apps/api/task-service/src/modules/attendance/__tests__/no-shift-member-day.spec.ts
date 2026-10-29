@@ -53,10 +53,33 @@ describe("the no-shift limit counts the MEMBER's day", () => {
     expect(prisma.user.findUnique).toHaveBeenCalledTimes(1);
   });
 
-  it("a member with no zone of their own counts their main workspace's day, not the organization's", async () => {
-    const { self } = harness(null, 'Europe/Vienna');
+  /*
+    With no zone of their own, each workspace's tag counts the day in THAT workspace's zone — the day the clock-in
+    there will count (`memberDayZone(user, org, location)`). It used to be the main workspace's for every row, so
+    the phone showed hours left at Chicago that the clock-in there then counted against another day.
+  */
+  it('a member with no zone of their own: each workspace counts its own day, as its clock-in will', async () => {
+    const { self, prisma } = harness(null, 'Europe/Vienna');
     const tagged = await self.tagClockInContext(spaces, 'u1', now, new Set(['chicago']));
-    // Chicago: the session started and it is still Oct 13 → 558 minutes, the same everywhere.
-    expect(tagged.map((s: any) => s.noShift.workedTodayMinutes)).toEqual([558, 558, 558]);
+    // Vienna and New York are on Oct 14 (the session started the day before); Chicago is still on Oct 13.
+    expect(tagged.map((s: any) => s.noShift.workedTodayMinutes)).toEqual([0, 0, 558]);
+    expect(prisma.user.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it('carries the planned shift windows, so the phone judges "a shift now" at the tap', async () => {
+    const { self } = harness('Europe/Vienna', 'Europe/Vienna');
+    const start = new Date('2026-10-14T12:00:00Z');
+    const end = new Date('2026-10-14T20:00:00Z');
+    self.shiftResolver.plannedWindows = jest.fn().mockResolvedValue(
+      new Map([['vienna', [{ dateStr: '2026-10-14', shiftId: 's', expectedClockInAt: start, expectedClockOutAt: end, toleranceMin: 10 }]]]),
+    );
+    const tagged = await self.tagClockInContext([{ ...spaces[0], workModel: 'SHIFT' }], 'u1', now, new Set());
+    const days = self.shiftResolver.plannedWindows.mock.calls[0][2]({ timezone: 'Europe/Vienna' });
+    expect(days).toEqual(['2026-10-13', '2026-10-14', '2026-10-15']);
+    expect(tagged[0].noShift.shiftWindows).toEqual([
+      { dayFrom: '2026-10-13T22:00:00.000Z', end: end.toISOString(), toleranceMin: 10 },
+    ]);
+    // Past the end of tomorrow (Vienna) the windows say nothing.
+    expect(tagged[0].noShift.shiftWindowsUntil).toBe('2026-10-15T22:00:00.000Z');
   });
 });

@@ -58,8 +58,26 @@ describe('checkClockInLocally — the same answer offline as online', () => {
     });
 
     it('refuses where a shift is required, and lets somebody with a shift in', () => {
-      expect(checkClockInLocally({ location: at({ policy: 'SHIFT_ONLY' }), fix: north(5), alreadyClockedIn: false, now: NOW })).toMatchObject({ ok: false, code: 'NO_SHIFT_TODAY' });
-      expect(checkClockInLocally({ location: at({ policy: 'SHIFT_ONLY', hasShiftNow: true }), fix: north(5), alreadyClockedIn: false, now: new Date() })).toMatchObject({ ok: true });
+      const T = new Date();
+      const iso = (ms: number) => new Date(T.getTime() + ms).toISOString();
+      const H = 3_600_000;
+      const until = iso(24 * H);
+      const none = at({ policy: 'SHIFT_ONLY', shiftWindows: [], shiftWindowsUntil: until });
+      expect(checkClockInLocally({ location: none, fix: north(5), alreadyClockedIn: false, now: T })).toMatchObject({ ok: false, code: 'NO_SHIFT_TODAY' });
+      expect(checkClockInLocally({ location: at({ policy: 'SHIFT_ONLY', hasShiftNow: true }), fix: north(5), alreadyClockedIn: false, now: T })).toMatchObject({ ok: true });
+      // A shift planned today counts at the TAP, though the list was read when there was none (hasShiftNow false).
+      const later = at({ policy: 'SHIFT_ONLY', shiftWindows: [{ dayFrom: iso(-H), end: iso(8 * H), toleranceMin: 10 }], shiftWindowsUntil: until });
+      expect(checkClockInLocally({ location: later, fix: north(5), alreadyClockedIn: false, now: T })).toMatchObject({ ok: true });
+      // …and one that ended (past its tolerance) does not.
+      const ended = at({ policy: 'SHIFT_ONLY', shiftWindows: [{ dayFrom: iso(-10 * H), end: iso(-H), toleranceMin: 10 }], shiftWindowsUntil: until });
+      expect(checkClockInLocally({ location: ended, fix: north(5), alreadyClockedIn: false, now: T })).toMatchObject({ code: 'NO_SHIFT_TODAY' });
+    });
+
+    it('never refuses on a guess: no windows (older server) or a list older than them — the server keeps it', () => {
+      const T = new Date();
+      expect(checkClockInLocally({ location: at({ policy: 'SHIFT_ONLY' }), fix: north(5), alreadyClockedIn: false, now: T })).toMatchObject({ ok: true });
+      const stale = at({ policy: 'SHIFT_ONLY', shiftWindows: [], shiftWindowsUntil: new Date(T.getTime() - 1).toISOString() });
+      expect(checkClockInLocally({ location: stale, fix: north(5), alreadyClockedIn: false, now: T })).toMatchObject({ ok: true });
     });
 
     it('starts the next day with the hours back, from what the phone kept yesterday', () => {
