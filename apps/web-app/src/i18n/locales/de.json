@@ -8390,7 +8390,8 @@
     "OVERTIME_ALREADY_DECIDED": "Jemand hat über diese Überstunden bereits entschieden.",
     "TIME_OFF_DECIDED": "Über diesen Antrag wurde bereits entschieden.",
     "DOCUMENT_STEP_ALREADY_SIGNED": "Dieser Schritt wurde bereits unterschrieben. Öffnen Sie das Dokument erneut, um den aktuellen Stand zu sehen.",
-    "DOCUMENT_ALREADY_REVIEWED": "Dieses Dokument wurde bereits geprüft."
+    "DOCUMENT_ALREADY_REVIEWED": "Dieses Dokument wurde bereits geprüft.",
+    "OWN_DOCUMENT_ALREADY_ACCEPTED": "Dieses Dokument wurde von Ihrer Organisation bereits angenommen und kann nicht entfernt werden."
   },
   "signLink": {
     "tabs": {

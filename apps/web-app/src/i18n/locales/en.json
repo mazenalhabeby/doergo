@@ -8390,7 +8390,8 @@
     "OVERTIME_ALREADY_DECIDED": "Somebody already decided this overtime.",
     "TIME_OFF_DECIDED": "This request was already decided.",
     "DOCUMENT_STEP_ALREADY_SIGNED": "Somebody already signed this step. Open the document again to see where it stands.",
-    "DOCUMENT_ALREADY_REVIEWED": "Somebody already reviewed this document."
+    "DOCUMENT_ALREADY_REVIEWED": "Somebody already reviewed this document.",
+    "OWN_DOCUMENT_ALREADY_ACCEPTED": "This document was already accepted by your organization and cannot be removed."
   },
   "signLink": {
     "tabs": {

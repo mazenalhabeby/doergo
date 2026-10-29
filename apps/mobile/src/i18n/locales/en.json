@@ -3341,7 +3341,8 @@
       "SECOND_STEP_SAME_PERSON": "You gave the first approval — the second must come from {{role}}.",
       "SECOND_STEP_REQUIRED": "The second approval is for {{role}}.",
       "DOCUMENT_STEP_ALREADY_SIGNED": "Somebody already signed this step. Open the document again to see where it stands.",
-      "DOCUMENT_ALREADY_REVIEWED": "Somebody already reviewed this document."
+      "DOCUMENT_ALREADY_REVIEWED": "Somebody already reviewed this document.",
+      "OWN_DOCUMENT_ALREADY_ACCEPTED": "This document was already accepted by your organization and cannot be removed."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

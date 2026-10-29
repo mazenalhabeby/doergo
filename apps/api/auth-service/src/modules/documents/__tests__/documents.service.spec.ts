@@ -21,12 +21,12 @@ describe('DocumentsService — who can reach whose documents', () => {
 
   const prisma: Record<string, any> = {
     documentType: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
-    document: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
+    document: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), deleteMany: jest.fn(), count: jest.fn() },
     // No signer rows anywhere in this file: these tests are about the ordinary
     // permission model, and a countersignature must not quietly widen it.
     documentSigner: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
     documentEvent: { create: jest.fn(), findMany: jest.fn() },
-    user: { findFirst: jest.fn() },
+    user: { findFirst: jest.fn() }, activityLog: { create: jest.fn() },
     $transaction: jest.fn(),
   };
 
@@ -279,8 +279,8 @@ describe('DocumentsService — who can reach whose documents', () => {
 
   describe('deleteOwnSupplied', () => {
     it('lets a member remove something they supplied', async () => {
-      prisma.document.findFirst.mockResolvedValue({ id: 'd1', type: { direction: 'SUPPLIED' } });
-      prisma.document.delete.mockResolvedValue({});
+      prisma.document.findFirst.mockResolvedValue({ id: 'd1', status: 'REJECTED', type: { direction: 'SUPPLIED' } });
+      prisma.$transaction.mockImplementation(async (fn: any) => fn({ ...prisma, document: { deleteMany: async () => ({ count: 1 }) } }));
       await expect(service.deleteOwnSupplied({ actor: actor(), documentId: 'd1' })).resolves.toEqual({
         success: true,
       });
@@ -291,7 +291,7 @@ describe('DocumentsService — who can reach whose documents', () => {
       await expect(
         service.deleteOwnSupplied({ actor: actor(), documentId: 'd1' }),
       ).rejects.toBeInstanceOf(ForbiddenException);
-      expect(prisma.document.delete).not.toHaveBeenCalled();
+      expect(prisma.document.deleteMany).not.toHaveBeenCalled();
     });
 
     it('only ever looks at the caller’s own documents', async () => {

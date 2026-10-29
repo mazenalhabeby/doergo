@@ -8390,7 +8390,8 @@
     "OVERTIME_ALREADY_DECIDED": "Alguien ya decidió estas horas extra.",
     "TIME_OFF_DECIDED": "Esta solicitud ya fue decidida.",
     "DOCUMENT_STEP_ALREADY_SIGNED": "Alguien ya firmó este paso. Abra el documento de nuevo para ver en qué punto está.",
-    "DOCUMENT_ALREADY_REVIEWED": "Alguien ya revisó este documento."
+    "DOCUMENT_ALREADY_REVIEWED": "Alguien ya revisó este documento.",
+    "OWN_DOCUMENT_ALREADY_ACCEPTED": "Su organización ya aceptó este documento y no se puede eliminar."
   },
   "signLink": {
     "tabs": {

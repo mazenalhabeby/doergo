@@ -8390,7 +8390,8 @@
     "OVERTIME_ALREADY_DECIDED": "Qualcuno ha già deciso su questi straordinari.",
     "TIME_OFF_DECIDED": "Questa richiesta è già stata decisa.",
     "DOCUMENT_STEP_ALREADY_SIGNED": "Qualcuno ha già firmato questo passaggio. Riapra il documento per vedere a che punto è.",
-    "DOCUMENT_ALREADY_REVIEWED": "Qualcuno ha già esaminato questo documento."
+    "DOCUMENT_ALREADY_REVIEWED": "Qualcuno ha già esaminato questo documento.",
+    "OWN_DOCUMENT_ALREADY_ACCEPTED": "La sua organizzazione ha già accettato questo documento e non può essere rimosso."
   },
   "signLink": {
     "tabs": {

@@ -3341,7 +3341,8 @@
       "SECOND_STEP_SAME_PERSON": "Sie haben die erste Freigabe gegeben — die zweite muss von {{role}} kommen.",
       "SECOND_STEP_REQUIRED": "Die zweite Freigabe gibt {{role}}.",
       "DOCUMENT_STEP_ALREADY_SIGNED": "Dieser Schritt wurde bereits unterschrieben. Öffnen Sie das Dokument erneut, um den aktuellen Stand zu sehen.",
-      "DOCUMENT_ALREADY_REVIEWED": "Dieses Dokument wurde bereits geprüft."
+      "DOCUMENT_ALREADY_REVIEWED": "Dieses Dokument wurde bereits geprüft.",
+      "OWN_DOCUMENT_ALREADY_ACCEPTED": "Dieses Dokument wurde von Ihrer Organisation bereits angenommen und kann nicht entfernt werden."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

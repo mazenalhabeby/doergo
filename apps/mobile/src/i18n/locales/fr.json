@@ -3341,7 +3341,8 @@
       "SECOND_STEP_SAME_PERSON": "Vous avez donné la première validation — la seconde doit venir de {{role}}.",
       "SECOND_STEP_REQUIRED": "La seconde validation revient à {{role}}.",
       "DOCUMENT_STEP_ALREADY_SIGNED": "Quelqu’un a déjà signé cette étape. Rouvrez le document pour voir où il en est.",
-      "DOCUMENT_ALREADY_REVIEWED": "Quelqu’un a déjà examiné ce document."
+      "DOCUMENT_ALREADY_REVIEWED": "Quelqu’un a déjà examiné ce document.",
+      "OWN_DOCUMENT_ALREADY_ACCEPTED": "Votre organisation a déjà accepté ce document, il ne peut plus être supprimé."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

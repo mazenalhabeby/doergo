@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { memberMayDelete, findPrior, personName, memberMaySupply, checkScan, PrismaService } from '@hbcfield/shared';
+import { findPrior, personName, memberMaySupply, checkScan, PrismaService } from '@hbcfield/shared';
 import {
   type DocumentActor,
   assertUploadable,
@@ -7,12 +7,14 @@ import {
   assertStagingKey,
   cuidish,
   eventContext,
+  type RequestContext,
 } from '../core/document-common';
 import { DocumentReadQueue } from '../reading/document-read-queue.service';
 import { DocumentStorageService } from '../core/document-storage.service';
 import { DocumentLookupService } from '../core/document-lookup.service';
 import { DocumentNotifierService } from '../core/document-notifier.service';
 import { extraSheets, ownDocumentRow, parseOwnExpiry, type SubmitOwnDocumentInput } from './own-document-steps';
+import { withdrawOwnDocument } from './own-document-withdraw';
 
 /**
  * What the member supplies themselves, and what is still required of them.
@@ -160,28 +162,8 @@ export class DocumentSupplyService {
    * Only ever their own, only ever SUPPLIED. Direction is the whole rule: a
    * payslip the member could remove is not a record of anything.
    */
-  async deleteOwnSupplied(data: { actor: DocumentActor; documentId: string }) {
-    const document = await this.prisma.document.findFirst({
-      where: {
-        id: data.documentId,
-        organizationId: data.actor.organizationId,
-        userId: data.actor.userId,
-      },
-      include: { type: { select: { direction: true } } },
-    });
-    if (!document) throw new NotFoundException('Document not found');
-
-    // On a BOTH type only their OWN upload: a copy the office filed carries `issuedById`.
-    if (!memberMayDelete(document.type.direction, document.issuedById === null)) {
-      throw new ForbiddenException('This document was issued to you and cannot be removed');
-    }
-
-    await this.prisma.document.delete({ where: { id: document.id } });
-
-    // The object is left in place deliberately: it is content-addressed, so
-    // another member's identical file may point at the same bytes. Orphans are
-    // collected by the retention sweep, which can see the whole picture.
-    return { success: true };
+  async deleteOwnSupplied(data: { actor: DocumentActor; documentId: string; ctx?: RequestContext }) {
+    return withdrawOwnDocument(this.prisma, this.storage, data);
   }
 
   /**
@@ -266,3 +248,4 @@ export class DocumentSupplyService {
     return type;
   }
 }
+
