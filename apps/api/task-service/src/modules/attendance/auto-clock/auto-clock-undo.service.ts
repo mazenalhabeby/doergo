@@ -78,13 +78,33 @@ export class AutoClockUndoService {
     const settings = readAutoClockSettings(entry.location?.autoClock);
     if (at.getTime() > autoClockUndoDeadline(entry.clockInAt, settings).getTime()) throw refuse('TOO_LATE');
 
-    const worked = await this.prisma.taskEvent.findFirst({
-      where: { userId: data.userId, createdAt: { gte: entry.clockInAt }, eventType: { in: [...WORK_EVENTS] as never } },
-      select: { id: true },
-    });
-    if (worked) throw refuse('WORK_RECORDED');
-
+    /*
+      The checks above are the quick refusals; the decision is made again INSIDE
+      one transaction. A rest, a work-log note, a job step or a clock-out can land
+      between the read and the delete, so the entry is removed only on the
+      conditions it was judged on (still open, nothing recorded) — a conditional
+      delete — and work events are asked again before it commits. Either fails →
+      the whole undo is refused and nothing is written.
+    */
     await this.prisma.$transaction(async (tx) => {
+      const removed = await tx.timeEntry.deleteMany({
+        where: {
+          id: entry.id,
+          status: TimeEntryStatus.CLOCKED_IN,
+          clockOutAt: null,
+          breaks: { none: {} },
+          workLog: { none: {} },
+        },
+      });
+      if (removed.count !== 1) {
+        const now = await tx.timeEntry.findUnique({ where: { id: entry.id }, select: { status: true } });
+        throw refuse(now?.status === TimeEntryStatus.CLOCKED_IN ? 'WORK_RECORDED' : 'CLOSED');
+      }
+      const worked = await tx.taskEvent.findFirst({
+        where: { userId: data.userId, createdAt: { gte: entry.clockInAt }, eventType: { in: [...WORK_EVENTS] as never } },
+        select: { id: true },
+      });
+      if (worked) throw refuse('WORK_RECORDED');
       // The expected shift it fulfilled is expected again — the person may still arrive.
       const instances = await tx.shiftInstance.findMany({
         where: { timeEntryId: entry.id },
@@ -100,8 +120,7 @@ export class AutoClockUndoService {
           data: { state: 'PENDING', timeEntryId: null, nextRemindAt: new Date(due) },
         });
       }
-      // Rests, presence, excursions and work-log cascade with the entry.
-      await tx.timeEntry.delete({ where: { id: entry.id } });
+      // (Presence and excursions cascaded with the entry, deleted above.)
       await tx.activityLog.create({
         data: {
           eventType: AUTO_UNDO_EVENT,
