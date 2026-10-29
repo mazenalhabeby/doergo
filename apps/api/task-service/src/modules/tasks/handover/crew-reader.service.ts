@@ -72,6 +72,8 @@ export class CrewReader {
   ): Promise<Array<{ userId: string; role: 'LEAD' | 'MEMBER' }>> {
     const rows = await this.prisma.taskAssignee.findMany({
       where: { taskId: task.id },
+      // Put on first, first — the order a stand-in is picked in must not be the database's whim.
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: { userId: true, role: true },
     });
     const out = new Map<string, 'LEAD' | 'MEMBER'>(rows.map((r) => [r.userId, r.role as 'LEAD' | 'MEMBER']));
@@ -111,7 +113,8 @@ export class CrewReader {
     );
     const joinedInOrder = [...presence]
       .filter(([, p]) => p.joined)
-      .sort((a, b) => (a[1].since ?? 0) - (b[1].since ?? 0))
+      // Join order; two joined at the same moment, by id — the same stand-in on every read.
+      .sort((a, b) => (a[1].since ?? 0) - (b[1].since ?? 0) || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
       .map(([id]) => id);
     const leadId = crew.find((c) => c.role === 'LEAD')?.userId ?? task.assignedToId ?? null;
     return effectiveLeader({

@@ -346,6 +346,28 @@ describe('CrewService.view', () => {
   });
 });
 
+describe('the acting stand-in is the same on every read', () => {
+  it('the crew is read in the order it was put on, then by id', async () => {
+    const s = setup();
+    await s.service.view('job1', actor('priya'));
+    expect(s.prisma.taskAssignee.findMany.mock.calls[0][0].orderBy).toEqual([{ createdAt: 'asc' }, { id: 'asc' }]);
+  });
+
+  it('two joined at the same moment: the stand-in is picked by id, not by the order the rows came back', async () => {
+    const at = T('07:40').toISOString();
+    const joins = (first: string, second: string) => [
+      { taskId: 'job1', createdAt: T('07:40'), userId: first, eventType: 'CREW_JOINED', metadata: { at } },
+      { taskId: 'job1', createdAt: T('07:40'), userId: second, eventType: 'CREW_JOINED', metadata: { at } },
+    ];
+    const a = setup({ onClock: ['priya', 'conor'], events: joins('priya', 'conor') });
+    const b = setup({ onClock: ['priya', 'conor'], events: joins('conor', 'priya') });
+    const leadA = ((await a.service.view('job1', actor('priya'))).data as any).leader.userId;
+    const leadB = ((await b.service.view('job1', actor('priya'))).data as any).leader.userId;
+    expect(leadA).toBe('conor');
+    expect(leadB).toBe('conor');
+  });
+});
+
 describe('CrewService.checklistAuthority — who may give a checklist item away', () => {
   it('the leader, read from the job\'s own history', async () => {
     const { service } = setup();
