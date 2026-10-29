@@ -112,6 +112,12 @@ export class AssetContractService {
        * request body and a client must not be able to switch notifications off.
        */
       announceHandover?: boolean;
+      /**
+       * Written INSIDE the same transaction, after the asset — a proposal marks
+       * itself accepted here, so a failure can never leave a vehicle created and
+       * the proposal back in the queue to create a second one.
+       */
+      withinTransaction?: (tx: Prisma.TransactionClient, asset: { id: string; name: string }) => Promise<void>;
     } = {},
   ) {
     this.assertMay(data, 'manage assets');
@@ -223,6 +229,7 @@ export class AssetContractService {
         },
       });
 
+      await options.withinTransaction?.(tx, asset);
       return { asset, replaced, retirable };
     });
 

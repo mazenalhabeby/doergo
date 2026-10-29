@@ -286,7 +286,7 @@ describe('AssetProposalService', () => {
     */
     it('keeps the handover quiet — the decision already tells the member', async () => {
       await accept();
-      expect(contracts.apply).toHaveBeenCalledWith(expect.anything(), { announceHandover: false });
+      expect(contracts.apply).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ announceHandover: false }));
       const decided = notifications.emit.mock.calls.filter(([e]: any[]) => e === 'asset_proposal_decided');
       expect(decided).toHaveLength(1);
     });

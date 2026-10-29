@@ -221,21 +221,20 @@ export class ProposalReviewService {
           people that this app repeats itself.
         */
           announceHandover: false,
+          // ⚠️ Marked in the SAME transaction that creates it: marked after, a failure re-queued it with a vehicle
+          // already created and the next accept made a second. On our own claim only; a miss rolls it all back.
+          withinTransaction: async (tx, asset) => {
+            const json = fields as unknown as Prisma.InputJsonValue;
+            const { count } = await tx.assetProposal.updateMany({
+              where: { id: proposal.id, status: PROPOSAL_STATUS.ACCEPTED, createdAssetId: null },
+              data: { reviewedById: data.userId, reviewedAt: new Date(), categoryId, createdAssetId: asset.id, fields: json },
+            });
+            if (count !== 1) throw new NotFoundException('That is not waiting for a decision');
+          },
         },
       );
 
       const assetId = applied?.data?.assetId ?? null;
-      await this.prisma.assetProposal.update({
-        where: { id: proposal.id },
-        data: {
-          status: PROPOSAL_STATUS.ACCEPTED,
-          reviewedById: data.userId,
-          reviewedAt: new Date(),
-          categoryId,
-          createdAssetId: assetId,
-          fields: fields as unknown as Prisma.InputJsonValue,
-        },
-      });
 
       this.notices.decided(
         proposal.raisedById,
