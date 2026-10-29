@@ -8388,7 +8388,8 @@
     "CHANGED_MEANWHILE": "Esto cambió mientras usted decidía. Vuelva a mirarlo y decida.",
     "CLOCK_OUT_IN_FUTURE": "Una salida no puede estar en el futuro.",
     "OVERTIME_ALREADY_DECIDED": "Alguien ya decidió estas horas extra.",
-    "TIME_OFF_DECIDED": "Esta solicitud ya fue decidida."
+    "TIME_OFF_DECIDED": "Esta solicitud ya fue decidida.",
+    "DOCUMENT_STEP_ALREADY_SIGNED": "Alguien ya firmó este paso. Abra el documento de nuevo para ver en qué punto está."
   },
   "signLink": {
     "tabs": {

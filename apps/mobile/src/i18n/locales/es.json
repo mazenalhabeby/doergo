@@ -3339,7 +3339,8 @@
       "NO_SHOW_ALREADY_DECIDED": "Alguien ya respondió a este turno perdido.",
       "REQUEST_ALREADY_ROUTED": "Esta solicitud del cliente ya se ha gestionado.",
       "SECOND_STEP_SAME_PERSON": "Usted dio la primera aprobación — la segunda debe venir de {{role}}.",
-      "SECOND_STEP_REQUIRED": "La segunda aprobación corresponde a {{role}}."
+      "SECOND_STEP_REQUIRED": "La segunda aprobación corresponde a {{role}}.",
+      "DOCUMENT_STEP_ALREADY_SIGNED": "Alguien ya firmó este paso. Abre el documento de nuevo para ver en qué punto está."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",

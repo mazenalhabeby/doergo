@@ -3339,7 +3339,8 @@
       "NO_SHOW_ALREADY_DECIDED": "Diese verpasste Schicht wurde bereits beantwortet.",
       "REQUEST_ALREADY_ROUTED": "Diese Kundenanfrage wurde bereits bearbeitet.",
       "SECOND_STEP_SAME_PERSON": "Sie haben die erste Freigabe gegeben — die zweite muss von {{role}} kommen.",
-      "SECOND_STEP_REQUIRED": "Die zweite Freigabe gibt {{role}}."
+      "SECOND_STEP_REQUIRED": "Die zweite Freigabe gibt {{role}}.",
+      "DOCUMENT_STEP_ALREADY_SIGNED": "Dieser Schritt wurde bereits unterschrieben. Öffnen Sie das Dokument erneut, um den aktuellen Stand zu sehen."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

@@ -87,9 +87,9 @@ describe('DocumentsService — a client signing a batch', () => {
       // must still be PENDING and still be the current step.
       findFirst: jest.fn(async () => ({ order: 3 })),
       update: jest.fn(),
-      updateMany: jest.fn(),
+      updateMany: jest.fn(async () => ({ count: 1 })),
     },
-    document: { findFirst: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+    document: { findFirst: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(async () => ({ count: 1 })) },
     documentSignature: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), updateMany: jest.fn() },
     documentEvent: { create: jest.fn(), count: jest.fn().mockResolvedValue(0), findFirst: jest.fn().mockResolvedValue(null) },
     $transaction: jest.fn(async (fn: any) => fn(prisma)),

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { personName, signatureStrength, type SignerStep, PrismaService } from '@hbcfield/shared';
 import { documentKey, sha256 } from '@hbcfield/shared/storage';
 import { sealSignedPdf } from '../core/contract-pdf';
@@ -143,8 +143,30 @@ export class DocumentSealService {
     const sealedAt = new Date();
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.document.update({
-        where: { id: document.id },
+      /*
+        CLAIM the step first, conditionally: two people (or two taps on two
+        devices) signing the same step both passed the turn check before either
+        wrote. Only the write that still finds the step PENDING wins; the other
+        rolls back and is told 409. A no-route document is claimed the same way
+        on its status just below.
+      */
+      if (params.signerRowId) {
+        const claimed = await tx.documentSigner.updateMany({
+          where: { id: params.signerRowId, status: 'PENDING' },
+          data: {
+            status: 'SIGNED',
+            signedAt,
+            // Who actually signed, out of everyone who could have. Until this
+            // moment the step had no answer to that, and recording it is what
+            // takes the document off the others' lists.
+            ...(signer.kind === 'user' ? { userId: signer.userId } : {}),
+          },
+        });
+        if (claimed.count === 0) throw alreadySigned();
+      }
+
+      const moved = await tx.document.updateMany({
+        where: { id: document.id, status: 'AWAITING_SIGNATURE' },
         data: {
           storageKey: sealedKey,
           sha256: hashAfter,
@@ -155,6 +177,7 @@ export class DocumentSealService {
           ...(params.isLastStep ? { status: 'SIGNED' as const } : {}),
         },
       });
+      if (moved.count === 0) throw alreadySigned();
 
       if (params.signerRowId) {
         /*
@@ -169,17 +192,6 @@ export class DocumentSealService {
         await tx.documentSignature.updateMany({
           where: { signerId: params.signerRowId },
           data: { signerId: null },
-        });
-        await tx.documentSigner.update({
-          where: { id: params.signerRowId },
-          data: {
-            status: 'SIGNED',
-            signedAt,
-            // Who actually signed, out of everyone who could have. Until this
-            // moment the step had no answer to that, and recording it is what
-            // takes the document off the others' lists.
-            ...(signer.kind === 'user' ? { userId: signer.userId } : {}),
-          },
         });
       }
 
@@ -272,4 +284,12 @@ export class DocumentSealService {
       lng: event?.lng ?? null,
     };
   }
+}
+
+/** The loser of two signatures on one step (or one document) at the same moment. */
+function alreadySigned() {
+  return new ConflictException({
+    message: 'Somebody already signed this step. Open the document again to see where it stands.',
+    code: 'DOCUMENT_STEP_ALREADY_SIGNED',
+  });
 }

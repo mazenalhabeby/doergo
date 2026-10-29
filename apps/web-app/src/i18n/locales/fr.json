@@ -8388,7 +8388,8 @@
     "CHANGED_MEANWHILE": "Cela a changé pendant que vous décidiez. Regardez à nouveau, puis décidez.",
     "CLOCK_OUT_IN_FUTURE": "Un pointage de sortie ne peut pas être dans le futur.",
     "OVERTIME_ALREADY_DECIDED": "Quelqu’un a déjà décidé de ces heures sup.",
-    "TIME_OFF_DECIDED": "Cette demande a déjà été décidée."
+    "TIME_OFF_DECIDED": "Cette demande a déjà été décidée.",
+    "DOCUMENT_STEP_ALREADY_SIGNED": "Quelqu’un a déjà signé cette étape. Rouvrez le document pour voir où il en est."
   },
   "signLink": {
     "tabs": {

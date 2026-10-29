@@ -34,7 +34,7 @@ describe('DocumentsService — signing', () => {
   };
 
   const prisma: Record<string, any> = {
-    document: { findFirst: jest.fn(), update: jest.fn(), create: jest.fn() },
+    document: { findFirst: jest.fn(), update: jest.fn(), updateMany: jest.fn(), create: jest.fn() },
     // findMany: the chain is re-read on every signing so the seal can render
     // every signature so far. Empty here — these are first signatures.
     documentSignature: { findUnique: jest.fn(), create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
@@ -106,7 +106,7 @@ describe('DocumentsService — signing', () => {
     prisma.documentSignature.findMany.mockResolvedValue([]);
     objects = new Map([['org1/documents/ab/contract.pdf', contractBytes]]);
     prisma.documentSignature.findUnique.mockResolvedValue(null);
-    prisma.document.update.mockImplementation(async ({ where, data }: any) => ({ id: where.id, ...data }));
+    prisma.document.updateMany.mockResolvedValue({ count: 1 });
 
     const module = await Test.createTestingModule({
       providers: [
@@ -216,7 +216,7 @@ describe('DocumentsService — signing', () => {
       const sig = prisma.documentSignature.create.mock.calls[0][0].data;
       expect(sig.hashAfter).not.toBe(sig.hashBefore);
 
-      const update = prisma.document.update.mock.calls[0][0].data;
+      const update = prisma.document.updateMany.mock.calls[0][0].data;
       expect(update.sha256).toBe(sig.hashAfter);
       expect(update.status).toBe('SIGNED');
       // Content-addressed, so the new key IS the new hash.

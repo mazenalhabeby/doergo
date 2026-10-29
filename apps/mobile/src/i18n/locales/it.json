@@ -3339,7 +3339,8 @@
       "NO_SHOW_ALREADY_DECIDED": "Qualcuno ha già risposto per questo turno mancato.",
       "REQUEST_ALREADY_ROUTED": "Questa richiesta del cliente è già stata gestita.",
       "SECOND_STEP_SAME_PERSON": "Ha dato la prima approvazione — la seconda deve venire da {{role}}.",
-      "SECOND_STEP_REQUIRED": "La seconda approvazione spetta a {{role}}."
+      "SECOND_STEP_REQUIRED": "La seconda approvazione spetta a {{role}}.",
+      "DOCUMENT_STEP_ALREADY_SIGNED": "Qualcuno ha già firmato questo passaggio. Riapri il documento per vedere a che punto è."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",

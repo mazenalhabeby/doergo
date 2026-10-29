@@ -8388,7 +8388,8 @@
     "CHANGED_MEANWHILE": "Questo è cambiato mentre decideva. Lo guardi di nuovo e decida.",
     "CLOCK_OUT_IN_FUTURE": "Una timbratura di uscita non può essere nel futuro.",
     "OVERTIME_ALREADY_DECIDED": "Qualcuno ha già deciso su questi straordinari.",
-    "TIME_OFF_DECIDED": "Questa richiesta è già stata decisa."
+    "TIME_OFF_DECIDED": "Questa richiesta è già stata decisa.",
+    "DOCUMENT_STEP_ALREADY_SIGNED": "Qualcuno ha già firmato questo passaggio. Riapra il documento per vedere a che punto è."
   },
   "signLink": {
     "tabs": {

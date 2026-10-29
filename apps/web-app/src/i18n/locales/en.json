@@ -8388,7 +8388,8 @@
     "CHANGED_MEANWHILE": "This changed while you were deciding. Look again and decide.",
     "CLOCK_OUT_IN_FUTURE": "A clock-out cannot be in the future.",
     "OVERTIME_ALREADY_DECIDED": "Somebody already decided this overtime.",
-    "TIME_OFF_DECIDED": "This request was already decided."
+    "TIME_OFF_DECIDED": "This request was already decided.",
+    "DOCUMENT_STEP_ALREADY_SIGNED": "Somebody already signed this step. Open the document again to see where it stands."
   },
   "signLink": {
     "tabs": {
