@@ -196,6 +196,14 @@ export function isRosteredOn(p: CoverPerson, day: DateKey): boolean {
   return true;
 }
 
+/**
+ * Does the person's OWN plan decide this day — a rota rule in force on it, or a working week?
+ * When neither does, the places they work in decide (calendar/days.ts asks them day by day).
+ */
+export function rotaDecidesDay(p: CoverPerson, day: DateKey): boolean {
+  return p.scheduleDows.length > 0 || p.shiftRules.some((r) => shiftRuleInForce(r, day));
+}
+
 /** Does this person have any rota at all, or are we counting heads? */
 export function hasRota(p: CoverPerson): boolean {
   return p.shiftRules.length > 0 || p.scheduleDows.length > 0;

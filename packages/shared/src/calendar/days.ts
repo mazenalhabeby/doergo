@@ -12,7 +12,16 @@
  *
  * Everything here is pure: the caller fetches the settings and the holiday list, this decides.
  */
-import { type DateKey, type Dow, dowOf, eachDay, isRosteredOn, hasRota, type CoverPerson } from '../attendance/cover';
+import {
+  type DateKey,
+  type Dow,
+  dowOf,
+  eachDay,
+  isRosteredOn,
+  hasRota,
+  rotaDecidesDay,
+  type CoverPerson,
+} from '../attendance/cover';
 
 /** Saturday and Sunday — what an organization has until it says otherwise. 0 = Sunday … 6 = Saturday. */
 export const DEFAULT_WEEKEND: readonly Dow[] = [6, 0];
@@ -56,8 +65,16 @@ export interface HolidayDay {
 
 /** Everything that decides a day in one place (a workspace, or the organization). */
 export interface DayRules {
+  /** Rest days of the week. For several places: only the days that rest in ALL of them. */
   weekend: ReadonlySet<number>;
+  /** Holidays. For several places: only the days that are a holiday in ALL of them. */
   holidays: ReadonlyMap<DateKey, HolidayDay>;
+  /**
+   * Several places (intersectDayRules): each one's own rules, so a day is decided PER DAY —
+   * `weekend` and `holidays` above alone cannot say that Fri 25 Dec is off in Vienna (holiday)
+   * AND in Riyadh (weekend).
+   */
+  places?: readonly DayRules[];
 }
 
 export function makeDayRules(weekend: readonly number[], holidays: Iterable<HolidayDay>): DayRules {
@@ -84,31 +101,51 @@ export function intersectDayRules(list: readonly DayRules[]): DayRules {
     const all = list.map((r) => r.holidays.get(day));
     if (all.every(Boolean)) holidays.set(day, all.some((x) => x!.halfDay) ? { ...h, halfDay: true } : h);
   }
-  return { weekend, holidays };
+  return { weekend, holidays, places: list.flatMap((r) => r.places ?? [r]) };
 }
 
 /**
  * The person layer. When somebody has a rota or a working week, THAT decides whether they work
  * a day (a member who works Sunday to Thursday in a Sat+Sun workspace). Without one, undefined —
  * the place's weekend decides. Same precedence as cover, by construction: it calls cover.
+ * A day no rota rule reaches (and no working week) is undefined too: the places decide it, day
+ * by day, rather than one weekend standing in for all of them.
  */
 export type RosterFn = (day: DateKey) => boolean | undefined;
 
 export function personRoster(p: CoverPerson | null | undefined): RosterFn | undefined {
   if (!p || !hasRota(p)) return undefined;
-  return (day) => isRosteredOn(p, day);
+  return (day) => (rotaDecidesDay(p, day) ? isRosteredOn(p, day) : undefined);
 }
 
 export type DayKind = 'work' | 'weekend' | 'off-rota' | 'holiday' | 'half-holiday';
 
-/** What a day is, for this place (and this person, when given). */
+/**
+ * What a day is, for this place (and this person, when given). Several places decide per day:
+ * work anywhere = work; else half a holiday anywhere = half; else off (a holiday when any place
+ * is closed for one, so it is named).
+ */
 export function dayKind(day: DateKey, rules: DayRules, roster?: RosterFn): DayKind {
+  if (rules.places?.length) return combinedKind(rules.places.map((p) => dayKind(day, p, roster)));
   const r = roster?.(day);
   const working = r === undefined ? !rules.weekend.has(dowOf(day)) : r;
   if (!working) return r === false ? 'off-rota' : 'weekend';
   const h = rules.holidays.get(day);
   if (h) return h.halfDay ? 'half-holiday' : 'holiday';
   return 'work';
+}
+
+function combinedKind(kinds: DayKind[]): DayKind {
+  for (const k of ['work', 'half-holiday', 'holiday', 'off-rota'] as const) if (kinds.includes(k)) return k;
+  return 'weekend';
+}
+
+/** The holiday that makes this day a (half) holiday for these rules — the name a count shows. */
+export function holidayOn(day: DateKey, rules: DayRules, roster?: RosterFn): HolidayDay | undefined {
+  if (!rules.places?.length) return rules.holidays.get(day);
+  const kind = dayKind(day, rules, roster);
+  for (const p of rules.places) if (dayKind(day, p, roster) === kind) return p.holidays.get(day);
+  return undefined;
 }
 
 /** What one day of leave costs: a working day 1, a half holiday ½, anything else nothing. */
@@ -152,7 +189,7 @@ export function countLeave(from: DateKey, to: DateKey, rules: DayRules, roster?:
   for (const day of eachDay(from, to, LEAVE_COUNT_MAX_DAYS)) {
     const kind = dayKind(day, rules, roster);
     const cost = leaveCostOf(kind);
-    const h = rules.holidays.get(day);
+    const h = holidayOn(day, rules, roster);
     if (kind === 'weekend' || kind === 'off-rota') restDays++;
     if ((kind === 'holiday' || kind === 'half-holiday') && h) {
       holidays.push({ day, name: h.name, halfDay: h.halfDay, estimated: h.estimated });

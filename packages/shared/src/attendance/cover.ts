@@ -28,6 +28,7 @@ export {
   dowOf,
   shiftRuleMatches,
   isRosteredOn,
+  rotaDecidesDay,
   hasRota,
   type DayCover,
   coverOn,
