@@ -1,4 +1,4 @@
-import { autoClockActive, type MemberAutoClockSettings } from '@hbcfield/shared';
+import { autoClockActive, effectiveClockRules, type MemberAutoClockSettings } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { type DayRequestRow } from '../core/approved-requests';
 
@@ -33,13 +33,17 @@ interface EntryRef {
 /**
  * What "is this member automatic, and how" reads — one select, one mapping, so
  * the clock-in, the clock-out, the sweeps and the plan cannot answer it differently.
- * The workspace's hours without a shift are read LIVE: changing them on the
- * workspace changes them for every running session at once.
+ * The hours without a shift are read LIVE: changing them on the workspace — or
+ * the member's OWN hours there ("works here as" / own daily hours, through
+ * `effectiveClockRules`) — changes them for every running session at once, so
+ * "Still working?", the leader and the close go by the person's own day.
  */
 const MEMBER_AUTO_CLOCK_SELECT = {
   autoClock: true,
   autoClockMode: true,
   autoClockStartWindow: true,
+  workAs: true,
+  workDailyMinutes: true,
   space: { select: { autoClock: true, noShiftDailyMinutes: true, noShiftPolicy: true } },
   user: { select: { autoClockConsentAt: true, isExternal: true } },
 } as const;
@@ -48,9 +52,12 @@ function memberAutoClock(row: {
   autoClock: boolean;
   autoClockMode: string;
   autoClockStartWindow: Prisma.JsonValue | null;
+  workAs?: string | null;
+  workDailyMinutes?: number | null;
   space: { autoClock: Prisma.JsonValue | null; noShiftDailyMinutes: number; noShiftPolicy: string };
   user: { autoClockConsentAt: Date | null; isExternal: boolean };
 }): MemberAutoClockSettings | null {
+  const own = effectiveClockRules(row.space, row);
   return autoClockActive({
     consentAt: row.user.autoClockConsentAt,
     settings: row.space.autoClock,
@@ -58,8 +65,8 @@ function memberAutoClock(row: {
     isExternal: row.user.isExternal,
     mode: row.autoClockMode,
     startWindow: row.autoClockStartWindow,
-    noShiftDailyMinutes: row.space.noShiftDailyMinutes,
-    noShiftPolicy: row.space.noShiftPolicy,
+    noShiftDailyMinutes: own.noShiftDailyMinutes,
+    noShiftPolicy: own.noShiftPolicy,
   });
 }
 

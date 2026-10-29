@@ -1,5 +1,5 @@
 /** A workspace's hours without a shift changed: the sessions running there follow at once. */
-import { rearmNoShiftSessions } from '../core/no-shift-rearm';
+import { rearmMemberNoShiftSession, rearmNoShiftSessions } from '../core/no-shift-rearm';
 
 const sqlOf = (call: unknown[]) => (call[0] as TemplateStringsArray).join('?');
 
@@ -26,5 +26,23 @@ describe('rearmNoShiftSessions', () => {
     const $executeRaw = jest.fn();
     expect(await rearmNoShiftSessions({ $executeRaw } as any, { spaceId: 's1', organizationId: 'o1', fromMinutes: 480, toMinutes: 480 })).toEqual({ reminders: 0, limits: 0 });
     expect($executeRaw).not.toHaveBeenCalled();
+  });
+});
+
+describe('rearmMemberNoShiftSession (a member’s OWN hours changed)', () => {
+  it('re-times only THAT member’s running session, by the same two updates', async () => {
+    const $executeRaw = jest.fn().mockResolvedValue(1);
+    const res = await rearmMemberNoShiftSession({ $executeRaw } as any, {
+      userId: 'u1', spaceId: 's1', organizationId: 'o1', fromMinutes: 480, toMinutes: 360,
+    });
+    expect(res).toEqual({ reminders: 1, limits: 1 });
+    for (const c of $executeRaw.mock.calls) {
+      // The scope rides as a nested Prisma.Sql fragment.
+      const scope = c.find((x: any) => x && typeof x === 'object' && !Array.isArray(x) && 'strings' in x) as any;
+      expect(scope.sql).toContain('"userId" = ');
+      expect(scope.values).toEqual(['u1']);
+      expect(scope.sql).not.toContain('NOT EXISTS');
+    }
+    expect($executeRaw.mock.calls[1]).toContain(-120);
   });
 });

@@ -4,6 +4,7 @@ import {
   activeAssignmentWhere,
   addDaysStr,
   autoClockOffered,
+  effectiveClockRules,
   geofenceArmRadius,
   localPartsIn,
   parseGeofencePolygon,
@@ -64,7 +65,15 @@ export class AutoClockPlanService {
         autoClock: true,
         OR: [activeAssignmentWhere(data.userId, now), activeAssignmentWhere(data.userId, tomorrow)],
       },
-      select: { spaceId: true, autoClock: true, autoClockMode: true, autoClockStartWindow: true },
+      select: {
+        spaceId: true,
+        autoClock: true,
+        autoClockMode: true,
+        autoClockStartWindow: true,
+        // The member's own hours there ("works here as" / own daily hours) — the phone's "Still working?" goes by them.
+        workAs: true,
+        workDailyMinutes: true,
+      },
     });
     const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
     // How this member is clocked in each workspace (PRESENCE wins when any active row says so).
@@ -106,6 +115,7 @@ export class AutoClockPlanService {
     const chosen = locations
       .map((l) => {
         const a = assignmentFor(l.id);
+        const own = effectiveClockRules(l, a);
         return {
           l,
           settings: autoClockOffered({
@@ -114,8 +124,8 @@ export class AutoClockPlanService {
             isExternal: user.isExternal,
             mode: a.autoClockMode,
             startWindow: a.autoClockStartWindow,
-            noShiftDailyMinutes: l.noShiftDailyMinutes,
-            noShiftPolicy: l.noShiftPolicy,
+            noShiftDailyMinutes: own.noShiftDailyMinutes,
+            noShiftPolicy: own.noShiftPolicy,
           }),
         };
       })

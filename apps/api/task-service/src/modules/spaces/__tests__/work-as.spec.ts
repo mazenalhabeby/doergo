@@ -15,7 +15,7 @@ function build() {
         spaceId: 'loc-1',
         user: { isExternal: false },
       }),
-      update: jest.fn(async ({ data }: any) => ({ id: 'a1', spaceId: 'loc-1', space: {}, user: {}, ...data })),
+      update: jest.fn(async ({ data }: any) => ({ id: 'a1', spaceId: 'loc-1', space: { noShiftDailyMinutes: 480 }, user: {}, ...data })),
       updateMany: jest.fn(),
       findMany: jest.fn().mockResolvedValue([]),
     },
@@ -63,5 +63,30 @@ describe('works here as (D1)', () => {
     await run({ autoClock: true });
     expect(saved(prisma)).not.toHaveProperty('workAs');
     expect(saved(prisma)).not.toHaveProperty('workDailyMinutes');
+  });
+
+  it('own hours changed: the member’s RUNNING session there is re-timed at once (only theirs)', async () => {
+    const { prisma, run } = build();
+    await run({ workDailyMinutes: 600 });
+    expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
+    const [free, limited] = prisma.$executeRaw.mock.calls;
+    expect(free).toContain(600); // clock-in + their own 10 h
+    expect(limited).toContain(120); // the limit's end moves by the change (480 → 600)
+    for (const c of [free, limited]) expect(c[0].join('?')).toContain('"locationId" = ?');
+  });
+
+  it('back to the workspace’s hours re-times from their own to the workspace’s', async () => {
+    const { prisma, run } = build();
+    prisma.spaceAssignment.findFirst.mockResolvedValueOnce({
+      id: 'a1', organizationId: 'org-1', userId: 'u1', spaceId: 'loc-1', workDailyMinutes: 600, user: { isExternal: false },
+    });
+    await run({ workDailyMinutes: null });
+    expect(prisma.$executeRaw.mock.calls[1]).toContain(-120);
+  });
+
+  it('a PATCH that leaves their hours alone touches no running session', async () => {
+    const { prisma, run } = build();
+    await run({ autoClock: true });
+    expect(prisma.$executeRaw).not.toHaveBeenCalled();
   });
 });

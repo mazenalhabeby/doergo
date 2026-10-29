@@ -15,6 +15,7 @@ import {
 import { assertValidScheduleDays } from './space-helpers';
 import { PrismaService } from '@hbcfield/shared';
 import { SpaceAnnouncer } from './space-announcer.service';
+import { rearmMemberNoShiftSession } from '../attendance/core/no-shift-rearm';
 
 /** A member's terms in one workspace: roles, bill terms, the automatic clock. */
 @Injectable()
@@ -181,6 +182,18 @@ export class AssignmentTermsService {
     });
 
     this.logger.log(`Assignment updated: ${updated.id}`);
+    // Their OWN hours changed: their running session there follows at once, as everybody's does
+    // when the workspace's hours change (rearmNoShiftSessions). null = back to the workspace's.
+    if (data.workDailyMinutes !== undefined && updated.spaceId) {
+      const wsMinutes = updated.space?.noShiftDailyMinutes;
+      await rearmMemberNoShiftSession(this.prisma, {
+        userId: assignment.userId,
+        spaceId: updated.spaceId,
+        organizationId: data.organizationId,
+        fromMinutes: assignment.workDailyMinutes ?? wsMinutes,
+        toMinutes: updated.workDailyMinutes ?? wsMinutes,
+      });
+    }
     this.announcer.announce('space_roster_changed', data.organizationId, updated.spaceId ?? null);
     // Chosen for the automatic clock just now → tell them the switch is there.
     if (data.autoClock === true && assignment.autoClock !== true && updated.spaceId) {

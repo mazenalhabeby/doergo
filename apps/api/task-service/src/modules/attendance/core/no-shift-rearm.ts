@@ -19,21 +19,49 @@ import type { PrismaService } from '@hbcfield/shared';
  */
 export async function rearmNoShiftSessions(
   prisma: Pick<PrismaService, '$executeRaw'>,
-  input: { spaceId: string; organizationId: string; fromMinutes: number | null | undefined; toMinutes: number | null | undefined },
+  input: RearmInput,
+): Promise<{ reminders: number; limits: number }> {
+  const notOwnHours = Prisma.sql`AND NOT EXISTS (SELECT 1 FROM "space_assignments" a
+    WHERE a."userId" = "time_entries"."userId" AND a."spaceId" = ${input.spaceId} AND a."workDailyMinutes" IS NOT NULL
+      AND (a."effectiveTo" IS NULL OR a."effectiveTo" >= now()))`;
+  return rearm(prisma, input, notOwnHours);
+}
+
+/**
+ * The same for ONE member whose OWN hours there changed (their own daily hours,
+ * or back to the workspace's): their running session follows at once, as
+ * everybody's does when the workspace's hours change. `fromMinutes` /
+ * `toMinutes` are the hours in force for THEM before and after.
+ */
+export async function rearmMemberNoShiftSession(
+  prisma: Pick<PrismaService, '$executeRaw'>,
+  input: { userId: string } & RearmInput,
+): Promise<{ reminders: number; limits: number }> {
+  return rearm(prisma, input, Prisma.sql`AND "userId" = ${input.userId}`);
+}
+
+type RearmInput = {
+  spaceId: string;
+  organizationId: string;
+  fromMinutes: number | null | undefined;
+  toMinutes: number | null | undefined;
+};
+
+async function rearm(
+  prisma: Pick<PrismaService, '$executeRaw'>,
+  input: RearmInput,
+  scope: Prisma.Sql,
 ): Promise<{ reminders: number; limits: number }> {
   const from = clampDailyMinutes(input.fromMinutes);
   const to = clampDailyMinutes(input.toMinutes);
   if (from === to) return { reminders: 0, limits: 0 };
   const open = TimeEntryStatus.CLOCKED_IN;
-  const notOwnHours = Prisma.sql`AND NOT EXISTS (SELECT 1 FROM "space_assignments" a
-    WHERE a."userId" = "time_entries"."userId" AND a."spaceId" = ${input.spaceId} AND a."workDailyMinutes" IS NOT NULL
-      AND (a."effectiveTo" IS NULL OR a."effectiveTo" >= now()))`;
   const reminders = await prisma.$executeRaw`
     UPDATE "time_entries" SET "nextRemindAt" = "clockInAt" + make_interval(mins => ${to}::int), "updatedAt" = now()
     WHERE "locationId" = ${input.spaceId} AND "organizationId" = ${input.organizationId}
       AND "status" = ${open}::"TimeEntryStatus" AND "expectedClockOutAt" IS NULL
       AND "reminderCount" = 0 AND "nextRemindAt" IS NOT NULL
-      ${notOwnHours}`;
+      ${scope}`;
   const delta = to - from;
   const grace = SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
   const limits = await prisma.$executeRaw`
@@ -45,7 +73,7 @@ export async function rearmNoShiftSessions(
         "updatedAt" = now()
     WHERE "locationId" = ${input.spaceId} AND "organizationId" = ${input.organizationId}
       AND "status" = ${open}::"TimeEntryStatus" AND "endIsDailyLimit" = true
-      ${notOwnHours}`;
+      ${scope}`;
   return { reminders, limits };
 }
 
