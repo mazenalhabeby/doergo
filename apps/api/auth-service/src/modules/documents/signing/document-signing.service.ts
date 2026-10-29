@@ -21,6 +21,7 @@ import {
   CONSENT_TEXT,
   decodeSignaturePng,
   eventContext,
+  alreadySigned,
 } from '../core/document-common';
 import { DocumentStorageService } from '../core/document-storage.service';
 import { DocumentLookupService } from '../core/document-lookup.service';
@@ -203,54 +204,57 @@ export class DocumentSigningService {
     if (document.type.signatureMode !== 'ACKNOWLEDGE') {
       throw new BadRequestException('This document needs a signature, not an acknowledgement.');
     }
+    // With a route, acknowledging is the caller's STEP, like a signature: only
+    // their step moves (claimed while PENDING); ISSUED only when every step is
+    // done. It used to set ISSUED at once, skipping everybody after them.
+    const steps = await this.lookup.signerSteps(document.id);
+    const current = nextPendingStep(steps);
+    const isLast =
+      steps.length === 0 ||
+      chainProgress(steps.map((s) => (s.order === current?.order ? { ...s, status: 'SIGNED' as const } : s))).complete;
+
     await this.prisma.$transaction(async (tx) => {
-      await tx.document.update({ where: { id: document.id }, data: { status: 'ISSUED' } });
+      if (current) {
+        const claimed = await tx.documentSigner.updateMany({
+          where: { documentId: document.id, order: current.order, status: 'PENDING' },
+          data: { status: 'SIGNED', signedAt: new Date(), userId: data.actor.userId },
+        });
+        if (claimed.count === 0) throw alreadySigned();
+      }
+      const moved = await tx.document.updateMany({
+        where: { id: document.id, status: 'AWAITING_SIGNATURE' },
+        data: isLast ? { status: 'ISSUED' } : {},
+      });
+      if (moved.count === 0) throw alreadySigned();
       await tx.documentEvent.create({
         data: {
           documentId: document.id,
           type: 'ACKNOWLEDGED',
           actorId: data.actor.userId,
+          ...(current ? { meta: { step: current.order } } : {}),
           ...eventContext(data.ctx),
         },
       });
     });
+    if (!isLast) await this.notifier.notifyNextSigner(document.id, document.title);
     return { success: true };
   }
 
   /**
-   * A document this caller may sign, or a refusal.
+   * The document this caller may sign right now — SELF ONLY: no permission
+   * grants signing on somebody else's behalf, and no flag could allow it.
    *
-   * SELF ONLY, and not negotiable. No permission grants the right to sign on
-   * somebody else's behalf — that is the one thing a signature cannot survive,
-   * and there is deliberately no flag anywhere that could be set to allow it.
-   */
-  /**
-   * The document this caller may sign right now, and the step they are signing.
+   *   NO ROUTE   the document's own member signs it, and nobody else; a
+   *              colleague's id is NOT FOUND rather than refused.
+   *   A ROUTE    the person being waited on signs it (their manager signing a
+   *              time sheet). Out of turn is refused, never queued: the order
+   *              on the page must mean something.
    *
-   * Two shapes, and the difference is the whole of Phase 2:
-   *
-   *   NO ROUTE   the document's own member signs it, and nobody else. This is
-   *              every document issued before routes existed and every type
-   *              that never gets one, so it is scoped in the WHERE clause as
-   *              before — a colleague's id is NOT FOUND rather than refused.
-   *
-   *   A ROUTE    the person being waited on signs it, who is usually not the
-   *              document's subject. Their manager signing a time sheet is the
-   *              entire point. Turn is decided by the chain, so the query
-   *              cannot be scoped to the caller and the refusal is explicit.
-   *
-   * Signing out of turn is refused rather than queued. A signature means "I
-   * agree with what is above my name", and above the manager's name is supposed
-   * to be the worker's signature — collecting them in any order would make the
-   * order on the page a decoration.
+   * The document is found in the caller's organization FIRST. Reading the
+   * chain before it answered "already signed" / "somebody else's turn" for any
+   * id — another organization's included — an existence oracle.
    */
   private async findSignableOr404(actor: DocumentActor, documentId: string) {
-    /*
-      The document FIRST, in the caller's organization. Reading the chain
-      before this answered "already signed" / "somebody else's turn" for any
-      id at all — another organization's included — which is an existence
-      oracle. Anything the caller is not part of is simply not found.
-    */
     const document = await this.prisma.document.findFirst({
       where: {
         id: documentId,
