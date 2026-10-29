@@ -185,9 +185,28 @@ export class TaskAssignmentService {
     });
 
     if (isReassign) {
-      await this.support.createTaskEvent(data.id, data.userId, TaskEventType.UNASSIGNED, {
-        previousWorkerId: previousAssignee,
+      /*
+        The old lead keeps their crew row (demoted to MEMBER below): that is a change
+        of LEAD, as a permanent hand-over writes it — never an UNASSIGNED, which job
+        time reads as them LEAVING the job while they are still on it.
+      */
+      const staysOnCrew = await this.prisma.taskAssignee.findUnique({
+        where: { taskId_userId: { taskId: data.id, userId: previousAssignee } },
+        select: { id: true },
       });
+      if (staysOnCrew) {
+        await this.support.createTaskEvent(data.id, data.userId, TaskEventType.LEAD_CHANGED, {
+          from: previousAssignee,
+          to: data.workerId,
+          toName: personName(worker),
+          scope: 'PERMANENT',
+          by: 'OFFICE',
+        });
+      } else {
+        await this.support.createTaskEvent(data.id, data.userId, TaskEventType.UNASSIGNED, {
+          previousWorkerId: previousAssignee,
+        });
+      }
     }
 
     await this.support.createTaskEvent(data.id, data.userId, TaskEventType.ASSIGNED, {

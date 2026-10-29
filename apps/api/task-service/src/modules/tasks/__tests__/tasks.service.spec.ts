@@ -569,6 +569,30 @@ describe('TasksService', () => {
       expect(payload).not.toHaveProperty('workerEmail');
     });
 
+    it('reassigning the lead: the old lead who stays on the crew is not written as leaving the job', async () => {
+      const assign = (taskOver: object, rowOfOldLead: object | null) => {
+        mockPrismaService.task.findUnique.mockResolvedValue({ ...mockTask, assignedToId: 'old-lead', ...taskOver });
+        mockPrismaService.user.findFirst.mockResolvedValue(mockTechnician);
+        mockPrismaService.task.update.mockResolvedValue({ ...mockTask, assignedToId: 'tech-123' });
+        mockPrismaService.taskAssignee.findUnique.mockImplementation(async ({ where }: any) =>
+          where.taskId_userId.userId === 'old-lead' ? rowOfOldLead : null);
+        mockPrismaService.taskEvent.create.mockClear();
+        return service.assign({
+          id: 'task-123', workerId: 'tech-123', userId: 'user-123', userRole: Role.EMPLOYEE,
+          canViewAllTasks: true, canAssignTasks: true, organizationId: 'org-123',
+        });
+      };
+      const types = () => mockPrismaService.taskEvent.create.mock.calls.map((c: any) => c[0].data.eventType);
+      await assign({}, { id: 'row-old' });
+      expect(types()).toContain(TaskEventType.LEAD_CHANGED);
+      expect(types()).not.toContain(TaskEventType.UNASSIGNED);
+      // An old lead with no crew row (assigned the legacy way) does leave.
+      await assign({}, null);
+      expect(types()).toContain(TaskEventType.UNASSIGNED);
+      mockPrismaService.taskAssignee.findUnique.mockReset();
+      mockPrismaService.taskAssignee.findUnique.mockResolvedValue(null);
+    });
+
     it('should throw NotFoundException for non-existent task', async () => {
       mockPrismaService.task.findUnique.mockResolvedValue(null);
 
