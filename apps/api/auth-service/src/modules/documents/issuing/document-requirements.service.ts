@@ -6,8 +6,9 @@ import {
   isCurrentSigner,
   type SignerStep,
   PrismaService,
+  visibleTypeSelfWhere,
 } from '@hbcfield/shared';
-import { type DocumentActor } from '../core/document-common';
+import { type DocumentActor, typeScope } from '../core/document-common';
 import { DocumentChainService } from '../core/document-chain.service';
 
 /** What is required OF a member, and what waits ON them. */
@@ -45,12 +46,27 @@ export class DocumentRequirementsService {
     });
     if (!member) throw new NotFoundException('Member not found');
 
+    /*
+      Somebody else's requirements follow the type-visibility rule: a type the
+      reader may not see is not listed, and their held documents are read
+      through the same scope as every other list. Your own stay whole.
+    */
+    const viewer = { roleId: data.actor.roleId ?? null, isAdmin: !!data.actor.isAdmin };
     const [types, held] = await Promise.all([
       this.prisma.documentType.findMany({
-        where: { organizationId: data.actor.organizationId, isActive: true, direction: { in: ['SUPPLIED', 'BOTH'] } },
+        where: {
+          organizationId: data.actor.organizationId,
+          isActive: true,
+          direction: { in: ['SUPPLIED', 'BOTH'] },
+          ...(isSelf ? {} : visibleTypeSelfWhere(viewer)),
+        },
       }),
       this.prisma.document.findMany({
-        where: { organizationId: data.actor.organizationId, userId: targetUserId },
+        where: {
+          organizationId: data.actor.organizationId,
+          userId: targetUserId,
+          ...(isSelf ? {} : typeScope(data.actor)),
+        },
         select: { typeId: true, status: true, expiresOn: true },
       }),
     ]);
