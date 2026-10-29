@@ -119,7 +119,10 @@ export class ContactImportService {
     // ── A retried import is the same import: refs already used ──
     const refs = items.map((i) => i.ref);
     const replayed = new Map(
-      (await this.prisma.customer.findMany({ where: { id: { in: refs } }, select: { id: true, organizationId: true, name: true } }))
+      (await this.prisma.customer.findMany({
+        where: { id: { in: refs } },
+        select: { id: true, organizationId: true, name: true, spaceId: true, ownerId: true, managerIds: true },
+      }))
         .map((r) => [r.id, r]),
     );
 
@@ -164,11 +167,14 @@ export class ContactImportService {
 
       const prior = replayed.get(item.ref);
       if (prior) {
-        if (prior.organizationId !== organizationId) {
+        // A ref is not a key: a replay answers only for a client the caller still reaches, and
+        // anything else reads exactly like another organization's id — its name is never told.
+        if (prior.organizationId !== organizationId || !this.customers.canReach(crm, prior, caller)) {
           results.set(item.ref, { ...base, outcome: 'skipped', reason: 'NOT_YOURS' });
         } else {
           results.set(item.ref, { ...base, outcome: 'created', id: prior.id, name: prior.name });
-          if (item.kind === 'COMPANY') companyOf.set(item.ref, { id: prior.id, isNew: false, spaceId });
+          // Where the company IS filed, not where this import files new clients.
+          if (item.kind === 'COMPANY') companyOf.set(item.ref, { id: prior.id, isNew: false, spaceId: prior.spaceId });
         }
         continue;
       }
