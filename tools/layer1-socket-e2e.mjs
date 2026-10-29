@@ -80,7 +80,7 @@ spoof.s.close();
 
 // ── things happen in Service Center ─────────────────────────────────────────────────────────────────────────────────
 const owner = people.owner.token;
-const scMember = sql(`select sa."userId" from space_assignments sa join users u on u.id=sa."userId" where sa."spaceId"='${SC}' and u.email not in ('mike@example.com','noor@example.com','client@example.com') and not u."isExternal" limit 1`);
+const scMember = sql(`select sa."userId" from space_assignments sa join users u on u.id=sa."userId" where sa."spaceId"='${SC}' and u.email not in ('mike@example.com','noor@example.com','client@example.com') and not u."isExternal" order by u.email limit 1`);
 const created = await call('POST', '/tasks', owner, { title: 'L1 socket test', spaceId: SC });
 const taskId = created.data?.id;
 check('the owner creates a job in Service Center', !!taskId, JSON.stringify(created).slice(0, 200));
@@ -99,7 +99,12 @@ await call('POST', `/tasks/${taskId}/comments`, owner, { content: 'L1 socket com
 const conv = await call('POST', '/chat/conversations', owner, { userId: scMember });
 const convId = conv.data?.id;
 if (convId) await call('POST', `/chat/conversations/${convId}/messages`, owner, { body: 'L1 socket chat' });
-const day = '2026-10-27';
+// A past day the member has NO hours on — a day already recorded is skipped, and a skip announces nothing.
+const day = sql(
+  `select d::date::text from generate_series(current_date - 40, current_date - 10, interval '1 day') d ` +
+    `where not exists (select 1 from time_entries e where e."userId"='${scMember}' ` +
+    `and e."clockInAt"::date between d::date - 1 and d::date + 1) order by d desc limit 1`,
+);
 const before = sql(`select coalesce(max("createdAt"), now())::text from time_entries`);
 const manual = await call('POST', '/attendance/entries/manual', owner, {
   userId: scMember, locationId: SC, startDate: day, endDate: day, startTime: '06:00', endTime: '07:00',
