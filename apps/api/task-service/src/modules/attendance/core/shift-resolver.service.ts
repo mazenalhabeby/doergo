@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { notEndedWhere, zoneOf, rotaFor, dowOfDay, workspaceSchedulesShifts } from '@hbcfield/shared';
+import { notEndedWhere, zoneOf, rotasFor, dowOfDay, workspaceSchedulesShifts } from '@hbcfield/shared';
 import { SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
 // Wall time ↔ UTC comes from ONE place. This service used to carry a verbatim
 // private copy of all of it; two copies of "what time is 06:00 in Vienna" are
@@ -135,38 +135,39 @@ export class ShiftResolverService {
     for (const space of scheduling) {
       const tz = zoneOf(space.timezone);
       const windows: PlannedWindow[] = [];
+      const mine = assignments.filter((x) => x.spaceId === space.id);
       for (const dateStr of daysBySpace.get(space.id) ?? []) {
-        // The shared rota rule (`rotaFor`: priority, then most recently effective, in force, runs that day).
-        const a = rotaFor(
-          assignments.filter((x) => x.spaceId === space.id),
-          dateStr,
-        );
-        let found: (typeof windows)[number] | null = a?.shift
-          ? {
-              dateStr,
-              shiftId: a.shift.id,
-              toleranceMin: a.shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
-              ...shiftWindowOn(a.shift, tz, dateStr),
-            }
-          : null;
-        if (!found) {
-          const dow = dowOfDay(dateStr);
-          const legacy = schedules.find((s) => s.dayOfWeek === dow && s.endTime);
-          if (legacy) {
-            found = {
-              dateStr,
-              shiftId: null,
-              toleranceMin: SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, // legacy schedules use the default
-              ...shiftWindowOn(
-                { startLocal: legacy.startTime, endLocal: legacy.endTime!, crossesMidnight: false },
-                tz,
-                dateStr,
-              ),
-            };
-          }
+        /*
+          The shared rota rule (`rotasFor`: in force, runs that day, by priority then most recently
+          effective) — EVERY row that plans the day: a split day is two windows, as the clock-in
+          sees it. One row per day hid the afternoon of 08:00–12:00 + 13:00–17:00.
+        */
+        const planned = rotasFor(mine, dateStr).filter((a) => a.shift);
+        for (const a of planned) {
+          windows.push({
+            dateStr,
+            shiftId: a.shift.id,
+            toleranceMin: a.shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+            ...shiftWindowOn(a.shift, tz, dateStr),
+          });
         }
-        if (found) windows.push(found);
+        if (planned.length) continue;
+        const dow = dowOfDay(dateStr);
+        const legacy = schedules.find((s) => s.dayOfWeek === dow && s.endTime);
+        if (legacy) {
+          windows.push({
+            dateStr,
+            shiftId: null,
+            toleranceMin: SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, // legacy schedules use the default
+            ...shiftWindowOn(
+              { startLocal: legacy.startTime, endLocal: legacy.endTime!, crossesMidnight: false },
+              tz,
+              dateStr,
+            ),
+          });
+        }
       }
+      windows.sort((a, b) => a.expectedClockInAt.getTime() - b.expectedClockInAt.getTime());
       out.set(space.id, windows);
     }
     return out;

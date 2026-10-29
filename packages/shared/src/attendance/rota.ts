@@ -72,14 +72,20 @@ export function rotaInForceOn(
  * then the most recently effective — the clock-in's own order.
  */
 export function rotaFor<T extends RotaAssignmentLike>(assignments: readonly T[], dateStr: string): T | null {
+  return rotasFor(assignments, dateStr)[0] ?? null;
+}
+
+/**
+ * EVERY assignment that plans this day, in the same order — a split day (08:00–12:00 and
+ * 13:00–17:00) is two rows, and the clock-in holds a person to whichever the moment falls in.
+ */
+export function rotasFor<T extends RotaAssignmentLike>(assignments: readonly T[], dateStr: string): T[] {
   const ranked = [...assignments].sort(
     (a, b) => b.priority - a.priority || dayOf(b.effectiveFrom).localeCompare(dayOf(a.effectiveFrom)),
   );
-  for (const a of ranked) {
-    if (a.shift && a.shift.isActive === false) continue;
-    if (rotaInForceOn(a, dateStr) && rotaRunsOn(a, dateStr)) return a;
-  }
-  return null;
+  return ranked.filter(
+    (a) => !(a.shift && a.shift.isActive === false) && rotaInForceOn(a, dateStr) && rotaRunsOn(a, dateStr),
+  );
 }
 
 /* ------------------------------------------------------------------ */

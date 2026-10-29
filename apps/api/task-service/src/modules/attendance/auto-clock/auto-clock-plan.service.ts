@@ -161,22 +161,27 @@ export class AutoClockPlanService {
 
     const places: AutoClockPlace[] = active.map(({ l, settings }) => {
       const tz = zoneOf(l.timezone);
-      const byDay = new Map((windows.get(l.id) ?? []).map((w) => [w.dateStr, w]));
+      const mine = windows.get(l.id) ?? [];
       const shifts: Array<{ start: string; end: string }> = [];
       for (const dateStr of daysOf(tz)) {
-        const w = byDay.get(dateStr);
-        // Changed hours / agreed overtime move the day exactly as at clock-in (the shared rule).
-        const effect = dayRequestEffect(requests, {
-          spaceId: l.id,
-          at: zonedWallTimeToUtc(dateStr, 12, 0, tz),
-          tz,
-          expectedClockInAt: w?.expectedClockInAt ?? null,
-          expectedClockOutAt: w?.expectedClockOutAt ?? null,
-        });
-        const start = effect.expectedClockInAt ?? w?.expectedClockInAt ?? null;
-        const end = effect.expectedClockOutAt ?? w?.expectedClockOutAt ?? null;
-        if (!start || !end || end.getTime() <= now.getTime() || end <= start) continue;
-        shifts.push({ start: start.toISOString(), end: end.toISOString() });
+        // Every window of the day (a split day is two); a day with none still asks the requests.
+        const today = mine.filter((w) => w.dateStr === dateStr);
+        for (const w of today.length ? today : [null]) {
+          // Changed hours / agreed overtime move the day exactly as at clock-in (the shared rule).
+          const effect = dayRequestEffect(requests, {
+            spaceId: l.id,
+            at: zonedWallTimeToUtc(dateStr, 12, 0, tz),
+            tz,
+            expectedClockInAt: w?.expectedClockInAt ?? null,
+            expectedClockOutAt: w?.expectedClockOutAt ?? null,
+          });
+          const start = effect.expectedClockInAt ?? w?.expectedClockInAt ?? null;
+          const end = effect.expectedClockOutAt ?? w?.expectedClockOutAt ?? null;
+          if (!start || !end || end.getTime() <= now.getTime() || end <= start) continue;
+          const shift = { start: start.toISOString(), end: end.toISOString() };
+          // Changed hours replace each window with the same hours: once is enough.
+          if (!shifts.some((x) => x.start === shift.start && x.end === shift.end)) shifts.push(shift);
+        }
       }
       const polygon = parseGeofencePolygon(l.geofencePolygon);
       return {
