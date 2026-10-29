@@ -214,6 +214,7 @@ export default function AssetRecordPage() {
               entries={moneyQ.data?.entries ?? []}
               totals={moneyQ.data?.totals}
               periods={custodyQ.data?.periods ?? []}
+              timeZone={custodyQ.data?.timeZone}
               canManage={canManageAssets}
               onChanged={() => {
                 qc.invalidateQueries({ queryKey: keys.assets.money(id) })

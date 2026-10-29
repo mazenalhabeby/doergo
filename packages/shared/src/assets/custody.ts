@@ -38,4 +38,5 @@ export {
   type AttributedEntry,
   attribute,
 } from './custody/periods';
+export { custodyDayWindow, heldDuringDay, entryHolder, overlapMs } from './custody/day';
 export { type HandoverPlan, type HandoverProblem, planHandover, canHandOver, partiesAfter } from './custody/handover';

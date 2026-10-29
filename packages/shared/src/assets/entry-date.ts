@@ -149,8 +149,8 @@ export function assetEntryDayBounds(
  * reading" is decided by date. A past day is its local midday: half a day from
  * both of its edges, so no time zone between here and the server can move it
  * onto a neighbouring date. (`new Date("2026-09-10")` is UTC midnight, which is
- * the evening of the 9th anywhere west of Greenwich — and custody is asked of
- * that instant.)
+ * the evening of the 9th anywhere west of Greenwich.) Custody is asked of the
+ * whole local DAY this instant falls on (`heldDuringDay`, decision 2026-10-29).
  */
 export function assetEntryOccurredAt(dayKey: string, now: Date): Date | null {
   const day = localDayFromKey(dayKey);

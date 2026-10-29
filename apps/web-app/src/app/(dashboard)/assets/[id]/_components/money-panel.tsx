@@ -30,6 +30,7 @@ export function MoneyPanel({
   entries,
   totals,
   periods,
+  timeZone,
   canManage,
   onChanged,
 }: {
@@ -40,6 +41,8 @@ export function MoneyPanel({
   totals?: { inCents: number; outCents: number; netCents: number; waitingCount?: number; waitingCents?: number }
   /** Who held it, when — so each row can say whose cost it was. */
   periods: CustodyPeriodDto[]
+  /** The record's workspace zone, from the custody timeline — the day a receipt is dated with. */
+  timeZone?: string
   canManage: boolean
   onChanged: () => void
 }) {
@@ -83,7 +86,7 @@ export function MoneyPanel({
     periods.map((p) => [p.id, p.user ? personName(p.user) || p.user.email || "" : (p.customer?.name ?? "")]),
   )
   const attributed = new Map(
-    attribute(entries, periods as unknown as CustodyPeriod[]).map(({ entry, heldBy }) => [
+    attribute(entries, periods as unknown as CustodyPeriod[], { timeZone }).map(({ entry, heldBy }) => [
       entry.id,
       heldBy?.id ? (holderNames.get(heldBy.id) ?? "") : "",
     ]),

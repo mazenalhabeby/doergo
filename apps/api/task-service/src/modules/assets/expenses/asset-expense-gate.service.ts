@@ -39,7 +39,9 @@ export class AssetExpenseGateService {
     const spaceId = asset.category?.spaceId ?? null;
 
     const mayLog = this.access.mayIn(data, 'log', spaceId);
-    if (!mayLog && (data.isExternal === true || !(await this.custodyRead.heldBy(data.id, data.userId, when)))) {
+    // Held it at any moment of that DAY, in the workspace's zone (custody-read heldBy).
+    const place = { spaceId, organizationId: data.organizationId };
+    if (!mayLog && (data.isExternal === true || !(await this.custodyRead.heldBy(data.id, data.userId, when, place)))) {
       /*
         404-shaped in wording, 403 in code, deliberately: the caller already
         knows this asset exists — they had to pick it from a list of what they

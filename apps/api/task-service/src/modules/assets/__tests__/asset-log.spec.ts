@@ -73,7 +73,7 @@ describe('who may log', () => {
     const when = yesterday();
     await expect(service.create({ ...member, ...fuel, occurredAt: when })).rejects.toBeInstanceOf(ForbiddenException);
     // Asked of the ENTRY'S date, not of today.
-    expect(custody.heldBy).toHaveBeenCalledWith(VAN, 'ahmed', new Date(when));
+    expect(custody.heldBy).toHaveBeenCalledWith(VAN, 'ahmed', new Date(when), expect.anything());
   });
 
   it('lets whoever held it that day log it', async () => {

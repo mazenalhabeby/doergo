@@ -284,7 +284,7 @@ describe('filing an expense is gated on custody', () => {
     custody.heldBy.mockResolvedValue(true);
     const when = '2026-08-15T10:00:00.000Z';
     await submit({ occurredAt: when });
-    expect(custody.heldBy).toHaveBeenCalledWith('a1', 'u1', new Date(when));
+    expect(custody.heldBy).toHaveBeenCalledWith('a1', 'u1', new Date(when), expect.objectContaining({ organizationId: 'org1' }));
   });
 
   it('refuses somebody who did not have it then', async () => {

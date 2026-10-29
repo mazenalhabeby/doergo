@@ -64,7 +64,8 @@ export class AssetLogAccessService {
     when: Date,
   ): Promise<void> {
     if (this.access.mayIn(actor, 'manage', asset.spaceId)) return;
-    if (actor.isExternal !== true && (await this.custodyRead.heldBy(asset.id, actor.userId, when))) return;
+    const place = { spaceId: asset.spaceId, organizationId: actor.organizationId };
+    if (actor.isExternal !== true && (await this.custodyRead.heldBy(asset.id, actor.userId, when, place))) return;
     if (!holderOnly && this.access.mayIn(actor, 'log', asset.spaceId)) return;
     throw new ForbiddenException(holderOnly ? 'You did not have this on that date' : 'You cannot log against this');
   }

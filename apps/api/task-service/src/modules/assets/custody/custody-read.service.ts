@@ -5,6 +5,8 @@ import {
   success,
   normalizeKindShape,
   totalsByPeriod,
+  custodyDayWindow,
+  workspaceZone,
   type CustodyPeriod,
   clientContacts,
   peopleContacts,
@@ -37,9 +39,9 @@ export class CustodyReadService {
    * kept for five years has a lot of handovers.
    */
   async timeline(data: { id: string } & AssetActor) {
-    await this.access.assetInScope(data.id, data, 'view');
+    const asset = await this.access.assetInScope(data.id, data, 'view');
 
-    const [periods, entries] = await Promise.all([
+    const [periods, entries, timeZone] = await Promise.all([
       this.prisma.assetCustody.findMany({
         where: { assetId: data.id },
         orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
@@ -52,9 +54,10 @@ export class CustodyReadService {
         where: { assetId: data.id, status: 'RECORDED', amountCents: { gt: 0 } },
         select: { occurredAt: true, amountCents: true, direction: true, authorId: true },
       }),
+      this.zoneOf({ spaceId: asset.spaceId, organizationId: data.organizationId }),
     ]);
 
-    const { byPeriod, unattributed } = totalsByPeriod(entries, periods as unknown as CustodyPeriod[]);
+    const { byPeriod, unattributed } = totalsByPeriod(entries, periods as unknown as CustodyPeriod[], { timeZone });
     const named = await this.withNames(periods, data.organizationId);
 
     return success({
@@ -68,6 +71,8 @@ export class CustodyReadService {
         },
       })),
       unattributed,
+      // The zone the ledger's days are read in — the web attributes each row by it.
+      timeZone,
     });
   }
 
@@ -173,24 +178,42 @@ export class CustodyReadService {
       is six ids in a single `IN`, and the split is arithmetic afterwards.
     */
     const assetIds = [...new Set(periods.map((p) => p.assetId))];
-    const entries = await this.prisma.assetMoney.findMany({
-      where: { assetId: { in: assetIds }, organizationId, status: 'RECORDED', amountCents: { gt: 0 } },
-      select: { assetId: true, occurredAt: true, amountCents: true, direction: true, authorId: true },
-    });
+    const spaceIds = [...new Set(periods.map((p) => p.asset.category?.spaceId ?? null))];
+    /*
+      Every period of those assets, not only this member's: who a day-dated cost
+      belongs to depends on who ELSE held it that day (`entryHolder`), and a
+      member's view must agree with the asset's own timeline.
+    */
+    const [entries, everyPeriod, zones] = await Promise.all([
+      this.prisma.assetMoney.findMany({
+        where: { assetId: { in: assetIds }, organizationId, status: 'RECORDED', amountCents: { gt: 0 } },
+        select: { assetId: true, occurredAt: true, amountCents: true, direction: true, authorId: true },
+      }),
+      this.prisma.assetCustody.findMany({ where: { assetId: { in: assetIds } }, select: CUSTODY_SELECT }),
+      Promise.all(spaceIds.map((spaceId) => this.zoneOf({ spaceId, organizationId }))),
+    ]);
+    const zoneBySpace = new Map(spaceIds.map((id, i) => [id, zones[i]]));
 
-    const byAsset = new Map<string, typeof entries>();
-    for (const e of entries) {
-      const list = byAsset.get(e.assetId);
-      if (list) list.push(e);
-      else byAsset.set(e.assetId, [e]);
-    }
+    const group = <T extends { assetId: string }>(rows: T[]) => {
+      const m = new Map<string, T[]>();
+      for (const r of rows) {
+        const list = m.get(r.assetId);
+        if (list) list.push(r);
+        else m.set(r.assetId, [r]);
+      }
+      return m;
+    };
+    const entriesOf = group(entries);
+    const periodsOf = group(everyPeriod);
 
     const out = periods.map((p) => {
-      const mine = byAsset.get(p.assetId) ?? [];
-      const { byPeriod } = totalsByPeriod(mine, [p as unknown as CustodyPeriod]);
+      const all = (periodsOf.get(p.assetId) ?? []) as unknown as CustodyPeriod[];
+      const timeZone = zoneBySpace.get(p.asset.category?.spaceId ?? null);
+      const { byPeriod } = totalsByPeriod(entriesOf.get(p.assetId) ?? [], all, { timeZone });
+      const own = all.find((q) => q.id === p.id);
       return {
         ...p,
-        totals: byPeriod.get(p as unknown as CustodyPeriod) ?? { inCents: 0, outCents: 0, netCents: 0, entries: 0 },
+        totals: (own && byPeriod.get(own)) ?? { inCents: 0, outCents: 0, netCents: 0, entries: 0 },
       };
     });
 
@@ -227,23 +250,37 @@ export class CustodyReadService {
   }
 
   /**
-   * Does this person hold this asset — now, or on a given date?
+   * Did this person hold this asset at ANY moment of the local day `when` falls on?
    *
-   * The gate on a member filing an expense. Asked of the DATE the money moved
-   * rather than of today, so somebody can file yesterday's fuel the morning
-   * after they hand the van back and cannot file a receipt for a van they have
-   * never driven.
+   * The gate on a member filing an expense or a logbook entry. A receipt carries
+   * a DAY, not a moment (a past day is filed as its local noon), so it is asked
+   * of the whole day in the record's workspace zone — the decision of
+   * 2026-10-29, the same rule `heldDuringDay` / `entryHolder` in shared apply,
+   * so a slip let through here is charged to the person who filed it. Somebody
+   * can file yesterday's fuel the morning after they hand the van back, and
+   * cannot file a receipt for a van they have never driven.
    */
-  async heldBy(assetId: string, userId: string, when: Date): Promise<boolean> {
+  async heldBy(
+    assetId: string,
+    userId: string,
+    when: Date,
+    place: { spaceId: string | null; organizationId: string },
+  ): Promise<boolean> {
+    const { from, to } = custodyDayWindow(when, await this.zoneOf(place));
     const hit = await this.prisma.assetCustody.findFirst({
       where: {
         assetId,
         userId,
-        startedAt: { lte: when },
-        OR: [{ endedAt: null }, { endedAt: { gt: when } }],
+        startedAt: { lt: to },
+        OR: [{ endedAt: null }, { endedAt: { gt: from } }],
       },
       select: { id: true },
     });
     return !!hit;
+  }
+
+  /** The zone a record's day is read in: its workspace's, else the organization's, else UTC. */
+  zoneOf(place: { spaceId: string | null; organizationId: string }): Promise<string> {
+    return workspaceZone(this.prisma, place);
   }
 }

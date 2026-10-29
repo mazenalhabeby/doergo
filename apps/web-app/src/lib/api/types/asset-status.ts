@@ -221,6 +221,8 @@ export interface CustodyTimeline {
   periods: CustodyPeriodDto[]
   /** Money that falls in no period — real, and deliberately not hidden. */
   unattributed: { inCents: number; outCents: number; netCents: number; entries: number }
+  /** The zone the record's days are read in — a receipt carries a day (`entryHolder`). */
+  timeZone?: string
 }
 
 /** What a reader made of a contract, before a person corrects it. */

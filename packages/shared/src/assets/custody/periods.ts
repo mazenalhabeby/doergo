@@ -1,5 +1,7 @@
 /** Custody as periods: who held it on a day, the days held, and what each period cost. */
 
+import { entryHolder } from './day';
+
 /**
  * Who held a thing, and WHEN.
  *
@@ -171,36 +173,28 @@ const addTo = (totals: CustodyTotals, e: DatedAmount): void => {
 export function totalsByPeriod<T extends DatedAmount>(
   entries: T[],
   periods: CustodyPeriod[],
+  opts: { timeZone?: string | null } = {},
 ): { byPeriod: Map<CustodyPeriod, CustodyTotals>; unattributed: CustodyTotals } {
   const byPeriod = new Map<CustodyPeriod, CustodyTotals>();
   for (const p of periods) byPeriod.set(p, emptyTotals());
   const unattributed = emptyTotals();
 
   for (const entry of entries) {
-    const hits = holdersOn(periods, entry.occurredAt);
-    if (hits.length === 0) {
-      addTo(unattributed, entry);
-      continue;
-    }
     /*
-      A cost inside two open custodies counts ONCE — against the holder who
-      LOGGED it, else the earliest.
+      A cost counts ONCE, against ONE holder — `entryHolder` (day.ts): the
+      author if they held it that day, else the holder at the instant, else
+      whoever held it longest that day.
 
       A machine with a whole shift of operators has several open periods at the
       same instant, so charging every one of them would multiply a €400 repair
-      by the size of the shift and quietly inflate the asset's total. Charging
-      the earliest regardless was the first answer, and it sent every
+      by the size of the shift. Charging the earliest regardless sent every
       operator's fuel to whoever had been on the machine longest: the sum was
-      right and every part of it was wrong. The author was there and is one
-      person; the earliest stays only as the stable fallback for an entry typed
-      by somebody who was not holding it (the office, a colleague).
+      right and every part of it was wrong.
     */
-    const sorted = hits.sort((a, b) => ms(a.startedAt) - ms(b.startedAt));
-    const first = (entry.authorId && sorted.find((p) => p.userId === entry.authorId)) || sorted[0]!;
-    // `hits` came out of `periods`, so the bucket always exists — but a
-    // fallback that silently threw the entry away would be a total that is
-    // quietly short, so it is asserted rather than defaulted.
-    const bucket = byPeriod.get(first);
+    const holder = entryHolder(entry, periods, opts.timeZone);
+    // A fallback that silently threw the entry away would be a total that is
+    // quietly short, so a missing bucket goes to `unattributed`.
+    const bucket = holder ? byPeriod.get(holder) : undefined;
     if (bucket) addTo(bucket, entry);
     else addTo(unattributed, entry);
   }
@@ -218,8 +212,9 @@ export interface AttributedEntry<T> {
 export function attribute<T extends DatedAmount>(
   entries: T[],
   periods: CustodyPeriod[],
+  opts: { timeZone?: string | null } = {},
 ): AttributedEntry<T>[] {
-  return entries.map((entry) => ({ entry, heldBy: holderOn(periods, entry.occurredAt) }));
+  return entries.map((entry) => ({ entry, heldBy: entryHolder(entry, periods, opts.timeZone) }));
 }
 
 export { ms };
