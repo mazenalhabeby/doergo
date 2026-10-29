@@ -27,12 +27,12 @@ describe('the slot', () => {
     expect(slotHeldBy('a', me, [job('a', 'IN_PROGRESS')])).toBeNull(); // itself never blocks
   });
   it('the server reads the same list', () => {
-    const server = fs.readFileSync(
-      // The one-at-a-time check moved out of task-status.service.ts with the updateStatus split.
-      path.resolve(__dirname, '../../../../api/task-service/src/modules/tasks/status/task-status-checks.ts'),
-      'utf8',
-    );
-    expect(server).toMatch(/status: \{ in: \[\.\.\.ONE_AT_A_TIME_STATUSES\]/);
+    const dir = path.resolve(__dirname, '../../../../api/task-service/src/modules/tasks/status');
+    // The check filters on slotKeysOf (each job judged by its own flow), which starts from this list.
+    const server = fs.readFileSync(path.join(dir, 'task-status-checks.ts'), 'utf8');
+    const keys = fs.readFileSync(path.join(dir, 'step-checks.ts'), 'utf8');
+    expect(server).toMatch(/status: \{ in: slotKeysOf\(/);
+    expect(keys).toMatch(/new Set<string>\(ONE_AT_A_TIME_STATUSES\)/);
     expect([...ONE_AT_A_TIME_STATUSES]).toEqual(['ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS']);
   });
 });
