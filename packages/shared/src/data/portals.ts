@@ -25,18 +25,24 @@ export function activePortals(
   });
 }
 
-/** A unit of the organization (for a portal client: one THEY hold and still active) — `{ id }` or null. */
-export function unitRef(
+/**
+ * A unit of the organization (for a portal client: one THEY hold and still active) — `{ id }` or null.
+ *
+ * ⚠️ A portal session WITHOUT a client holds nothing: `customerId: undefined` would have dropped the
+ * filter and matched every unit of the organization.
+ */
+export async function unitRef(
   db: On<'customerUnit', 'findFirst'>,
   unitId: string,
   organizationId: string,
   portal?: { customerId: string | null },
-) {
+): Promise<{ id: string } | null> {
+  if (portal && !portal.customerId) return null;
   return db.customerUnit.findFirst({
     where: {
       id: unitId,
       organizationId,
-      ...(portal ? { customerId: portal.customerId || undefined, isActive: true } : {}),
+      ...(portal ? { customerId: portal.customerId, isActive: true } : {}),
     },
     select: { id: true },
   });

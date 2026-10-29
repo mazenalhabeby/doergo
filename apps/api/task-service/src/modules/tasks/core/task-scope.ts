@@ -29,14 +29,22 @@ export async function resolveOwnedTaskRefs(
   portal?: { customerId: string | null },
 ): Promise<Partial<Record<'unitId' | 'assetId' | 'customerId' | 'phaseId' | 'sprintId' | 'epicId', string | null>>> {
   const id = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
-  const portalCustomer = portal ? { customerId: portal.customerId || undefined } : {};
+  // A portal session without a client holds nothing — never "no filter" (`customerId: undefined` matched every asset).
+  const holdsNothing = !!portal && !portal.customerId;
+  const portalCustomer = portal ? { customerId: portal.customerId } : {};
   const probes: Record<string, (v: string) => Promise<{ id: string } | null>> = {
     unitId: (v) => unitRef(prisma, v, orgId, portal),
-    assetId: (v) =>
-      prisma.asset.findFirst({
-        where: { id: v, organizationId: orgId, ...(portal ? { ...portalCustomer, ...SELECTABLE_ASSET_WHERE } : {}) },
-        select: { id: true },
-      }),
+    assetId: async (v) =>
+      holdsNothing
+        ? null
+        : prisma.asset.findFirst({
+            where: {
+              id: v,
+              organizationId: orgId,
+              ...(portal ? { ...portalCustomer, ...SELECTABLE_ASSET_WHERE } : {}),
+            },
+            select: { id: true },
+          }),
     customerId: (v) => clientRef(prisma, v, orgId),
     phaseId: (v) => prisma.phase.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
     sprintId: (v) => prisma.sprint.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
