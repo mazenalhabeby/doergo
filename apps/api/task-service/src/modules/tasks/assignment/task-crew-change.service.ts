@@ -145,7 +145,7 @@ export class TaskCrewChangeService {
   private async syncPrimaryAssignee(taskId: string) {
     const lead = await this.prisma.taskAssignee.findFirst({
       where: { taskId, role: 'LEAD' },
-      select: { userId: true },
+      select: { id: true, userId: true },
     });
     const primary =
       lead ??
@@ -154,8 +154,17 @@ export class TaskCrewChangeService {
         // The first person put on it — stable, and it does not change under
         // somebody just because a colleague was added later.
         orderBy: { createdAt: 'asc' },
-        select: { userId: true },
+        select: { id: true, userId: true },
       }));
+    /*
+      ⚠️ No LEAD row and people still on it (the lead handed back, was taken off,
+      declined or left): the earliest of them IS the lead now, written as the row.
+      Left as MEMBERs only, the next person to take a place found "no lead" and
+      jumped ahead of everybody already on the job.
+    */
+    if (!lead && primary) {
+      await this.prisma.taskAssignee.updateMany({ where: { id: primary.id, role: 'MEMBER' }, data: { role: 'LEAD' } });
+    }
 
     await this.prisma.task.update({
       where: { id: taskId },
