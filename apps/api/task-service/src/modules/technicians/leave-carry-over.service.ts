@@ -27,7 +27,8 @@ const dayBefore = (k: string) => {
  * The carry-over rule, applied (shared leave/leave-ledger.ts carryOverDays / carryExpiredDays).
  *
  * For every organization whose rule is not NONE, on or after each person's leave-year start:
- *   · CARRY_OVER  = carryOverDays(what was left of the previous leave year, the rule)
+ *   · CARRY_OVER  = carryOverDays(what was left of the previous leave year, less its PENDING leave)
+ *     — written once, then kept in step on every run as that year's requests are decided
  *   · after the rule's expiry date, CARRY_EXPIRED = −carryExpiredDays(carried, taken up to it)
  * Both are ordinary ledger lines — visible, with no author (the rule), and undoable.
  *
@@ -123,6 +124,7 @@ export class LeaveCarryOverService {
       reason: string;
       sourceKey: string;
     }> = [];
+    let updated = 0;
     for (const p of people) {
       const cur = current.get(p.id)!;
       const start = cur.leaveYear.start;
@@ -132,8 +134,32 @@ export class LeaveCarryOverService {
       // 1. Carry into this leave year — once, unless the starting balances already carried.
       let carriedNow = cur.adjustments.filter((a) => a.kind === 'CARRY_OVER').reduce((s, a) => s + a.days, 0);
       const prev = previous.get(p.id);
-      if (prev && !openingCarry && !has(leaveSourceKey.carry(p.id, start))) {
-        const days = carryOverDays(prev.balance.remaining, rule);
+      const carryKey = leaveSourceKey.carry(p.id, start);
+      /*
+        ⚠️ PENDING leave of that year is not unspent: it is taken the moment it is approved. Carried
+        as remaining, an approval a week later spent the same days twice.
+      */
+      const unspent = prev ? prev.balance.remaining - prev.balance.pending : 0;
+      const written = cur.adjustments.find((a) => a.sourceKey === carryKey);
+      if (prev && !openingCarry && written) {
+        /*
+          Already carried: a request of that year decided since (refused, cancelled, recorded) moves
+          what was unspent — the line follows, ONE conditional update on the days it was written
+          with (an undone line is voided and never read here, so it is never brought back).
+        */
+        const days = carryOverDays(unspent, rule);
+        if (days !== written.days) {
+          const res = await this.prisma.leaveAdjustment.updateMany({
+            where: { organizationId: org.id, sourceKey: carryKey, voidedAt: null, days: written.days },
+            data: { days },
+          });
+          if (res.count) {
+            carriedNow += days - written.days;
+            updated += res.count;
+          }
+        }
+      } else if (prev && !openingCarry && !has(carryKey)) {
+        const days = carryOverDays(unspent, rule);
         if (days > 0) {
           rows.push({
             organizationId: org.id,
@@ -142,7 +168,7 @@ export class LeaveCarryOverService {
             days,
             leaveYearStart: asDate(start),
             reason: `Carried over from the leave year ${prev.leaveYear.start} – ${prev.leaveYear.end}`,
-            sourceKey: leaveSourceKey.carry(p.id, start),
+            sourceKey: carryKey,
           });
           carriedNow += days;
         }
@@ -165,8 +191,8 @@ export class LeaveCarryOverService {
         }
       }
     }
-    if (!rows.length) return 0;
+    if (!rows.length) return updated;
     const res = await this.prisma.leaveAdjustment.createMany({ data: rows as never, skipDuplicates: true });
-    return res.count;
+    return res.count + updated;
   }
 }

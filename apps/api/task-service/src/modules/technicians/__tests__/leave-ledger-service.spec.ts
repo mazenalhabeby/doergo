@@ -102,7 +102,8 @@ function fakeDb(seed: { orgs: Row[]; users: Row[]; timeOffs?: Row[]; assignments
         return { count };
       }),
       updateMany: jest.fn(async ({ where, data }: any) => {
-        const rows = db.adjustments.filter((a) => a.id === where.id && (where.voidedAt !== null || a.voidedAt === null));
+        const rows = db.adjustments.filter((a) =>
+          Object.entries(where).every(([k, c]) => (k === 'voidedAt' ? c !== null || a.voidedAt === null : inList(c, a[k]))));
         rows.forEach((r) => Object.assign(r, data));
         return { count: rows.length };
       }),
@@ -363,6 +364,28 @@ describe('leave ledger — the service', () => {
 
       const late = setup({ leaveTrackingStartedOn: D('2026-01-01') });
       expect(await late.sweep.sweep(jan2)).toBe(0);
+    });
+
+    it('PENDING leave of the old year is not carried; refused later, the carry follows', async () => {
+      const { db, sweep } = setup({ carryOverMaxDays: 10 });
+      // 7 left after the 18 approved; 3 more days (1–3 Dec) still waiting for a decision.
+      const pending = { technicianId: 'mark', status: 'PENDING', startDate: D('2025-12-01'), endDate: D('2025-12-03') };
+      db.timeOffs.push(pending);
+      const jan2 = new Date('2026-01-02T08:00:00Z');
+      jest.setSystemTime(jan2);
+      await sweep.sweep(jan2);
+      const carry = () => db.adjustments.find((a) => a.kind === 'CARRY_OVER' && a.userId === 'mark')!;
+      expect(carry().days).toBe(4);
+      // Approved: those days are spent — nothing moves.
+      pending.status = 'APPROVED';
+      expect(await sweep.sweep(jan2)).toBe(0);
+      expect(carry().days).toBe(4);
+      // Then cancelled: the 3 days were never spent, so they carry.
+      pending.status = 'CANCELED';
+      expect(await sweep.sweep(jan2)).toBe(1);
+      expect(carry()).toMatchObject({ days: 7, sourceKey: 'carry:mark:2026-01-01' });
+      expect(db.adjustments.filter((a) => a.kind === 'CARRY_OVER' && a.userId === 'mark')).toHaveLength(1);
+      jest.setSystemTime(new Date('2026-08-14T09:00:00Z'));
     });
 
     it('an opening carry for the year stops the rule from carrying a second time', async () => {
