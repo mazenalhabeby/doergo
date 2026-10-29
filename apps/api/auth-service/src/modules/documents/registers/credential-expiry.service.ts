@@ -11,6 +11,8 @@ import {
   credentialStanding,
   PERSON_BRIEF_SELECT,
   toISODateString,
+  documentVisibleTo,
+  isAdmin,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { emitEvent, credentialExpiringEvent } from '@hbcfield/shared/microservices';
@@ -105,7 +107,11 @@ export class CredentialExpiryService {
         expiresOn: true,
         organizationId: true,
         user: { select: PERSON_BRIEF_SELECT },
-        type: { select: { label: true } },
+        // Who may see it: the type's roles, or the document's own override.
+        userId: true,
+        rolesOverridden: true,
+        visibleToRoleIds: true,
+        type: { select: { label: true, visibleToRoleIds: true } },
       },
     });
 
@@ -117,8 +123,9 @@ export class CredentialExpiryService {
       anyone who can see the whole board — because those are the people who
       schedule work and will discover the gap otherwise.
     */
-    const rosterOwners = new Map<string, string[]>();
-    const ownersFor = async (organizationId: string): Promise<string[]> => {
+    type Owner = { id: string; role: string; memberRoleId: string | null };
+    const rosterOwners = new Map<string, Owner[]>();
+    const ownersFor = async (organizationId: string): Promise<Owner[]> => {
       const cached = rosterOwners.get(organizationId);
       if (cached) return cached;
       const rows = await this.prisma.user.findMany({
@@ -127,12 +134,23 @@ export class CredentialExpiryService {
           isActive: true,
           OR: [{ role: Role.ADMIN }, { canAssignTasks: true }, { canViewAllTasks: true }],
         },
-        select: { id: true },
+        select: { id: true, role: true, memberRoleId: true },
       });
-      const ids = rows.map((r) => r.id);
-      rosterOwners.set(organizationId, ids);
-      return ids;
+      rosterOwners.set(organizationId, rows);
+      return rows;
     };
+    /*
+      Only those who may SEE this document are told about it. A reminder names
+      the person, the credential and its date — sending it past the type's
+      roles (or the document's own override) would leak exactly what the
+      restriction hides. Administrators always see it.
+    */
+    const allowedFor = (doc: (typeof soon)[number], owners: Owner[]) =>
+      owners
+        .filter((o) =>
+          documentVisibleTo(doc, { roleId: o.memberRoleId, isAdmin: isAdmin({ role: o.role }), userId: o.id }),
+        )
+        .map((o) => o.id);
 
     let sent = 0;
     for (const doc of soon) {
@@ -156,7 +174,7 @@ export class CredentialExpiryService {
           standing: credentialStanding(doc.expiresOn, now),
           // The member is told by the handler regardless; these are the people
           // who plan the work and would otherwise find out on the day.
-          recipientIds: await ownersFor(doc.organizationId),
+          recipientIds: allowedFor(doc, await ownersFor(doc.organizationId)),
         });
         sent++;
       } catch (err) {
