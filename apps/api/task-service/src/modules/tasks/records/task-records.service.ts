@@ -188,17 +188,28 @@ export class TaskRecordsService {
       return createdTask;
     });
 
-    await this.announceCreated(task, data.userId, hasAssignment ? data.assignedToId : null);
-
-    // Notify
-    emitEvent(this.notificationClient, taskCreatedEvent, task);
+    await this.announceNew(task, data.userId, hasAssignment ? data.assignedToId : null);
 
     // Opened to a role: the record, then the first wave (the free ones now).
     if (openRole) await this.rolePool.afterOpened(task.id, data.userId, openRole, task.openSpots ?? 1);
 
-    this.support.invalidateStatusCountsCache(task.organizationId);
-
     return success(task);
+  }
+
+  /**
+   * What follows a NEW job, wherever it was made (the create route, a recurring template): the CREATED
+   * record, and — when it was born assigned — the ASSIGNED record and the push; then `task_created` to
+   * every screen and the status counts reset. One path, so a generated job is announced like a typed one.
+   */
+  async announceNew(
+    task: Prisma.TaskGetPayload<{ include: typeof TASK_CREATE_INCLUDE }>,
+    userId: string,
+    assignedToId: string | null | undefined,
+    createdMeta?: Record<string, unknown>,
+  ) {
+    await this.announceCreated(task, userId, assignedToId, createdMeta);
+    emitEvent(this.notificationClient, taskCreatedEvent, task);
+    this.support.invalidateStatusCountsCache(task.organizationId);
   }
 
   /** The CREATED record, and — when it was born assigned — the ASSIGNED record and the push. */
@@ -206,9 +217,10 @@ export class TaskRecordsService {
     task: Prisma.TaskGetPayload<{ include: typeof TASK_CREATE_INCLUDE }>,
     userId: string,
     assignedToId: string | null | undefined,
+    createdMeta?: Record<string, unknown>,
   ) {
     // Create task event
-    await this.support.createTaskEvent(task.id, userId, TaskEventType.CREATED);
+    await this.support.createTaskEvent(task.id, userId, TaskEventType.CREATED, createdMeta);
 
     // If assigned during creation, also create assignment event and notify
     if (assignedToId) {

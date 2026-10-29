@@ -3298,6 +3298,7 @@
       "CHECKLIST_CHANGED": "Somebody changed this item just now. Look again.",
       "CHECKLIST_ITEM_NOT_YOURS": "Only the person it belongs to, the leader of this job, or the office changes this item.",
       "ROLE_TASK_TAKEN": "Somebody else took it first.",
+      "RECURRING_RUN_TAKEN": "This run was just made. Refresh to see the job.",
       "TASK_STEP_NOT_IN_DESTINATION_FLOW": "This job's step does not exist in that workspace's flow. Ask your office.",
       "TASK_HAS_FINISHED_SUBTASKS": "This job has finished sub-jobs, so it cannot be deleted.",
       "ROLE_TASK_ALREADY_YOURS": "You are already on this job.",

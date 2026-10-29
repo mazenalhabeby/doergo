@@ -8264,6 +8264,7 @@
     "ROLE_TASK_PEOPLE_OR_ROLE": "Assign people or open the task to a role — not both.",
     "ROLE_TASK_FINISHED": "This task is finished.",
     "ROLE_TASK_TAKEN": "Somebody else took the last place.",
+    "RECURRING_RUN_TAKEN": "This run was just made. Refresh to see the job.",
     "TASK_STEP_NOT_IN_DESTINATION_FLOW": "This job's current step does not exist in that workspace's flow. Choose a flow for it as you move it.",
     "TASK_HAS_FINISHED_SUBTASKS": "This job has finished sub-jobs. Their record stays, so the job cannot be deleted.",
     "ROLE_TASK_ALREADY_YOURS": "You are already on this task.",

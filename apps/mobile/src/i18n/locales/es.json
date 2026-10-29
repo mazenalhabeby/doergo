@@ -3298,6 +3298,7 @@
       "CHECKLIST_CHANGED": "Alguien acaba de cambiar este punto. Vuelve a mirarlo.",
       "CHECKLIST_ITEM_NOT_YOURS": "Solo la persona responsable, el jefe de este trabajo o la oficina cambia este punto.",
       "ROLE_TASK_TAKEN": "Otra persona lo tomó primero.",
+      "RECURRING_RUN_TAKEN": "Esta ejecución se acaba de crear. Actualice para ver el trabajo.",
       "TASK_STEP_NOT_IN_DESTINATION_FLOW": "El paso de este trabajo no existe en el flujo de ese espacio de trabajo. Pregunte a su oficina.",
       "TASK_HAS_FINISHED_SUBTASKS": "Este trabajo tiene subtrabajos terminados, así que no se puede eliminar.",
       "ROLE_TASK_ALREADY_YOURS": "Ya estás en este trabajo.",

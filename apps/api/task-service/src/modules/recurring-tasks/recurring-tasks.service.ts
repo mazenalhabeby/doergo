@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { workspaceZone } from '../../common/zone.util';
-import { success, localPartsIn, assertFoundInOrg, PrismaService } from '@hbcfield/shared';
-import { calculateNextRun, validateFrequencyFields } from './recurring-schedule';
+import { success, localPartsIn, assertFoundInOrg, PrismaService, zonedWallTimeToUtc } from '@hbcfield/shared';
+import { firstRunAt, nextRunPast, validateFrequencyFields, withinEnd, type RepeatRule } from './recurring-schedule';
 import { assertTemplateRefsInOrg } from './recurring-materialize';
 // Requests are the message contracts' (shared with the gateway) — one definition, not two.
 import { type createRecurringTask, type updateRecurringTask, type RpcRequest } from '@hbcfield/shared/microservices';
@@ -57,7 +57,7 @@ export class RecurringTasksService {
       data.customerId,
     );
 
-    const startDate = new Date(data.startDate);
+    let startDate = new Date(data.startDate);
 
     /*
       Validate startDate is not in the past — as CALENDAR DAYS in the
@@ -66,9 +66,10 @@ export class RecurringTasksService {
       as typed; a full timestamp is read as its local day there.
     */
     const zone = await workspaceZone(this.prisma, data);
-    const startDay = /^\d{4}-\d{2}-\d{2}$/.test(data.startDate)
-      ? data.startDate
-      : localPartsIn(startDate, zone).dateStr;
+    const bareDay = /^\d{4}-\d{2}-\d{2}$/.test(data.startDate);
+    const startDay = bareDay ? data.startDate : localPartsIn(startDate, zone).dateStr;
+    // A bare day is that day's start WHERE THE WORK IS — never UTC midnight (the evening before in New York).
+    if (bareDay) startDate = zonedWallTimeToUtc(startDay, 0, 0, zone);
     if (startDay < localPartsIn(new Date(), zone).dateStr) {
       throw new BadRequestException('Start date cannot be in the past');
     }
@@ -79,15 +80,8 @@ export class RecurringTasksService {
       throw new BadRequestException('End date must be after start date');
     }
 
-    // Calculate the first nextRunAt
-    const nextRunAt = calculateNextRun(
-      data.frequency,
-      startDate,
-      null, // no lastGenerated yet
-      data.dayOfWeek,
-      data.dayOfMonth,
-      data.customDays,
-    );
+    // The start day itself makes the first job (or the first day after it the rule names).
+    const nextRunAt = withinEnd(firstRunAt(ruleOf(data), startDate, zone), endDate);
 
     const template = await this.prisma.recurringTaskTemplate.create({
       data: {
@@ -151,7 +145,8 @@ export class RecurringTasksService {
       });
     }
 
-    // Recalculate nextRunAt if frequency-related fields changed
+    // Recalculate nextRunAt if frequency-related fields changed: the new rule's first run that is not
+    // already made (before the old next run), in the workspace's zone — never counted from "now".
     let nextRunAt = existing.nextRunAt;
     if (
       data.frequency ||
@@ -159,14 +154,18 @@ export class RecurringTasksService {
       data.dayOfMonth !== undefined ||
       data.customDays !== undefined
     ) {
-      nextRunAt = calculateNextRun(
+      const rule = ruleOf({
         frequency,
-        existing.startDate,
-        existing.lastGeneratedAt,
-        data.dayOfWeek ?? existing.dayOfWeek ?? undefined,
-        data.dayOfMonth ?? existing.dayOfMonth ?? undefined,
-        data.customDays ?? existing.customDays ?? undefined,
-      );
+        dayOfWeek: data.dayOfWeek ?? existing.dayOfWeek,
+        dayOfMonth: data.dayOfMonth ?? existing.dayOfMonth,
+        customDays: data.customDays ?? existing.customDays,
+      });
+      const where = { spaceId: data.spaceId === undefined ? existing.spaceId : data.spaceId, organizationId: data.organizationId };
+      const zone = await workspaceZone(this.prisma, where);
+      const first = firstRunAt(rule, existing.startDate, zone);
+      const used = existing.nextRunAt ? new Date(existing.nextRunAt.getTime() - 1) : existing.lastGeneratedAt;
+      const endDate = data.endDate === undefined ? existing.endDate : data.endDate ? new Date(data.endDate) : null;
+      nextRunAt = withinEnd(used ? nextRunPast(rule, first, used, zone) : first, endDate);
     }
 
     const template = await this.prisma.recurringTaskTemplate.update({
@@ -214,4 +213,9 @@ export class RecurringTasksService {
 
     return success(null, 'Recurring task template deleted successfully');
   }
+}
+
+/** The schedule fields of a request or a template, as the schedule reads them. */
+function ruleOf(r: { frequency: string; dayOfWeek?: number | null; dayOfMonth?: number | null; customDays?: number | null }): RepeatRule {
+  return { frequency: r.frequency, dayOfWeek: r.dayOfWeek, dayOfMonth: r.dayOfMonth, customDays: r.customDays };
 }

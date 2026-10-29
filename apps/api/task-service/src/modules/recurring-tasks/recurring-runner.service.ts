@@ -1,14 +1,34 @@
-import { Injectable, BadRequestException, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { success, assertFoundInOrg, PrismaService } from '@hbcfield/shared';
-import { calculateNextRun } from './recurring-schedule';
-import { materializeTask } from './recurring-materialize';
+import {
+  Injectable,
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
+import type { RecurringTaskTemplate } from '@prisma/client';
+import { success, assertFoundInOrg, PrismaService, workspaceZone } from '@hbcfield/shared';
+import { nextRunPast, withinEnd } from './recurring-schedule';
+import { activeTemplateAssignees, materializeTask } from './recurring-materialize';
+import { TaskRecordsService } from '../tasks/records/task-records.service';
+import { TASK_CREATE_INCLUDE } from '../tasks/records/task-create-steps';
+
+/** The refusal a screen translates: the run was made a moment ago (by the scheduler or another tap). */
+export const RECURRING_RUN_TAKEN = 'RECURRING_RUN_TAKEN';
+
+type Outcome = { made: { id: string } } | { taken: true } | { paused: true };
 
 /** Running repeats: the poller that makes every task that is due, and making one now by hand. */
 @Injectable()
 export class RecurringRunnerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RecurringRunnerService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    /** A generated job is announced exactly like a typed one (TaskRecordsService.announceNew). */
+    private readonly records: TaskRecordsService,
+  ) {}
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   /** How often the scheduler scans for due templates. */
@@ -33,52 +53,31 @@ export class RecurringRunnerService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Manually generate a task from a recurring template
+   * Make the NEXT planned run now, by hand. It is that run taken early — the schedule moves on from it —
+   * and it is claimed exactly as the scheduler claims it, so a tap and a tick never make the same job twice.
    */
   async generate(data: { id: string; organizationId: string; userId: string }) {
-    const template = await this.prisma.recurringTaskTemplate.findUnique({
-      where: { id: data.id },
-    });
+    const template = await this.prisma.recurringTaskTemplate.findUnique({ where: { id: data.id } });
 
     assertFoundInOrg(template, data.organizationId, 'Recurring task template');
 
     if (!template.isActive) {
       throw new BadRequestException('Cannot generate task from inactive template');
     }
-
-    // Check if endDate has passed
-    if (template.endDate && new Date() > template.endDate) {
+    // Past its end (or no run left before it).
+    if ((template.endDate && new Date() > template.endDate) || !template.nextRunAt) {
       throw new BadRequestException('Template end date has passed');
     }
 
-    // Create the task (space-, type- and flow-aware)
-    const task = await materializeTask(this.prisma, template, data.userId);
-
-    // Update template: set lastGeneratedAt and calculate next run
-    const now = new Date();
-    const nextRunAt = calculateNextRun(
-      template.frequency,
-      template.startDate,
-      now,
-      template.dayOfWeek ?? undefined,
-      template.dayOfMonth ?? undefined,
-      template.customDays ?? undefined,
-    );
-
-    // If nextRunAt is past endDate, keep it null (template expired)
-    const finalNextRunAt = template.endDate && nextRunAt && nextRunAt > template.endDate ? null : nextRunAt;
-
-    await this.prisma.recurringTaskTemplate.update({
-      where: { id: template.id },
-      data: {
-        lastGeneratedAt: now,
-        nextRunAt: finalNextRunAt,
-      },
-    });
+    const outcome = await this.runOnce(template, new Date(), data.userId);
+    if ('paused' in outcome) throw new NotFoundException('Space not found in this organization');
+    if ('taken' in outcome) {
+      throw new ConflictException({ message: 'This run was just made. Refresh to see it.', code: RECURRING_RUN_TAKEN });
+    }
 
     // Return the created task with includes
     const fullTask = await this.prisma.task.findUnique({
-      where: { id: task.id },
+      where: { id: outcome.made.id },
       include: {
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
@@ -92,11 +91,7 @@ export class RecurringRunnerService implements OnModuleInit, OnModuleDestroy {
     return success(fullTask, 'Task generated from recurring template');
   }
 
-  /**
-   * Scheduler tick: find every active template whose nextRunAt has arrived,
-   * claim each atomically (compare-and-swap on nextRunAt so concurrent workers
-   * don't double-generate), then create its task.
-   */
+  /** Scheduler tick: every active template whose planned run has arrived makes it (each claimed once). */
   async runDue(): Promise<number> {
     const now = new Date();
     const due = await this.prisma.recurringTaskTemplate.findMany({
@@ -110,26 +105,8 @@ export class RecurringRunnerService implements OnModuleInit, OnModuleDestroy {
 
     let generated = 0;
     for (const template of due) {
-      const next = calculateNextRun(
-        template.frequency,
-        template.startDate,
-        now,
-        template.dayOfWeek ?? undefined,
-        template.dayOfMonth ?? undefined,
-        template.customDays ?? undefined,
-      );
-      const finalNext = template.endDate && next && next > template.endDate ? null : next;
-
-      // Claim: only proceed if nextRunAt is still exactly what we read.
-      const claim = await this.prisma.recurringTaskTemplate.updateMany({
-        where: { id: template.id, nextRunAt: template.nextRunAt },
-        data: { lastGeneratedAt: now, nextRunAt: finalNext },
-      });
-      if (claim.count !== 1) continue;
-
       try {
-        await materializeTask(this.prisma, template, template.createdById);
-        generated++;
+        if ('made' in (await this.runOnce(template, now, template.createdById))) generated++;
       } catch (e) {
         this.logger.error(`Recurring generate failed for template ${template.id}: ${e}`);
       }
@@ -137,5 +114,54 @@ export class RecurringRunnerService implements OnModuleInit, OnModuleDestroy {
 
     if (generated > 0) this.logger.log(`Recurring scheduler generated ${generated} task(s)`);
     return generated;
+  }
+
+  /**
+   * One run: claim the PLANNED run (compare-and-swap on nextRunAt) and make its job in ONE transaction —
+   * a failure gives the run back for the next tick instead of losing it. The next run is the planned one
+   * plus a period in the workspace's zone (recurring-schedule.ts), never "now" plus a period.
+   */
+  private async runOnce(template: RecurringTaskTemplate, now: Date, userId: string): Promise<Outcome> {
+    // An archived workspace takes no new work: the repeat is paused (switched off), not left failing.
+    if (template.spaceId && !(await this.spaceIsActive(template.spaceId))) {
+      await this.prisma.recurringTaskTemplate.updateMany({ where: { id: template.id }, data: { isActive: false } });
+      this.logger.warn(`Recurring template ${template.id} paused: its workspace is archived`);
+      return { paused: true };
+    }
+    const planned = template.nextRunAt!;
+    const zone = await workspaceZone(this.prisma, template);
+    const rule = {
+      frequency: template.frequency,
+      dayOfWeek: template.dayOfWeek,
+      dayOfMonth: template.dayOfMonth,
+      customDays: template.customDays,
+    };
+    // Due → the first planned run after now (runs missed while down make ONE job); early → the one after it.
+    const floor = planned > now ? planned : now;
+    const next = withinEnd(nextRunPast(rule, planned, floor, zone), template.endDate);
+    const people = await activeTemplateAssignees(this.prisma, template, now);
+
+    const made = await this.prisma.$transaction(async (tx) => {
+      const claim = await tx.recurringTaskTemplate.updateMany({
+        where: { id: template.id, nextRunAt: planned, isActive: true },
+        data: { lastGeneratedAt: now, nextRunAt: next },
+      });
+      if (claim.count !== 1) return null;
+      return materializeTask(tx, template, userId, people);
+    });
+    if (!made) return { taken: true };
+
+    const task = await this.prisma.task.findUniqueOrThrow({ where: { id: made.id }, include: TASK_CREATE_INCLUDE });
+    await this.records.announceNew(task, userId, people[0] ?? null, {
+      source: 'recurring_template',
+      templateId: template.id,
+      templateTitle: template.title,
+    });
+    return { made };
+  }
+
+  private async spaceIsActive(spaceId: string): Promise<boolean> {
+    const space = await this.prisma.companyLocation.findUnique({ where: { id: spaceId }, select: { isActive: true } });
+    return !!space?.isActive;
   }
 }

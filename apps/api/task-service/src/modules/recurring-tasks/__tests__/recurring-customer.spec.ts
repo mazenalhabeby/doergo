@@ -17,6 +17,7 @@ import { Test } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { RecurringTasksService } from '../recurring-tasks.service';
+import { TaskRecordsService } from '../../tasks/records/task-records.service';
 import { recurringPartsOf, type RecurringTasksServiceParts } from './recurring-tasks.service.fixture';
 
 describe('RecurringTasksService — the client survives the repeat', () => {
@@ -43,6 +44,8 @@ describe('RecurringTasksService — the client survives the repeat', () => {
         RecurringRunnerService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
+        // A generated job is announced through the create route's after-steps.
+        { provide: TaskRecordsService, useValue: { announceNew: jest.fn() } },
       ],
     }).compile();
     service = recurringPartsOf(module);
