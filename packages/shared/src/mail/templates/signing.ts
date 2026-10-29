@@ -21,14 +21,29 @@ export function signLinkEmail(
   data: {
     organizationName: string;
     documents: Array<{ title: string; forMember: string | null }>;
-    url: string;
+    /** The link — or, when the client already holds a live one, absent. */
+    url?: string;
     expiresAt: Date;
+    /**
+     * The client's earlier email still carries a working link, and its token
+     * cannot be recovered (only its hash is kept). Rotating it here would kill
+     * the link they may be about to use, so this email points back at that one
+     * and offers the page where a new link can be asked for.
+     */
+    earlier?: { sentAt: Date; askUrl: string };
   },
 ): RenderedEmail {
   const t = emailTranslator(locale);
   const count = data.documents.length;
   const org = data.organizationName;
   const until = bold(t.date(data.expiresAt, SIGN_DATE));
+  const useEarlier = !data.url && data.earlier;
+  const button = useEarlier
+    ? { href: data.earlier!.askUrl, label: t.html('sign.lostButton') }
+    : { href: data.url ?? '', label: t.html('sign.button') };
+  const validity = useEarlier
+    ? t.html('sign.useEarlier', { sent: bold(t.date(data.earlier!.sentAt, SIGN_DATE)), date: until })
+    : t.html({ plural: 'sign.validity', count }, { date: until });
   const items = data.documents
     .map(
       (d) =>
@@ -52,13 +67,13 @@ export function signLinkEmail(
             <ul style="margin:0;padding-left:18px;">${items}</ul>
           </div>
 
-          <a href="${escapeHtml(data.url)}"
+          <a href="${escapeHtml(button.href)}"
              style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 30px;border-radius:9px;font-weight:bold;margin:6px 0 14px;">
-            ${t.html('sign.button')}
+            ${button.label}
           </a>
 
           <p style="color:#94a3b8;font-size:13px;margin-bottom:0;">
-            ${t.html({ plural: 'sign.validity', count }, { date: until })}
+            ${validity}
           </p>
         </div>
 

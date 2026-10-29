@@ -121,6 +121,13 @@ export const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
 export const CUSTOMER_LINK_STATUSES = ['AWAITING_SIGNATURE', 'SIGNED'] as const;
 
 /**
+ * A CLIENT step: nobody with a login here is on it. Only these may be reached
+ * through the emailed link — a member's step carries their address too, and
+ * staff sign in the app, where their session is the authentication.
+ */
+export const CLIENT_STEP_WHERE = { userId: null, eligibleUserIds: { isEmpty: true } } as const;
+
+/**
  * How long a staged batch is kept before it counts as abandoned.
  *
  * A week, so an admin who staged a batch on Friday and came back on Monday

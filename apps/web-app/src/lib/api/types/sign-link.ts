@@ -15,7 +15,8 @@ export interface LinkDocumentRow {
 }
 
 
-export type LinkRefusal = "unknown" | "expired"
+/** "lost": the page opened without a token from an email's "ask for a new link" button. */
+export type LinkRefusal = "unknown" | "expired" | "lost"
 
 
 export type LinkOpenResult =

@@ -25,7 +25,10 @@ type Step = "list" | "agree" | "draw" | "done"
 /** The signing link's state: what it opened, the step, who signs, the signature, and sending it. */
 export function useSignLink() {
   const { t } = useTranslation()
-  const token = useSearchParams().get("token") ?? ""
+  const params = useSearchParams()
+  const token = params.get("token") ?? ""
+  // Reached from an email's "ask for a new link" button: no token on purpose.
+  const lost = params.get("lost") === "1"
 
   const [state, setState] = useState<LinkOpenResult | null>(null)
   const [loading, setLoading] = useState(true)
@@ -48,7 +51,7 @@ export function useSignLink() {
 
   const load = useCallback(async () => {
     if (!token) {
-      setState({ ok: false, refusal: "unknown" })
+      setState({ ok: false, refusal: lost ? "lost" : "unknown" })
       setLoading(false)
       return
     }
@@ -67,7 +70,7 @@ export function useSignLink() {
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, lost])
 
   useEffect(() => {
     void load()

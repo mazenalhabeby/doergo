@@ -101,6 +101,12 @@ export class DocumentSendBackService {
         where: { documentId: document.id, order: { gte: target.order }, status: 'SIGNED' },
         data: { status: 'PENDING', signedAt: null },
       });
+      // The turn comes round again for every step from the target on: a client
+      // is emailed afresh when it reaches them, not left on the old reminders.
+      await tx.documentSigner.updateMany({
+        where: { documentId: document.id, order: { gte: target.order } },
+        data: { notifiedAt: null, linkMailedAt: null, linkReminders: 0 },
+      });
       await tx.documentEvent.create({
         data: {
           documentId: document.id,

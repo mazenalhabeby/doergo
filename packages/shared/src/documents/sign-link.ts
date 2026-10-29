@@ -49,12 +49,30 @@ export function signLinkRefusal(
 }
 
 /** May another link be sent to this client yet? */
-export function canReissue(
-  lastSentAt: Date | string | null | undefined,
-  now: Date = new Date(),
-): boolean {
+export function canReissue(lastSentAt: Date | string | null | undefined, now: Date = new Date()): boolean {
   if (!lastSentAt) return true;
   return now.getTime() - new Date(lastSentAt).getTime() >= LINK_REISSUE_COOLDOWN_MS;
+}
+
+/**
+ * When a client is emailed about a step: once when it becomes their turn, then
+ * a reminder this many days after that first email, then never again.
+ */
+export const SIGN_LINK_REMINDER_DAYS = [3, 7] as const;
+
+/** What one client step is owed by the mail sweep right now. */
+export type SignMailDue = 'FIRST' | 'REMINDER' | null;
+
+export function signMailDue(
+  step: { linkMailedAt?: Date | string | null; linkReminders?: number | null },
+  now: Date = new Date(),
+): SignMailDue {
+  if (!step.linkMailedAt) return 'FIRST';
+  const sent = step.linkReminders ?? 0;
+  const days = SIGN_LINK_REMINDER_DAYS[sent];
+  if (days === undefined) return null;
+  const elapsed = now.getTime() - new Date(step.linkMailedAt).getTime();
+  return elapsed >= days * 24 * 60 * 60 * 1000 ? 'REMINDER' : null;
 }
 
 /** When a link minted now should expire. */
@@ -86,10 +104,7 @@ export interface SignableDocument {
  * the request would let somebody sign a document that had left their queue, so
  * the selection is always intersected with what is pending RIGHT NOW.
  */
-export function acceptedForSigning(
-  requestedSignerIds: string[],
-  pending: { signerId: string }[],
-): string[] {
+export function acceptedForSigning(requestedSignerIds: string[], pending: { signerId: string }[]): string[] {
   const live = new Set(pending.map((p) => p.signerId));
   const seen = new Set<string>();
   return requestedSignerIds.filter((id) => {

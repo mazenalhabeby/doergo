@@ -5857,6 +5857,13 @@ model DocumentSigner {
   notifiedAt DateTime?
   signedAt   DateTime?
 
+  /// A CLIENT step only: when the signing email for this turn went out, and how
+  /// many reminders followed (3 and 7 days later, then nothing). The sweep reads
+  /// these, so it emails once per turn instead of every few minutes. A send-back
+  /// clears both: the turn comes round again.
+  linkMailedAt  DateTime?
+  linkReminders Int       @default(0)
+
   /// Phase 4. Hashed like every other token here — the plaintext is only ever
   /// in the link, never at rest.
   tokenHash      String?   @unique

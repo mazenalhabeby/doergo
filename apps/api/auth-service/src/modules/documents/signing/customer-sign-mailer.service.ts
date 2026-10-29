@@ -3,11 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as nodemailer from 'nodemailer';
 import {
-  personName,
   mailRoutesFromConfig,
   sendViaFirstWorking,
   runWithCronLock,
-  canReissue,
+  signLinkRefusal,
+  SIGN_LINK_REMINDER_DAYS,
   clientEmailLocale,
   signLinkEmail,
   signReissueEmail,
@@ -19,6 +19,8 @@ import {
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { CustomerSignLinkService } from './customer-sign-link.service';
+import { clientStepsWaiting, recordStepsMailed } from './customer-sign-waiting';
+import { CLIENT_STEP_WHERE } from '../common/actor';
 
 /**
  * Telling a client that documents are waiting for them.
@@ -74,93 +76,72 @@ export class CustomerSignMailerService {
   }
 
   /**
-   * Send one client everything that is waiting for them.
+   * Email one client about what is waiting for them — when the sweep says a
+   * step is OWED an email (its first, or the 3- and 7-day reminder), never
+   * otherwise.
    *
-   * Returns false when nothing was sent — no address, no transport, or the
-   * cooldown has not elapsed. The caller decides what to say about that; this
-   * never reports success it did not achieve.
+   * The link is NOT rotated while it still works: only its hash is kept, so a
+   * new email cannot carry the old token, and minting a new one would kill the
+   * link the client may be about to click. So:
+   *
+   *   no link, expired, or never delivered   mint one and send it
+   *   a live link the client already holds   send the list, point at the
+   *                                          earlier email, and offer the page
+   *                                          where a new link is asked for
+   *
+   * A link is rotated only when somebody asks for a new one (the re-send form).
+   * Returns false when nothing was sent; never reports success it did not get.
    */
-  async sendPending(organizationId: string, email: string): Promise<boolean> {
+  async sendPending(organizationId: string, email: string, now: Date = new Date()): Promise<boolean> {
     const addr = normalizeEmail(email);
+
+    const waiting = await clientStepsWaiting(this.prisma, organizationId, addr, now);
+    if (!waiting.some((w) => w.due)) return false;
+    const customerId = waiting.find((w) => w.customerId)?.customerId ?? null;
 
     const link = await this.prisma.customerSignLink.findUnique({
       where: { organizationId_email: { organizationId, email: addr } },
-      select: { id: true, lastSentAt: true },
+      select: { id: true, lastSentAt: true, expiresAt: true },
     });
-    if (link && !canReissue(link.lastSentAt)) return false;
+    const holdsLiveLink = !!link && !!link.lastSentAt && signLinkRefusal(link, now) === null;
 
-    const { toSign, customerId, organizationName } = await this.documentsWaiting(organizationId, addr);
-    if (toSign.length === 0) return false;
-
-    /*
-      A fresh link every time.
-
-      The plaintext exists only inside an email, so somebody who deleted the
-      last one has no way back to it — minting anew is the only way to send a
-      usable link, and it kills the previous one, which is what we want.
-    */
-    const { token, expiresAt } = await this.links.mintFor(organizationId, addr, { force: true, customerId });
-    if (!token) return false;
+    let url: string | undefined;
+    let expiresAt: Date;
+    if (holdsLiveLink) {
+      expiresAt = link.expiresAt;
+    } else {
+      const minted = await this.links.mintFor(organizationId, addr, { force: true, customerId });
+      if (!minted.token) return false;
+      url = this.signUrl(minted.token);
+      expiresAt = minted.expiresAt;
+    }
 
     const sent = await this.send(
       addr,
       signLinkEmail(await this.localeFor(organizationId, addr, customerId), {
-        organizationName,
-        documents: toSign,
-        url: this.signUrl(token),
+        organizationName: waiting[0].organizationName,
+        documents: waiting.map((w) => ({ title: w.title, forMember: w.forMember })),
+        url,
         expiresAt,
+        earlier: holdsLiveLink
+          ? { sentAt: link.lastSentAt as Date, askUrl: `${this.appUrl()}/sign?lost=1` }
+          : undefined,
       }),
     );
-
     if (!sent) return false;
-    const row = await this.prisma.customerSignLink.findUnique({
-      where: { organizationId_email: { organizationId, email: addr } },
-      select: { id: true },
-    });
-    if (row) await this.links.markSent(row.id);
+
+    await recordStepsMailed(this.prisma, waiting, now);
+    // Only an email that CARRIED a token counts as the link being delivered —
+    // marking a pointer email would also start the re-send cooldown on the
+    // client who then asks for a new link.
+    if (url) {
+      const row = await this.prisma.customerSignLink.findUnique({
+        where: { organizationId_email: { organizationId, email: addr } },
+        select: { id: true },
+      });
+      if (row) await this.links.markSent(row.id);
+    }
     return true;
-  }
-
-  /** Titles of what is genuinely this client's turn — the list the email names. */
-  private async documentsWaiting(organizationId: string, email: string) {
-    const rows = await this.prisma.documentSigner.findMany({
-      where: {
-        email,
-        status: 'PENDING',
-        document: { organizationId, status: 'AWAITING_SIGNATURE' },
-      },
-      select: {
-        order: true,
-        customerId: true,
-        document: {
-          select: {
-            title: true,
-            user: { select: { firstName: true, lastName: true } },
-            organization: { select: { name: true } },
-            signers: { select: { order: true, status: true } },
-          },
-        },
-      },
-      orderBy: { document: { issuedAt: 'asc' } },
-      take: 50,
-    });
-
-    // Only steps whose turn it actually is. A document three signatures away is
-    // not theirs yet, and naming it in an email invites a countersignature on
-    // work the supplier has not finished approving.
-    const live = rows.filter((r) => {
-      const pending = r.document.signers.filter((s) => s.status === 'PENDING').sort((a, b) => a.order - b.order);
-      return pending[0]?.order === r.order;
-    });
-
-    return {
-      toSign: live.map((r) => ({
-        title: r.document.title,
-        forMember: r.document.user ? personName(r.document.user) : null,
-      })),
-      customerId: live.find((r) => r.customerId)?.customerId ?? null,
-      organizationName: live[0]?.document.organization?.name ?? '',
-    };
   }
 
   private async send(to: string, email: RenderedEmail): Promise<boolean> {
@@ -242,13 +223,13 @@ export class CustomerSignMailerService {
   }
 
   /**
-   * The sweep — what actually makes eleven documents one email.
+   * The sweep — what makes eleven documents one email, and one email per turn.
    *
-   * Every minute, find clients with something genuinely waiting whose link has
-   * not been sent since the newest of it, and send once. The per-client
-   * cooldown inside `sendPending` does the debouncing, so a burst of documents
-   * issued together produces a single message a few minutes later rather than
-   * one per document.
+   * Every minute, find client steps still owed something (no first email yet,
+   * or fewer than two reminders) and ask `sendPending` once per address. It
+   * sends only when a step is actually due, and records what it sent ON THE
+   * STEP, so a client is emailed when their turn comes, reminded at 3 and 7
+   * days, and then left alone.
    *
    * The lease is not optional: NestJS starts this schedule in EVERY replica.
    */
@@ -263,6 +244,8 @@ export class CustomerSignMailerService {
             status: 'PENDING',
             email: { not: null },
             notifiedAt: { not: null },
+            ...CLIENT_STEP_WHERE,
+            linkReminders: { lt: SIGN_LINK_REMINDER_DAYS.length },
             document: { status: 'AWAITING_SIGNATURE' },
           },
           select: { email: true, document: { select: { organizationId: true } } },
@@ -284,7 +267,7 @@ export class CustomerSignMailerService {
             this.logger.warn(`Signing-link sweep failed for ${key}: ${(err as Error).message}`);
           }
         }
-        if (sent > 0) this.logger.log(`Sent ${sent} client signing link email(s)`);
+        if (sent > 0) this.logger.log(`Sent ${sent} client signing email(s)`);
       },
     );
   }

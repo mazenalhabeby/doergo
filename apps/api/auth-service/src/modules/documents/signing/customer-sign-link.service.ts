@@ -72,6 +72,10 @@ export class CustomerSignLinkService {
         tokenHash: hashSecret(token),
         expiresAt,
         firstOpenedAt: null,
+        // A new token has not been mailed yet. Until `markSent` says so, the
+        // sweep knows nobody holds it and may mint again instead of pointing
+        // the client at an earlier email that does not carry it.
+        lastSentAt: null,
         ...(opts.customerId ? { customerId: opts.customerId } : {}),
       },
     });

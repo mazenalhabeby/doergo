@@ -97,8 +97,10 @@ describe('client signing link email language', () => {
     const { service, send, prisma } = setup({ clients: [{ id: 'c7', email: 'other@firma.es', locale: 'es' }] });
     prisma.customerSignLink = { findUnique: jest.fn(async () => null) };
     prisma.documentSigner = {
+      updateMany: jest.fn(),
       findMany: jest.fn(async () => [
         {
+          id: 's1',
           order: 1,
           customerId: 'c7',
           document: {

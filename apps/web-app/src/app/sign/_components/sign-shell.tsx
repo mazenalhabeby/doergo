@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Clock, FileText, Loader2, Mail } from "lucide-react"
 import { signLinkApi } from "@/lib/api"
+import type { LinkRefusal } from "@/lib/api/types/sign-link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,7 +32,7 @@ export function Shell({ children, org, subtitle }: { children: React.ReactNode; 
  * differently on purpose and the SERVER already decided which — a page that
  * guessed would be a way to find out whether an address is a client here.
  */
-export function Refused({ refusal }: { refusal: "unknown" | "expired" }) {
+export function Refused({ refusal }: { refusal: LinkRefusal }) {
   const { t } = useTranslation()
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
@@ -55,12 +56,21 @@ export function Refused({ refusal }: { refusal: "unknown" | "expired" }) {
   return (
     <div className="text-center">
       <Clock className="mx-auto h-9 w-9 text-amber-600" />
-      <h1 className="mt-3 text-lg font-semibold">{t("signLink.expired.title", "This link has expired")}</h1>
+      <h1 className="mt-3 text-lg font-semibold">
+        {refusal === "lost"
+          ? t("signLink.lost.title", "Ask for a new link")
+          : t("signLink.expired.title", "This link has expired")}
+      </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {t(
-          "signLink.expired.body",
-          "Your documents are still here. Enter the address this was sent to and we will send a new link.",
-        )}
+        {refusal === "lost"
+          ? t(
+              "signLink.lost.body",
+              "Enter the address our email was sent to and we will send a new link. Any earlier link stops working.",
+            )
+          : t(
+              "signLink.expired.body",
+              "Your documents are still here. Enter the address this was sent to and we will send a new link.",
+            )}
       </p>
 
       {sent ? (

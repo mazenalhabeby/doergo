@@ -8440,6 +8440,10 @@
       "email": "Your email address",
       "send": "Send me a new link",
       "sent": "If that address has documents with us, a link is on its way."
+    },
+    "lost": {
+      "title": "Ask for a new link",
+      "body": "Enter the address our email was sent to and we will send a new link. Any earlier link stops working."
     }
   },
   "explainerButton": {

@@ -8440,6 +8440,10 @@
       "email": "Tu dirección de correo",
       "send": "Envíame un enlace nuevo",
       "sent": "Si esa dirección tiene documentos con nosotros, el enlace va en camino."
+    },
+    "lost": {
+      "title": "Pide un enlace nuevo",
+      "body": "Escribe la dirección a la que enviamos el correo y te mandaremos un enlace nuevo. Los enlaces anteriores dejarán de funcionar."
     }
   },
   "explainerButton": {

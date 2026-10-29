@@ -8440,6 +8440,10 @@
       "email": "Il tuo indirizzo e-mail",
       "send": "Mandami un nuovo link",
       "sent": "Se a quell’indirizzo risultano documenti, il link è in arrivo."
+    },
+    "lost": {
+      "title": "Chiedi un nuovo link",
+      "body": "Inserisci l’indirizzo a cui è stata inviata la nostra email e ti invieremo un nuovo link. I link precedenti smetteranno di funzionare."
     }
   },
   "explainerButton": {

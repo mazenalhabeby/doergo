@@ -8440,6 +8440,10 @@
       "email": "Ihre E-Mail-Adresse",
       "send": "Neuen Link senden",
       "sent": "Wenn zu dieser Adresse Dokumente vorliegen, ist ein Link unterwegs."
+    },
+    "lost": {
+      "title": "Neuen Link anfordern",
+      "body": "Geben Sie die Adresse ein, an die unsere E-Mail ging, und wir senden einen neuen Link. Frühere Links funktionieren dann nicht mehr."
     }
   },
   "explainerButton": {

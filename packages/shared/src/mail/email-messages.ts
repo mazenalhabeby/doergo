@@ -44,12 +44,10 @@ const en = {
   'label.distance': 'Distance from location',
   'label.allowedRadius': 'Allowed radius',
 
-
   'priority.LOW': 'Low',
   'priority.MEDIUM': 'Medium',
   'priority.HIGH': 'High',
   'priority.URGENT': 'Urgent',
-
   'role.ADMIN': 'Admin',
   'role.MANAGER': 'Manager',
   'role.EMPLOYEE': 'Employee',
@@ -118,6 +116,8 @@ const en = {
   'sign.validity.other':
     'You can sign them all at once. This link is valid until {{date}} and stays your way back to these documents — if it expires, you can ask for a new one from the same page.',
   'sign.footer': 'You are receiving this because {{org}} listed you as the client for this work.',
+  'sign.useEarlier': 'Open them with the link in our email of {{sent}} — it works until {{date}}.',
+  'sign.lostButton': 'Lost that email? Ask for a new link',
   'signReissue.subject': 'Your documents with {{org}}',
   'signReissue.heading': 'Here is your link',
   'signReissue.intro':
@@ -181,12 +181,10 @@ const de: Record<EmailKey, string> = {
   'label.distance': 'Entfernung zum Standort',
   'label.allowedRadius': 'Erlaubter Radius',
 
-
   'priority.LOW': 'Niedrig',
   'priority.MEDIUM': 'Mittel',
   'priority.HIGH': 'Hoch',
   'priority.URGENT': 'Dringend',
-
   'role.ADMIN': 'Admin',
   'role.MANAGER': 'Manager',
   'role.EMPLOYEE': 'Mitarbeiter',
@@ -250,6 +248,8 @@ const de: Record<EmailKey, string> = {
   'sign.validity.other':
     'Sie können alle auf einmal unterschreiben. Dieser Link ist bis {{date}} gültig und bleibt Ihr Weg zurück zu diesen Dokumenten — falls er abläuft, können Sie auf derselben Seite einen neuen anfordern.',
   'sign.footer': 'Sie erhalten diese E-Mail, weil {{org}} Sie als Kunden für diese Arbeit angegeben hat.',
+  'sign.useEarlier': 'Öffnen Sie sie mit dem Link aus unserer E-Mail vom {{sent}} – er gilt bis {{date}}.',
+  'sign.lostButton': 'E-Mail nicht mehr da? Neuen Link anfordern',
   'signReissue.subject': 'Ihre Dokumente bei {{org}}',
   'signReissue.heading': 'Hier ist Ihr Link',
   'signReissue.intro':
@@ -302,12 +302,10 @@ const es: Record<EmailKey, string> = {
   'label.distance': 'Distancia a la ubicación',
   'label.allowedRadius': 'Radio permitido',
 
-
   'priority.LOW': 'Baja',
   'priority.MEDIUM': 'Media',
   'priority.HIGH': 'Alta',
   'priority.URGENT': 'Urgente',
-
   'role.ADMIN': 'Administrador',
   'role.MANAGER': 'Responsable',
   'role.EMPLOYEE': 'Empleado',
@@ -370,6 +368,8 @@ const es: Record<EmailKey, string> = {
   'sign.validity.other':
     'Puedes firmarlos todos a la vez. Este enlace es válido hasta el {{date}} y te permite volver a estos documentos; si caduca, puedes pedir uno nuevo desde la misma página.',
   'sign.footer': 'Recibes este correo porque {{org}} te indicó como cliente de este trabajo.',
+  'sign.useEarlier': 'Ábrelos con el enlace de nuestro correo del {{sent}}: funciona hasta el {{date}}.',
+  'sign.lostButton': '¿No encuentras ese correo? Pide un enlace nuevo',
   'signReissue.subject': 'Tus documentos con {{org}}',
   'signReissue.heading': 'Aquí tienes tu enlace',
   'signReissue.intro': 'Abre tus documentos con {{org}}: tanto los que esperan tu firma como los que ya has firmado.',
@@ -421,12 +421,10 @@ const fr: Record<EmailKey, string> = {
   'label.distance': 'Distance du lieu',
   'label.allowedRadius': 'Rayon autorisé',
 
-
   'priority.LOW': 'Basse',
   'priority.MEDIUM': 'Moyenne',
   'priority.HIGH': 'Haute',
   'priority.URGENT': 'Urgente',
-
   'role.ADMIN': 'Administrateur',
   'role.MANAGER': 'Responsable',
   'role.EMPLOYEE': 'Employé',
@@ -490,6 +488,8 @@ const fr: Record<EmailKey, string> = {
   'sign.validity.other':
     'Vous pouvez tous les signer en une fois. Ce lien est valable jusqu’au {{date}} et vous permet de revenir à ces documents — s’il expire, vous pouvez en demander un nouveau depuis la même page.',
   'sign.footer': 'Vous recevez cet e-mail car {{org}} vous a indiqué comme client pour ce travail.',
+  'sign.useEarlier': 'Ouvrez-les avec le lien de notre e-mail du {{sent}} — il fonctionne jusqu’au {{date}}.',
+  'sign.lostButton': 'E-mail introuvable ? Demandez un nouveau lien',
   'signReissue.subject': 'Vos documents avec {{org}}',
   'signReissue.heading': 'Voici votre lien',
   'signReissue.intro':
@@ -542,12 +542,10 @@ const it: Record<EmailKey, string> = {
   'label.distance': 'Distanza dal luogo',
   'label.allowedRadius': 'Raggio consentito',
 
-
   'priority.LOW': 'Bassa',
   'priority.MEDIUM': 'Media',
   'priority.HIGH': 'Alta',
   'priority.URGENT': 'Urgente',
-
   'role.ADMIN': 'Amministratore',
   'role.MANAGER': 'Responsabile',
   'role.EMPLOYEE': 'Dipendente',
@@ -610,6 +608,8 @@ const it: Record<EmailKey, string> = {
   'sign.validity.other':
     'Puoi firmarli tutti in una volta. Questo link è valido fino al {{date}} e resta il tuo modo per tornare a questi documenti: se scade, puoi richiederne uno nuovo dalla stessa pagina.',
   'sign.footer': 'Ricevi questa email perché {{org}} ti ha indicato come cliente per questo lavoro.',
+  'sign.useEarlier': 'Aprili con il link della nostra email del {{sent}}: funziona fino al {{date}}.',
+  'sign.lostButton': 'Non trovi quell’email? Chiedi un nuovo link',
   'signReissue.subject': 'I tuoi documenti con {{org}}',
   'signReissue.heading': 'Ecco il tuo link',
   'signReissue.intro': 'Apre i tuoi documenti con {{org}}: sia quelli in attesa della tua firma sia quelli che hai già firmato.',

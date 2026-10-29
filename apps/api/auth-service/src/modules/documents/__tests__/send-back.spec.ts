@@ -77,6 +77,11 @@ describe('DocumentsService — sendBack', () => {
         data: { status: 'PENDING', signedAt: null },
       }),
     );
+    // …and the client is emailed afresh when the turn reaches them again.
+    expect(prisma.documentSigner.updateMany).toHaveBeenCalledWith({
+      where: { documentId: expect.any(String), order: { gte: 1 } },
+      data: { notifiedAt: null, linkMailedAt: null, linkReminders: 0 },
+    });
   });
 
   it('records why, on the trail', async () => {
