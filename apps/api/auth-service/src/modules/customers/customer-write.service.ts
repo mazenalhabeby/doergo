@@ -40,6 +40,10 @@ export class CustomerWriteService {
     */
     const reach = await this.reach.crmReachFor(caller, organizationId);
     this.reach.assertMayCreateIn(reach, dto.spaceId ?? null);
+    // App access is manage-level, on create as on update.
+    if ((dto.portalId || dto.isPortalResident) && !crmCapsIn(reach, dto.spaceId ?? null).manage) {
+      throw new ForbiddenException('Not allowed');
+    }
 
     // A client added from the phone and sent twice is one client. The id is the
     // phone's (UUIDv7); anything else in that field is ignored, never stored.
@@ -68,7 +72,7 @@ export class CustomerWriteService {
     const locale = clientLocaleFrom(dto.locale) ?? null;
     const currency = clientCurrencyFrom(dto.currency) ?? null;
     const legalEntityId = (await this.refs.clientCompany(organizationId, dto.legalEntityId)) ?? null;
-    await this.refs.assertRefsInOrg(dto, organizationId);
+    await this.refs.assertRefsInOrg(dto, organizationId, dto.spaceId ?? null);
     // ownerId must be a real member of this org (else drop it).
     const ownerId = dto.ownerId ? ((await this.refs.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
     // Assigned managers must be real members of THIS org (default: the creator).
@@ -168,6 +172,10 @@ export class CustomerWriteService {
         });
       }
     }
+    // A portal is attached by somebody who manages where the client ends up.
+    if (dto.portalId && !crmCapsIn(reach, dto.spaceId !== undefined ? dto.spaceId || null : existing.spaceId).manage) {
+      throw new ForbiddenException('Not allowed');
+    }
 
     return this.writeClient(existing, organizationId, dto, actorId);
   }
@@ -231,7 +239,11 @@ export class CustomerWriteService {
     if (dto.managerIds !== undefined)
       data.managerIds = await this.refs.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);
     // Cross-tenant guards: refs (space/portal) and ownerId must belong to the org.
-    await this.refs.assertRefsInOrg(dto, organizationId);
+    await this.refs.assertRefsInOrg(
+      dto,
+      organizationId,
+      dto.spaceId !== undefined ? dto.spaceId || null : existing.spaceId,
+    );
     if (dto.ownerId !== undefined)
       data.ownerId = dto.ownerId ? ((await this.refs.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
 

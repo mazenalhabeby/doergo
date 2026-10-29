@@ -8368,6 +8368,7 @@
     "LOCATION_REQUIRED": "Wählen Sie den Arbeitsort, an dem Sie einstempeln.",
     "NOT_ASSIGNED_HERE": "Sie sind diesem Arbeitsort nicht zugeteilt. Bitten Sie Ihr Büro, Sie hinzuzufügen.",
     "WORKSPACE_ARCHIVED": "Dieser Arbeitsort wurde archiviert. Fragen Sie Ihr Büro, wo Sie einstempeln sollen.",
+    "CRM_PORTAL_OTHER_WORKSPACE": "Dieses Portal gehört zu einem anderen Arbeitsort als der Kunde.",
     "CLOCK_OUT_AFTER_NEXT_SHIFT": "Diese Ausstempelzeit liegt nach dem Beginn Ihrer nächsten Schicht. Wählen Sie eine frühere Zeit oder fragen Sie Ihr Büro.",
     "REMOTE_BUCKET_NOT_ASSIGNABLE": "Personen können nicht zu Remote hinzugefügt werden. Wählen Sie einen Arbeitsbereich.",
     "NOT_ON_THE_CLOCK": "Sie sind nicht eingestempelt.",

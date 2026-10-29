@@ -31,7 +31,7 @@ export class CustomerRefsService {
    *  in a list nobody opens — invisible everywhere, and reachable only by
    *  restoring a workspace whose connection to the missing client nothing
    *  states. */
-  async assertRefsInOrg(dto: CustomerInput, organizationId: string) {
+  async assertRefsInOrg(dto: CustomerInput, organizationId: string, clientSpaceId?: string | null) {
     if (dto.spaceId) {
       const s = await workspaceInOrg(this.prisma, dto.spaceId, organizationId, { activeOnly: true });
       if (!s) throw new BadRequestException('Invalid space for this organization');
@@ -39,9 +39,17 @@ export class CustomerRefsService {
     if (dto.portalId) {
       const p = await this.prisma.portal.findFirst({
         where: { id: dto.portalId, organizationId },
-        select: { id: true },
+        select: { id: true, spaceId: true },
       });
       if (!p) throw new BadRequestException('Invalid portal for this organization');
+      // A workspace's portal takes that workspace's clients only — never another
+      // workspace's client (whose requests and config would then cross over).
+      if (clientSpaceId !== undefined && p.spaceId && p.spaceId !== clientSpaceId) {
+        throw new BadRequestException({
+          message: 'This portal belongs to another workspace than the client.',
+          code: 'CRM_PORTAL_OTHER_WORKSPACE',
+        });
+      }
     }
   }
 }
