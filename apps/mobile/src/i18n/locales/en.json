@@ -3298,6 +3298,7 @@
       "CHECKLIST_CHANGED": "Somebody changed this item just now. Look again.",
       "CHECKLIST_ITEM_NOT_YOURS": "Only the person it belongs to, the leader of this job, or the office changes this item.",
       "ROLE_TASK_TAKEN": "Somebody else took it first.",
+      "TASK_HAS_FINISHED_SUBTASKS": "This job has finished sub-jobs, so it cannot be deleted.",
       "ROLE_TASK_ALREADY_YOURS": "You are already on this job.",
       "ROLE_TASK_STARTED": "The work has started — leave the crew instead.",
       "ROLE_TASK_NOT_ROLE": "This job was not opened to a role.",

@@ -6,23 +6,19 @@ import { assertSpaceInOrg } from '../../../common/tenant-scope.util';
 import { TaskStatus, TaskEventType, success, accessAllowsInSpace, assertFoundInOrg } from '@hbcfield/shared';
 import { TaskSupportService } from '../core/task-support.service';
 import { resolveOwnedTaskRefs, assertMayCreateUnder } from '../core/task-scope';
-import { emitEvent, taskDeletedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
-import { TASK_JOBS, type JobData } from '@hbcfield/shared';
+import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import type { TaskUpdateJob } from '@hbcfield/shared';
-import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
 import { effectiveWorkflowOf } from '../../workflows/effective-workflow';
 import { stepState } from './task-step-state';
 
-/** Changing a task's fields (never its open-role columns or its status), and deleting one. */
+/** Changing a task's fields (never its open-role columns or its status). Deleting one: TaskRemovalService. */
 @Injectable()
 export class TaskUpdateService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     private readonly support: TaskSupportService,
-    // A client request deleted half-way through an office rule: its approvals end with it.
-    private readonly rules: ApprovalRulesService,
     private readonly workflows: WorkflowConfigCache,
   ) {}
 
@@ -200,38 +196,5 @@ export class TaskUpdateService {
     emitEvent(this.notificationClient, taskUpdatedEvent, { task });
 
     return success(task);
-  }
-
-  /**
-   * Delete a task (CLIENT only - own tasks)
-   */
-  async remove(data: JobData<typeof TASK_JOBS.remove>) {
-    const task = await this.prisma.task.findUnique({
-      where: { id: data.id },
-    });
-
-    // Authorization: an ADMIN may delete any task in their organization.
-    assertFoundInOrg(task, data.organizationId, 'Task');
-
-    // Never a job somebody is working on or that was finished — by ITS flow (task-step-state.ts).
-    const at = stepState(task.status, await effectiveWorkflowOf(this.prisma, this.workflows, task));
-    if (at.working || at.finished) {
-      throw new BadRequestException('Cannot delete a task that is in progress or completed');
-    }
-
-    await this.prisma.task.delete({ where: { id: data.id } });
-    await this.rules.clearItem('clientRequest', data.id);
-
-    // Notify via Socket.IO for real-time updates (spaceId lets cross-org shared
-    // guests receive the delete on the space room too).
-    emitEvent(this.notificationClient, taskDeletedEvent, {
-      taskId: data.id,
-      organizationId: task.organizationId,
-      spaceId: task.spaceId ?? null,
-    });
-
-    this.support.invalidateStatusCountsCache(task.organizationId);
-
-    return success(null, 'Task deleted successfully');
   }
 }

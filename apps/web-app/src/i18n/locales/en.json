@@ -8264,6 +8264,7 @@
     "ROLE_TASK_PEOPLE_OR_ROLE": "Assign people or open the task to a role — not both.",
     "ROLE_TASK_FINISHED": "This task is finished.",
     "ROLE_TASK_TAKEN": "Somebody else took the last place.",
+    "TASK_HAS_FINISHED_SUBTASKS": "This job has finished sub-jobs. Their record stays, so the job cannot be deleted.",
     "ROLE_TASK_ALREADY_YOURS": "You are already on this task.",
     "ROLE_TASK_NOT_ROLE": "This task was not opened to a role.",
     "ROLE_TASK_STARTED": "The work has started — leave the crew instead.",

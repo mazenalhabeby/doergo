@@ -12,6 +12,7 @@ import { TaskHierarchyService } from './records/task-hierarchy.service';
 import { TaskDeclineService } from './assignment/task-decline.service';
 import { TaskCrewMembersService } from './assignment/task-crew-members.service';
 import { TaskUpdateService } from './records/task-update.service';
+import { TaskRemovalService } from './records/task-removal.service';
 import { WorkflowResyncService } from './records/workflow-resync.service';
 import { TaskDetailService } from './query/task-detail.service';
 import { TaskDependenciesService } from './records/task-dependencies.service';
@@ -43,6 +44,7 @@ export class TasksService {
     private readonly records: TaskRecordsService,
     private readonly workflowResync: WorkflowResyncService,
     private readonly taskUpdates: TaskUpdateService,
+    private readonly removal: TaskRemovalService,
     private readonly portal: TaskPortalService,
     private readonly triage: TaskTriageService,
     private readonly query: TaskQueryService,
@@ -77,8 +79,8 @@ export class TasksService {
     return this.taskUpdates.update(...args);
   }
 
-  remove(...args: Parameters<TaskUpdateService['remove']>) {
-    return this.taskUpdates.remove(...args);
+  remove(...args: Parameters<TaskRemovalService['remove']>) {
+    return this.removal.remove(...args);
   }
 
   // ── The customer portal: a customer's own requests, a portal's inbox, triage.

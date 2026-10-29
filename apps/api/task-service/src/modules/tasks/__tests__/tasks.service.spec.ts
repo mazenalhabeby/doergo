@@ -129,6 +129,8 @@ describe('TasksService', () => {
       findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn(),
     },
+    // Deleting a job removes its files' stored objects; none in these specs.
+    attachment: { findMany: jest.fn().mockResolvedValue([]) },
     // A job's chat follows its crew; none exists in these specs.
     conversation: { findUnique: jest.fn().mockResolvedValue(null) },
     checklistItem: {

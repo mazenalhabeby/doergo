@@ -3298,6 +3298,7 @@
       "CHECKLIST_CHANGED": "Qualcuno ha appena cambiato questo punto. Guarda di nuovo.",
       "CHECKLIST_ITEM_NOT_YOURS": "Solo il responsabile, il capo di questo lavoro o l’ufficio modifica questo punto.",
       "ROLE_TASK_TAKEN": "Qualcun altro l’ha preso per primo.",
+      "TASK_HAS_FINISHED_SUBTASKS": "Questo lavoro ha sottolavori completati, quindi non può essere eliminato.",
       "ROLE_TASK_ALREADY_YOURS": "Sei già su questo lavoro.",
       "ROLE_TASK_STARTED": "Il lavoro è iniziato: esci invece dalla squadra.",
       "ROLE_TASK_NOT_ROLE": "Questo lavoro non è stato aperto a un ruolo.",

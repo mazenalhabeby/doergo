@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Role } from '@hbcfield/shared';
 import { TaskUpdateService } from '../records/task-update.service';
+import { TaskRemovalService } from '../records/task-removal.service';
 import { stepState } from '../records/task-step-state';
 
 /*
@@ -43,8 +44,9 @@ describe('editing and deleting a job on a custom flow', () => {
       attachment: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const workflows: any = { getWorkflow: jest.fn().mockResolvedValue(FLOW) };
-    const service = new TaskUpdateService(prisma, { emit: jest.fn() } as any, {} as any, {} as any, workflows);
-    return { service, prisma };
+    const service = new TaskUpdateService(prisma, { emit: jest.fn() } as any, {} as any, workflows);
+    const removal = new TaskRemovalService(prisma, { emit: jest.fn() } as any, {} as any, {} as any, workflows, {} as any, null);
+    return { service, removal, prisma };
   };
   const caller = { userId: 'u', userRole: Role.ADMIN, organizationId: 'org' } as any;
 
@@ -56,8 +58,8 @@ describe('editing and deleting a job on a custom flow', () => {
 
   it('a job somebody is DOING, or that is DONE, is not deleted', async () => {
     for (const status of ['DOING', 'DONE']) {
-      const { service, prisma } = build(status);
-      await expect(service.remove({ ...caller, id: 't1' })).rejects.toThrow(BadRequestException);
+      const { removal, prisma } = build(status);
+      await expect(removal.remove({ ...caller, id: 't1' })).rejects.toThrow(BadRequestException);
       expect(prisma.task.delete).not.toHaveBeenCalled();
     }
   });

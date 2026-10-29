@@ -5,6 +5,7 @@ import { TaskCoreModule } from '../core/task-core.module';
 import { TaskAssignmentModule } from '../assignment/task-assignment.module';
 import { TaskRecordsService } from './task-records.service';
 import { TaskUpdateService } from './task-update.service';
+import { TaskRemovalService } from './task-removal.service';
 import { WorkflowResyncService } from './workflow-resync.service';
 import { TaskHierarchyService } from './task-hierarchy.service';
 import { TaskDependenciesService } from './task-dependencies.service';
@@ -24,6 +25,7 @@ import { TaskTriageService } from './task-triage.service';
   providers: [
     TaskRecordsService,
     TaskUpdateService,
+    TaskRemovalService,
     WorkflowResyncService,
     TaskHierarchyService,
     TaskDependenciesService,
@@ -33,6 +35,7 @@ import { TaskTriageService } from './task-triage.service';
   exports: [
     TaskRecordsService,
     TaskUpdateService,
+    TaskRemovalService,
     WorkflowResyncService,
     TaskHierarchyService,
     TaskDependenciesService,

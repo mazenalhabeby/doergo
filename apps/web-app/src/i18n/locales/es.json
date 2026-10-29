@@ -8264,6 +8264,7 @@
     "ROLE_TASK_PEOPLE_OR_ROLE": "Asigna personas o abre la tarea a un rol, no ambas cosas.",
     "ROLE_TASK_FINISHED": "Esta tarea está terminada.",
     "ROLE_TASK_TAKEN": "Otra persona tomó el último puesto.",
+    "TASK_HAS_FINISHED_SUBTASKS": "Este trabajo tiene subtrabajos terminados. Su registro se conserva, así que el trabajo no se puede eliminar.",
     "ROLE_TASK_ALREADY_YOURS": "Ya estás en esta tarea.",
     "ROLE_TASK_NOT_ROLE": "Esta tarea no se abrió a un rol.",
     "ROLE_TASK_STARTED": "El trabajo ya empezó: sal del equipo en su lugar.",

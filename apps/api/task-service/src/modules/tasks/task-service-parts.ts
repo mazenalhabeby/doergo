@@ -13,6 +13,7 @@ import { TaskDeclineService } from './assignment/task-decline.service';
 import { TaskCrewMembersService } from './assignment/task-crew-members.service';
 import { TaskCrewChangeService } from './assignment/task-crew-change.service';
 import { TaskUpdateService } from './records/task-update.service';
+import { TaskRemovalService } from './records/task-removal.service';
 import { WorkflowResyncService } from './records/workflow-resync.service';
 import { TaskDetailService } from './query/task-detail.service';
 import { TaskDependenciesService } from './records/task-dependencies.service';
@@ -28,6 +29,7 @@ export const TASK_SERVICE_PARTS = [
   TaskSupportService,
   TaskRecordsService,
   TaskUpdateService,
+  TaskRemovalService,
   WorkflowResyncService,
   TaskPortalService,
   TaskTriageService,
