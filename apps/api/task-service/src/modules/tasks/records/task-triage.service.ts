@@ -82,9 +82,17 @@ export class TaskTriageService {
     }
     const space = await this.prisma.companyLocation.findFirst({
       where: { id: data.spaceId, organizationId: data.organizationId },
-      select: { id: true, lat: true, lng: true, address: true, workflowId: true },
+      select: { id: true, lat: true, lng: true, address: true, workflowId: true, isActive: true },
     });
     if (!space) throw new NotFoundException('Space not found');
+    // An archived workspace takes no new work — a request routed there lands on a board nobody opens. Coded, so
+    // the screen says why in the reader's language.
+    if (!space.isActive) {
+      throw new BadRequestException({
+        code: 'TRIAGE_WORKSPACE_ARCHIVED',
+        message: 'This workspace was archived. Route the request to another workspace.',
+      });
+    }
 
     // Flow: explicit choice wins; otherwise inherit the space's default flow.
     // null is a valid explicit choice (canonical NEW/ASSIGNED, no workflow).

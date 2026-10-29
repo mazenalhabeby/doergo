@@ -8368,6 +8368,7 @@
     "LOCATION_REQUIRED": "Choose the workspace you are clocking in at.",
     "NOT_ASSIGNED_HERE": "You are not assigned to this workspace. Ask your office to add you.",
     "WORKSPACE_ARCHIVED": "This workspace was archived. Ask your office where to clock in.",
+    "TRIAGE_WORKSPACE_ARCHIVED": "This workspace was archived. Route the request to another workspace.",
     "CRM_PORTAL_OTHER_WORKSPACE": "This portal belongs to another workspace than the client.",
     "CLOCK_OUT_AFTER_NEXT_SHIFT": "This clock-out time is after your next shift began. Choose an earlier time, or ask your office.",
     "REMOTE_BUCKET_NOT_ASSIGNABLE": "People can't be added to Remote. Choose a workspace.",

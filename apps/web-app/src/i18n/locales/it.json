@@ -8368,6 +8368,7 @@
     "LOCATION_REQUIRED": "Scegli il luogo di lavoro in cui timbri.",
     "NOT_ASSIGNED_HERE": "Non sei assegnato a questo luogo di lavoro. Chiedi al tuo ufficio di aggiungerti.",
     "WORKSPACE_ARCHIVED": "Questo luogo di lavoro è stato archiviato. Chiedi al tuo ufficio dove timbrare.",
+    "TRIAGE_WORKSPACE_ARCHIVED": "Questo spazio di lavoro è stato archiviato. Indirizza la richiesta a un altro spazio di lavoro.",
     "CRM_PORTAL_OTHER_WORKSPACE": "Questo portale appartiene a uno spazio di lavoro diverso da quello del cliente.",
     "CLOCK_OUT_AFTER_NEXT_SHIFT": "Questo orario di uscita è dopo l'inizio del tuo prossimo turno. Scegli un orario precedente o chiedi al tuo ufficio.",
     "REMOTE_BUCKET_NOT_ASSIGNABLE": "Non è possibile aggiungere persone a Remoto. Scegli uno spazio di lavoro.",
