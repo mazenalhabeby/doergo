@@ -35,3 +35,12 @@ export function activeWindowWhere(now: Date = new Date()) {
 export function notEndedWhere(at: Date = new Date()) {
   return { OR: [{ effectiveTo: null }, { effectiveTo: { gte: at } }] };
 }
+
+/**
+ * The same end bound as `notEndedWhere`, for a row already read: has this assignment ENDED before `at`? A former
+ * member re-added is a member again — their row reopens (`effectiveTo` cleared) rather than staying ended while the
+ * screen says "assigned".
+ */
+export function assignmentEnded(row: { effectiveTo?: Date | null } | null | undefined, at: Date = new Date()): boolean {
+  return !!row?.effectiveTo && row.effectiveTo.getTime() < at.getTime();
+}

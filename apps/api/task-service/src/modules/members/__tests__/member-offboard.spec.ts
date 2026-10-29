@@ -11,16 +11,28 @@ describe('MemberOffboardService', () => {
       spaceAssignment: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
       technicianSchedule: { deleteMany: jest.fn().mockResolvedValue({ count: 5 }) },
       timeOff: { deleteMany: jest.fn().mockResolvedValue({ count: 4 }) },
+      shiftAssignment: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      shiftInstance: { deleteMany: jest.fn().mockResolvedValue({ count: 3 }) },
+      timeEntry: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const tasks: any = { releaseMemberFromOpenWork: jest.fn().mockResolvedValue(3) };
     const custody: any = { releaseAllHeldBy: jest.fn().mockResolvedValue(1) };
-    return { prisma, tasks, custody, service: new MemberOffboardService(prisma, tasks, custody) };
+    const closer: any = { closeEntry: jest.fn() };
+    return { prisma, tasks, custody, closer, service: new MemberOffboardService(prisma, tasks, custody, closer) };
   };
 
   it('releases open jobs, returns equipment and ends assignments', async () => {
     const { prisma, tasks, custody, service } = setup();
     const r = await service.offboard({ organizationId: 'o1', userId: 'u1', actorId: 'admin' });
-    expect(r).toEqual({ tasksReleased: 3, assetsReturned: 1, assignmentsEnded: 2, schedulesRemoved: 5, timeOffErased: 0 });
+    expect(r).toEqual({
+      tasksReleased: 3,
+      assetsReturned: 1,
+      assignmentsEnded: 2,
+      schedulesRemoved: 5,
+      timeOffErased: 0,
+      shiftsClosed: 0,
+      rotaEnded: 2,
+    });
     expect(prisma.technicianSchedule.deleteMany).toHaveBeenCalledWith({ where: { technicianId: 'u1' } });
     // A removal keeps the leave record — only the person erasing their account takes it.
     expect(prisma.timeOff.deleteMany).not.toHaveBeenCalled();
@@ -29,6 +41,48 @@ describe('MemberOffboardService', () => {
     const call = prisma.spaceAssignment.updateMany.mock.calls[0][0];
     expect(call.where).toMatchObject({ userId: 'u1', space: { organizationId: 'o1' } });
     expect(call.data.effectiveTo).toBeInstanceOf(Date);
+  });
+
+  it('ends their rota everywhere in the organization and drops the shifts ahead — never a daily no-show', async () => {
+    const { prisma, service } = setup();
+    await service.offboard({ organizationId: 'o1', userId: 'u1', actorId: 'admin' });
+    const rota = prisma.shiftAssignment.updateMany.mock.calls[0][0];
+    expect(rota.where).toMatchObject({ organizationId: 'o1', userId: 'u1' });
+    expect(rota.where.spaceId).toBeUndefined();
+    expect(rota.data.effectiveTo).toBeInstanceOf(Date); // ended, never deleted
+    expect(prisma.shiftInstance.deleteMany.mock.calls[0][0].where).toMatchObject({
+      organizationId: 'o1',
+      userId: 'u1',
+      state: 'PENDING',
+    });
+  });
+
+  it('looks for a shift still running (closed through the office close — leaver-close.spec)', async () => {
+    const { prisma, service } = setup();
+    await service.offboard({ organizationId: 'o1', userId: 'u1', actorId: 'admin' });
+    expect(prisma.timeEntry.findMany.mock.calls[0][0].where).toMatchObject({
+      organizationId: 'o1',
+      userId: 'u1',
+      status: 'CLOCKED_IN',
+    });
+  });
+
+  it('a revoked share takes the guests off the rota there too', async () => {
+    const { prisma, service } = setup();
+    const tx = {
+      spaceAssignment: { deleteMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      shiftAssignment: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      shiftInstance: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    };
+    prisma.companyLocation = { findFirst: jest.fn().mockResolvedValue({ id: 's1' }) };
+    prisma.spaceAssignment.findMany = jest.fn().mockResolvedValue([{ userId: 'g1' }, { userId: 'g2' }]);
+    prisma.$transaction = (fn: (t: unknown) => unknown) => fn(tx);
+    const r = await service.releaseSharedSpace({ ownerOrgId: 'own', spaceId: 's1', guestOrgId: 'guest' });
+    expect(r).toEqual({ assignmentsRemoved: 2 });
+    expect(tx.shiftAssignment.updateMany.mock.calls[0][0].where).toMatchObject({
+      spaceId: 's1',
+      userId: { in: ['g1', 'g2'] },
+    });
   });
 
   it('an account deletion also erases the leave record', async () => {
@@ -83,9 +137,13 @@ describe('MemberOffboardService.releaseSharedSpace', () => {
   const build = (space: unknown) => {
     const prisma: any = {
       companyLocation: { findFirst: jest.fn().mockResolvedValue(space) },
-      spaceAssignment: { deleteMany: jest.fn().mockResolvedValue({ count: 3 }) },
+      spaceAssignment: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 3 }),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
     };
-    return { prisma, service: new MemberOffboardService(prisma, {} as any, {} as any) };
+    prisma.$transaction = (fn: (tx: unknown) => unknown) => fn(prisma);
+    return { prisma, service: new MemberOffboardService(prisma, {} as any, {} as any, {} as any) };
   };
 
   it('removes only the guest organization’s people from that workspace', async () => {

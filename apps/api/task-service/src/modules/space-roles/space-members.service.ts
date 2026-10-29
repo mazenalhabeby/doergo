@@ -14,6 +14,8 @@ import {
   effectiveHoursBasis,
   peopleCostRates,
   orgRates,
+  assignmentEnded,
+  notEndedWhere,
 } from '@hbcfield/shared';
 import { getOwnedRole, useWorkRoleIn } from './space-role-rules';
 import { dropStalePersonalRole } from './role-admin.service';
@@ -30,7 +32,8 @@ export class SpaceMembersService {
   async listMembers(data: { organizationId: string; spaceId: string }) {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
     const members = await this.prisma.spaceAssignment.findMany({
-      where: { organizationId: data.organizationId, spaceId: data.spaceId },
+      // A former member (row ended — they left the organization) is not on the list; one with a planned end still is.
+      where: { organizationId: data.organizationId, spaceId: data.spaceId, ...notEndedWhere() },
       include: {
         user: userSelect,
         role: roleSelect,
@@ -151,16 +154,21 @@ export class SpaceMembersService {
         roleId: true,
         workRoleId: true,
         allowSecondRole: true,
+        effectiveTo: true,
         role: { select: { permissions: true } },
       },
     });
+    // A FORMER member (row ended) is added again, not edited: it needs the right to add people, and the row
+    // reopens (as the invitation's placement does) — left ended, they read as here and could not clock in.
+    const former = assignmentEnded(existing);
+    const reopen = former ? { effectiveFrom: new Date(), effectiveTo: null } : {};
     /*
       Adding somebody to the workspace and choosing what they may do there are
       two different trusts now (canAddSpaceMembers / canGrantSpaceRoles), so a
       person may hold one without the other. Putting a NEW person in needs the
       first; whatever role comes with them needs the second as well.
     */
-    if (!existing && !may.addMembers) throw authorityRefusal('add people');
+    if ((!existing || former) && !may.addMembers) throw authorityRefusal('add people');
     /*
       ONE role picker, two columns: a trade lands in `workRoleId` (grants
       nothing), anything else in `roleId` (permissions). Re-assigning a member
@@ -186,7 +194,7 @@ export class SpaceMembersService {
             workRoleId: picked.id,
             createdById: data.createdById,
           },
-          update: { workRoleId: picked.id },
+          update: { workRoleId: picked.id, ...reopen },
           include: { user: userSelect, role: roleSelect, workRole: roleSelect },
         });
         await useWorkRoleIn(this.prisma, data.spaceId, picked.id);
@@ -268,7 +276,7 @@ export class SpaceMembersService {
         roleId: data.spaceRoleId ?? null,
         createdById: data.createdById,
       },
-      update: { roleId: data.spaceRoleId ?? null },
+      update: { roleId: data.spaceRoleId ?? null, ...reopen },
       include: { user: userSelect, role: roleSelect, workRole: roleSelect },
     });
     await dropStalePersonalRole(this.prisma, member.id, member.roleId ?? null);

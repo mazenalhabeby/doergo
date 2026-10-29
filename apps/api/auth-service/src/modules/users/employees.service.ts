@@ -1,10 +1,11 @@
 import type { Prisma } from '@prisma/client';
 import { SessionEvents } from '../../common/session-events/session-events.service';
 import { memberScopeFilter, Role, TaskStatus, personSearchOr, memberOpenJobCount } from '@hbcfield/shared';
-import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { Injectable, NotFoundException, BadRequestException, Optional, Inject } from '@nestjs/common';
+import { PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
+import type { ClientProxy } from '@nestjs/microservices';
 import { ListEmployeesDto } from './dto';
-import { isOnline } from './users-common';
+import { announceDeactivated, isOnline } from './users-common';
 
 /**
  * Employee records: the filtered list, and creating, editing and deactivating one.
@@ -18,6 +19,8 @@ export class EmployeesService {
     // Optional: socket revocation is best effort, and unit tests that do not
     // exercise it need not wire it.
     @Optional() private readonly sessionEvents?: SessionEvents,
+    // Optional for the same reason: task-service is told a member was switched off (announceDeactivated).
+    @Optional() @Inject(SERVICE_NAMES.TASK) private readonly taskClient?: ClientProxy,
   ) {}
 
   /**
@@ -216,6 +219,7 @@ export class EmployeesService {
       this.prisma.refreshToken.deleteMany({ where: { userId: id } }),
     ]);
     this.sessionEvents?.sessionsRevoked(id);
+    announceDeactivated(this.taskClient, organizationId, id);
 
     return { success: true, message: 'Employee deactivated successfully' };
   }

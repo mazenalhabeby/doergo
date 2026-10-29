@@ -21,6 +21,7 @@ import {
 } from '@hbcfield/shared';
 import { getOwnedRole, useWorkRoleIn } from './space-role-rules';
 import { dropStalePersonalRole } from './role-admin.service';
+import { endRotaFor } from '../shifts/rota-end';
 import {
   userSelect,
   roleSelect,
@@ -193,7 +194,11 @@ export class MemberRolesService {
         code: 'MEMBER_ABOVE_YOU',
       });
     }
-    await this.prisma.spaceAssignment.delete({ where: { id: member.id } });
+    // Off the roster and off the rota there, together (rota-end.ts); an open shift is left to its own clock-out.
+    await this.prisma.$transaction(async (tx) => {
+      await tx.spaceAssignment.delete({ where: { id: member.id } });
+      await endRotaFor(tx, { userId: member.userId, spaceId: member.spaceId });
+    });
     return success({ id: member.id }, 'Member removed');
   }
 

@@ -3,6 +3,7 @@ import { PrismaService } from '@hbcfield/shared';
 import { ShiftResolverService } from '../core/shift-resolver.service';
 import { notEndedWhere, zoneOf, success, SHIFT_REMINDER_DEFAULTS } from '@hbcfield/shared';
 import { localPartsIn } from '@hbcfield/shared';
+import { dropUpcomingShifts } from '../../shifts/rota-end';
 
 /** Writing the expected shifts (instances) for the days ahead, from the rota and the weekly schedule. */
 @Injectable()
@@ -120,9 +121,6 @@ export class ShiftInstancesService {
 
   /** The shifts still ahead that nobody has acted on yet — dropped when a member stops using the clock (A7). */
   async dropUpcomingFor(userId: string, organizationId: string): Promise<number> {
-    const res = await this.prisma.shiftInstance.deleteMany({
-      where: { userId, organizationId, state: 'PENDING', expectedClockInAt: { gt: new Date() } },
-    });
-    return res.count;
+    return dropUpcomingShifts(this.prisma, { userId, organizationId });
   }
 }

@@ -7,11 +7,13 @@ import {
   permissionsFromOrgRole,
   type PermissionSet,
   personPasses,
+  assignmentEnded,
 } from '@hbcfield/shared';
 import { assertValidScheduleDays } from './space-helpers';
 import { remoteBucketRefusal } from '../../common/tenant-scope.util';
 import { PrismaService } from '@hbcfield/shared';
 import { SpaceAnnouncer } from './space-announcer.service';
+import { endRotaFor } from '../shifts/rota-end';
 import type { ResolvedAccess } from '@hbcfield/shared';
 
 /** Putting a person into a workspace, and taking them out. */
@@ -92,6 +94,13 @@ export class SpaceMembershipService {
       });
     }
 
+    // A former member (their row ENDED) re-added is a member again: the row reopens unless an end was sent.
+    const before = await this.prisma.spaceAssignment.findUnique({
+      where: { userId_spaceId: { userId: data.userId, spaceId: data.locationId } },
+      select: { effectiveTo: true },
+    });
+    const reopen = assignmentEnded(before) ? { effectiveFrom: new Date(), effectiveTo: null } : {};
+
     // Create the assignment (upsert to handle existing assignment). Storage is the
     // unified space_assignments table (Phase 5b); `roleId`/routing overrides set
     // via the space-roles path are left untouched by this upsert.
@@ -102,11 +111,14 @@ export class SpaceMembershipService {
           spaceId: data.locationId,
         },
       },
+      // ⚠️ Only what was SENT: re-adding a current member used to reset their start day, primary flag, schedule and
+      // end — re-adding somebody already there must change nothing.
       update: {
-        isPrimary: data.isPrimary ?? false,
-        schedule: data.schedule ?? [],
-        effectiveFrom: data.effectiveFrom ? new Date(data.effectiveFrom) : new Date(),
-        effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
+        ...reopen,
+        ...(data.isPrimary !== undefined && { isPrimary: data.isPrimary }),
+        ...(data.schedule !== undefined && { schedule: data.schedule }),
+        ...(data.effectiveFrom && { effectiveFrom: new Date(data.effectiveFrom) }),
+        ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null }),
       },
       create: {
         organizationId: data.organizationId,
@@ -168,8 +180,11 @@ export class SpaceMembershipService {
       });
     }
 
-    await this.prisma.spaceAssignment.delete({
-      where: { id: data.assignmentId },
+    // Off the roster AND off the rota there, together: a rota left running is a no-show every day (rota-end.ts).
+    // Their open shift is left alone — clocking out still works wherever they clocked in.
+    await this.prisma.$transaction(async (tx) => {
+      await tx.spaceAssignment.delete({ where: { id: data.assignmentId } });
+      await endRotaFor(tx, { userId: assignment.userId, spaceId: assignment.spaceId });
     });
 
     this.logger.log(`Assignment removed: ${data.assignmentId}`);

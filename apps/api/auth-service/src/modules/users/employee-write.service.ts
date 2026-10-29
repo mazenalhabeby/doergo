@@ -7,12 +7,20 @@ import {
   getDefaultModules,
   normalizeEmail,
 } from '@hbcfield/shared';
-import { Injectable, NotFoundException, ConflictException, BadRequestException, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  Optional,
+  Inject,
+} from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
+import type { ClientProxy } from '@nestjs/microservices';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto';
 import * as bcrypt from 'bcryptjs';
-import { BCRYPT_COST_FACTOR, generateRandomPassword } from './users-common';
+import { BCRYPT_COST_FACTOR, announceDeactivated, generateRandomPassword } from './users-common';
 
 /** Changing a member: adding one, and editing their profile and rates. */
 @Injectable()
@@ -22,6 +30,8 @@ export class EmployeeWriteService {
     // Optional: socket revocation is best effort, and unit tests that do not
     // exercise it need not wire it.
     @Optional() private readonly sessionEvents?: SessionEvents,
+    // Optional for the same reason: task-service is told a member was switched off (announceDeactivated).
+    @Optional() @Inject(SERVICE_NAMES.TASK) private readonly taskClient?: ClientProxy,
   ) {}
 
   /**
@@ -197,6 +207,7 @@ export class EmployeeWriteService {
     if (dto.isActive === false) {
       await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
       this.sessionEvents?.sessionsRevoked(id);
+      announceDeactivated(this.taskClient, organizationId, id);
     }
 
     return { success: true, data: employee };

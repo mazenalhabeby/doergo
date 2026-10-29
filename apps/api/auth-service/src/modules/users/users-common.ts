@@ -3,6 +3,8 @@
  * detail pages read, and the small pure helpers more than one of them needs.
  */
 import { randomInt } from 'crypto';
+import type { ClientProxy } from '@nestjs/microservices';
+import { emitEvent, memberDeactivatedEvent } from '@hbcfield/shared/microservices';
 
 export const BCRYPT_COST_FACTOR = 12;
 
@@ -109,8 +111,7 @@ export function isOnline(lastUpdate: Date | null | undefined): boolean {
 }
 
 export function generateRandomPassword(): string {
-  const chars =
-    'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
   // crypto.randomInt, not Math.random: this string is a credential handed
   // out by an admin reset, and Math.random is predictable from its outputs.
   let password = '';
@@ -118,4 +119,12 @@ export function generateRandomPassword(): string {
     password += chars.charAt(randomInt(chars.length));
   }
   return password;
+}
+
+/**
+ * A member was switched off (either way: Deactivate, or the edit form's switch). Task-service closes a shift still
+ * running and stops expecting the shifts ahead (`member_deactivated`). Absent client (unit tests): nothing to tell.
+ */
+export function announceDeactivated(task: ClientProxy | undefined, organizationId: string, userId: string): void {
+  if (task) emitEvent(task, memberDeactivatedEvent, { organizationId, userId });
 }

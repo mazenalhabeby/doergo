@@ -72,5 +72,11 @@ export const memberClockSwitchedEvent = event<{ organizationId: string; userId: 
   'member_clock_switched',
 );
 
+/**
+ * Handled by task-service (MembersController): a member was switched off (deactivated — reversible, so NOT the
+ * offboarding). A shift still running closes through the office close; the shifts still ahead are not expected.
+ */
+export const memberDeactivatedEvent = event<{ organizationId: string; userId: string }>('member_deactivated');
+
 /** Handled by auth-service (UsersController): which app version a member's phone runs. */
 export const appVersionSeenEvent = event<{ userId: string; version: string; platform?: string }>('app_version_seen');

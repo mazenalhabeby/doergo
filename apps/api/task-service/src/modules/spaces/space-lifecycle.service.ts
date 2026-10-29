@@ -11,6 +11,7 @@ import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES, success, activeShareCount, PrismaService } from '@hbcfield/shared';
 import { sendRpc, spacePurgeAuthSide } from '@hbcfield/shared/microservices';
 import { SpaceAnnouncer } from './space-announcer.service';
+import { endRotaFor } from '../shifts/rota-end';
 
 /** A workspace's life: the default one, archiving, purging. */
 @Injectable()
@@ -143,6 +144,8 @@ export class SpaceLifecycleService {
         where: { id: data.id },
         data: { isActive: false },
       });
+      // Nobody is planned at an archived workspace: every member's rota there ends with it (rota-end.ts).
+      await endRotaFor(tx, { spaceId: data.id });
       return { location: loc, tasksReassigned: reassigned };
     });
 
