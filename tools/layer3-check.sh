@@ -38,7 +38,7 @@ step "1. unit tests"
 run "shared: attendance, calendar, leave, zones" jest_in packages/shared "src/(attendance|calendar|leave|requests|utils/__tests__/zone)"
 run "task-service: attendance" jest_in apps/api/task-service src/modules/attendance
 run "task-service: people, leave, calendar" jest_in apps/api/task-service "src/modules/(technicians|calendar|members|spaces)"
-run "phone: the offline clock" jest_in apps/mobile "src/offline/attendance"
+run "phone: the offline clock" jest_in apps/mobile "src/offline/__tests__/(attendance-offline|refused-shift|shift-close-offline)"
 
 step "2. live (local API), each suite on a clean day"
 curl -sf -o /dev/null http://localhost:4000/api/v1/health || { echo "the local API is not running (pnpm dev:api)"; FAILED+=("local API"); }
