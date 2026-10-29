@@ -65,15 +65,15 @@ export function primaryContactOf(db: On<'customerContact', 'findFirst'>, company
   });
 }
 
-/** The workspace a client's portal belongs to (null: no portal) — where its requests belong. */
-export async function clientPortalSpaceId(
+/** The portal a client is in NOW (null: none) — stamped on a request when it is raised (`Task.portalId`). */
+export async function clientPortalId(
   db: On<'customer', 'findFirst'>,
   customerId: string,
   organizationId: string,
 ): Promise<string | null> {
   const c = await db.customer.findFirst({
     where: { id: customerId, organizationId },
-    select: { portal: { select: { spaceId: true } } },
+    select: { portalId: true },
   });
-  return c?.portal?.spaceId ?? null;
+  return c?.portalId ?? null;
 }

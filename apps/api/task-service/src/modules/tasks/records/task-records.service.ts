@@ -4,7 +4,7 @@ import { RolePoolService } from '../assignment/role-pool.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { findPrior } from '../../../common/create-once.util';
 import { PrismaService } from '@hbcfield/shared';
-import { personName, TaskEventType, success } from '@hbcfield/shared';
+import { personName, TaskEventType, success, clientPortalId } from '@hbcfield/shared';
 import { TaskSupportService } from '../core/task-support.service';
 import { TaskAssignmentService } from '../assignment/task-assignment.service';
 import { resolveOwnedTaskRefs } from '../core/task-scope';
@@ -117,6 +117,9 @@ export class TaskRecordsService {
     const effUnitId = owned.unitId ?? null;
     const effAssetId = owned.assetId ?? null;
     const effCustomerId = owned.customerId ?? null;
+    // A request keeps the portal it was raised in, whatever happens to the client later.
+    const effPortalId =
+      portal && effCustomerId ? await clientPortalId(this.prisma, effCustomerId, effectiveOrgId) : null;
 
     // A role belongs to a workspace; an un-triaged request has none yet — say so rather than drop it.
     if (openRoleId && isUntriaged) {
@@ -136,7 +139,9 @@ export class TaskRecordsService {
       !Array.isArray(data.roleAssignSpaceIds) ||
       (data.spaceId != null && data.roleAssignSpaceIds.includes(data.spaceId));
     const openRole =
-      openRoleId && mayOpenHere ? await this.roleOpening.resolveOpenRole(effectiveOrgId, data.spaceId, openRoleId) : null;
+      openRoleId && mayOpenHere
+        ? await this.roleOpening.resolveOpenRole(effectiveOrgId, data.spaceId, openRoleId)
+        : null;
 
     const task = await this.prisma.$transaction(async (tx) => {
       const createdTask = await tx.task.create({
@@ -170,6 +175,7 @@ export class TaskRecordsService {
           // above for portal requests.
           customerId: effCustomerId,
           unitId: effUnitId,
+          portalId: effPortalId,
           source: data.source === 'CUSTOMER_PORTAL' ? 'CUSTOMER_PORTAL' : 'INTERNAL',
           // Portal requests are born un-triaged; everything else is born routed.
           triaged: !isUntriaged,

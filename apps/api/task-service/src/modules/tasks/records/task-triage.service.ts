@@ -13,7 +13,7 @@ import {
   unitAddress,
   workerToAssign,
   isUrgentPriority,
-  clientPortalSpaceId,
+  portalInOrg,
 } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { ClientProxy } from '@nestjs/microservices';
@@ -151,7 +151,7 @@ export class TaskTriageService {
     // workspace without a rule is no way out), and urgent if the CLIENT said so, whatever priority routing picks.
     const home =
       task.spaceId ??
-      (task.customerId ? await clientPortalSpaceId(this.prisma, task.customerId, data.organizationId) : null);
+      (task.portalId ? ((await portalInOrg(this.prisma, task.portalId, data.organizationId))?.spaceId ?? null) : null);
     const decided = await this.rules.decide(
       {
         organizationId: data.organizationId,

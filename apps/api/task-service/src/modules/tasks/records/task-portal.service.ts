@@ -46,8 +46,9 @@ export class TaskPortalService {
 
   /**
    * Every request across a whole portal (office view, newest first). Scoped by
-   * the portal's customers via the Customer.portalId relation, so it never leaks
-   * across orgs or portals. Includes the submitting client's name.
+   * the portal each request was RAISED in (`Task.portalId`), so it never leaks
+   * across orgs or portals, and a client leaving the portal does not take its
+   * requests out of the inbox. Includes the submitting client's name.
    */
   async listPortalRequestsByPortal(data: { organizationId: string; portalId: string; scopeSpaceIds?: SpaceScopeIds }) {
     // Explicit portal-ownership check (defense-in-depth): the task filter below
@@ -72,7 +73,8 @@ export class TaskPortalService {
       where: {
         organizationId: data.organizationId,
         source: 'CUSTOMER_PORTAL',
-        customer: { portalId: data.portalId },
+        // The portal the request was RAISED in — a client who left the portal keeps its requests here.
+        portalId: data.portalId,
       },
       orderBy: [{ triaged: 'asc' }, { createdAt: 'desc' }], // pending-triage first
       include: {
@@ -131,13 +133,13 @@ export class TaskPortalService {
           organizationId: data.organizationId,
           source: 'CUSTOMER_PORTAL',
           ...(all ? {} : { triaged: false }),
-          customer: { portalId: { in: portals.map((p) => p.id) } },
+          portalId: { in: portals.map((p) => p.id) },
         },
         orderBy: { createdAt: 'desc' },
         ...(all ? { take: ALL_REQUESTS_MAX_ROWS } : {}),
         include: {
           unit: { select: { id: true, name: true, address: true } },
-          customer: { select: { id: true, name: true, portalId: true } },
+          customer: { select: { id: true, name: true } },
           space: { select: { id: true, name: true } },
           workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
         },
@@ -150,7 +152,7 @@ export class TaskPortalService {
       portals.flatMap((p) => {
         const suggested = p.spaceId ? spaceById.get(p.spaceId) : undefined;
         return tasks
-          .filter((t) => t.customer?.portalId === p.id)
+          .filter((t) => t.portalId === p.id)
           .map((t) => ({
             ...portalRequestShape(t),
             description: t.description ?? null,

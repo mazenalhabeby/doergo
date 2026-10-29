@@ -1249,6 +1249,12 @@ model Task {
   // + priority + worker → flips to true and it becomes a live task).
   triaged Boolean @default(true)
 
+  // The portal a CUSTOMER_PORTAL request was RAISED in — kept with the request, so
+  // the client leaving (or moving) portal never takes its requests out of the
+  // inbox they were raised to. Null for internal tasks.
+  portalId String?
+  portal   Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
+
   // Optional link to the customer's unit/site the request is about
   unitId String?
   unit   CustomerUnit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
@@ -1307,6 +1313,7 @@ model Task {
   @@index([workflowId]) // workflow filtering
   @@index([spaceId]) // space filtering
   @@index([unitId]) // customer portal: requests for a unit
+  @@index([portalId, triaged]) // a portal's request inbox
   @@index([organizationId, source, createdAt]) // portal-wide request list (filter org+source, sort by newest)
   @@index([organizationId, source, triaged]) // portal "pending triage" inbox count/list
   @@index([customerId, createdAt]) // portal request list (filter customer + sort by newest)
@@ -2186,6 +2193,7 @@ model Portal {
   categories IntakeCategory[]
   customers  Customer[]
   units      CustomerUnit[]
+  requests   Task[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -185,7 +185,7 @@ export async function proposalItems(
   }));
 }
 
-/** Client requests not yet turned into jobs; the workspace is the one chosen, else the client's portal's. */
+/** Client requests not yet turned into jobs; the workspace is the one chosen, else that of the portal it was raised in. */
 export async function clientRequestItems(prisma: PrismaService, organizationId: string, window: RuleItemWindow) {
   const rows = await prisma.task.findMany({
     where: {
@@ -195,7 +195,7 @@ export async function clientRequestItems(prisma: PrismaService, organizationId: 
         ? {
             OR: [
               { spaceId: { in: window.spaceIds } },
-              { spaceId: null, customer: { portal: { spaceId: { in: window.spaceIds } } } },
+              { spaceId: null, portal: { spaceId: { in: window.spaceIds } } },
             ],
           }
         : {}),
@@ -208,13 +208,14 @@ export async function clientRequestItems(prisma: PrismaService, organizationId: 
       createdAt: true,
       priority: true,
       spaceId: true,
-      customer: { select: { name: true, portal: { select: { spaceId: true } } } },
+      customer: { select: { name: true } },
+      portal: { select: { spaceId: true } },
     },
     orderBy: { createdAt: 'desc' },
     take: MAX_ITEMS,
   });
   return rows.map((t): RuleItem => {
-    const spaceId = t.spaceId ?? t.customer?.portal?.spaceId ?? null;
+    const spaceId = t.spaceId ?? t.portal?.spaceId ?? null;
     return {
       itemId: t.id,
       since: t.createdAt,

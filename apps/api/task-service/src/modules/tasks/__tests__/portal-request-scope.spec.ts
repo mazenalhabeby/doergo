@@ -4,7 +4,8 @@ import { taskPortalParts } from './task-portal.service.fixture';
 /*
   Portal REQUESTS honoured per workspace.
 
-  A request's workspace is its PORTAL's (`customer.portal.spaceId`), not
+  A request's workspace is its PORTAL's — the one it was RAISED in
+  (`Task.portalId`), never the client's current one — not
   `Task.spaceId` — that stays empty until triage and then names wherever the
   work was routed. `scopeSpaceIds` comes from the gateway (`portalScope`):
   undefined = org-wide, ['A'] = only workspace A, [] = nothing.
@@ -33,20 +34,20 @@ describe('reading requests', () => {
     expect(prisma.task.findMany.mock.calls[0][0].where).toMatchObject({
       organizationId: ORG,
       customerId: 'c1',
-      customer: { portal: { spaceId: { in: ['A'] } } },
+      portal: { spaceId: { in: ['A'] } },
     });
   });
 
   it('granted nowhere ([]) still narrows — to IN (), which is nothing', async () => {
     const { prisma, service } = setup();
     await service.listPortalRequests({ organizationId: ORG, customerId: 'c1', scopeSpaceIds: [] });
-    expect(prisma.task.findMany.mock.calls[0][0].where.customer).toEqual({ portal: { spaceId: { in: [] } } });
+    expect(prisma.task.findMany.mock.calls[0][0].where.portal).toEqual({ spaceId: { in: [] } });
   });
 
   it('the customer’s own list (no scope) is unchanged', async () => {
     const { prisma, service } = setup();
     await service.listPortalRequests({ organizationId: ORG, customerId: 'c1' });
-    expect(prisma.task.findMany.mock.calls[0][0].where).not.toHaveProperty('customer');
+    expect(prisma.task.findMany.mock.calls[0][0].where).not.toHaveProperty('portal');
   });
 
   it('another workspace’s portal inbox is 404, and no request is read', async () => {
@@ -73,6 +74,37 @@ describe('reading requests', () => {
     await service.listPortalRequestsByPortal({ organizationId: ORG, portalId: 'pA', scopeSpaceIds: ['A'] });
     expect(prisma.task.findMany).toHaveBeenCalled();
   });
+
+  it('the inbox reads the portal a request was RAISED in, not the client’s current portal', async () => {
+    // A client removed from the portal (customer.portalId = null) kept requests there: they must stay listed.
+    const { prisma, service } = setup();
+    prisma.portal.findFirst.mockResolvedValue({ id: 'pA', spaceId: 'A' });
+    await service.listPortalRequestsByPortal({ organizationId: ORG, portalId: 'pA' });
+    const where = prisma.task.findMany.mock.calls[0][0].where;
+    expect(where.portalId).toBe('pA');
+    expect(where).not.toHaveProperty('customer');
+  });
+
+  it('the inbox across portals groups by the request’s own portal', async () => {
+    const { prisma, service } = setup();
+    prisma.portal.findMany = jest.fn().mockResolvedValue([{ id: 'pA', spaceId: null }]);
+    prisma.companyLocation.findMany = jest.fn().mockResolvedValue([]);
+    prisma.task.findMany.mockResolvedValue([
+      {
+        id: 't1',
+        title: 'Leak',
+        status: 'NEW',
+        priority: 'LOW',
+        portalId: 'pA',
+        customer: { id: 'c', name: 'Ex' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+    const res: any = await service.listWaitingPortalRequests({ organizationId: ORG });
+    expect(prisma.task.findMany.mock.calls[0][0].where.portalId).toEqual({ in: ['pA'] });
+    expect(res.data.map((r: any) => r.id)).toEqual(['t1']);
+  });
 });
 
 describe('answering (triage)', () => {
@@ -84,7 +116,7 @@ describe('answering (triage)', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(prisma.task.findFirst.mock.calls[0][0].where).toMatchObject({
       id: 't1',
-      customer: { portal: { spaceId: { in: ['A'] } } },
+      portal: { spaceId: { in: ['A'] } },
     });
     expect(prisma.task.update).not.toHaveBeenCalled();
   });
@@ -103,8 +135,13 @@ describe('answering (triage)', () => {
     prisma.task.findFirst.mockResolvedValue({ id: 't1', triaged: false });
     await expect(
       service.triageRequest({
-        id: 't1', organizationId: ORG, userId: 'u', spaceId: 'A', assignedToId: 'w1',
-        scopeSpaceIds: ['A'], assignScopeSpaceIds: [],
+        id: 't1',
+        organizationId: ORG,
+        userId: 'u',
+        spaceId: 'A',
+        assignedToId: 'w1',
+        scopeSpaceIds: ['A'],
+        assignScopeSpaceIds: [],
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(prisma.task.update).not.toHaveBeenCalled();

@@ -56,7 +56,8 @@ export function portalRequestShape(task: PortalRequestRow) {
 }
 
 /**
- * A request's workspace is its PORTAL's (`Customer.portal.spaceId`) — not
+ * A request's workspace is its PORTAL's — the portal it was RAISED in
+ * (`Task.portalId`), never the client's current one — not
  * `Task.spaceId`, which stays empty until triage and then names wherever the
  * work was routed. The office reads a portal's inbox, so reach follows the
  * portal: a request from a portal in a workspace the caller answers for is
@@ -67,5 +68,5 @@ export function portalRequestShape(task: PortalRequestRow) {
  */
 export function portalRequestScope(scope: SpaceScopeIds): Record<string, unknown> {
   if (scope === undefined || scope === null) return {};
-  return { customer: { portal: { spaceId: { in: scope } } } };
+  return { portal: { spaceId: { in: scope } } };
 }
