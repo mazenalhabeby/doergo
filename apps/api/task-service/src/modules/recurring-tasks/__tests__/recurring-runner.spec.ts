@@ -48,7 +48,9 @@ function build(over: { claimed?: number; spaceActive?: boolean; members?: string
     },
     organization: { findUnique: jest.fn().mockResolvedValue({ timezone: 'Europe/Vienna' }) },
     user: { findMany: jest.fn().mockResolvedValue((over.members ?? ['ana']).map((id) => ({ id }))) },
-    spaceAssignment: { findMany: jest.fn().mockResolvedValue((over.rostered ?? ['ana']).map((userId) => ({ userId }))) },
+    spaceAssignment: {
+      findMany: jest.fn().mockResolvedValue((over.rostered ?? ['ana']).map((userId) => ({ userId }))),
+    },
     workflowStatus: { findFirst: jest.fn() },
     task: {
       create: jest.fn().mockResolvedValue({ id: 'job' }),
@@ -101,7 +103,10 @@ describe('the scheduler', () => {
   it('an archived workspace pauses the repeat and makes nothing', async () => {
     const { service, prisma } = build({ spaceActive: false });
     expect(await service.runDue()).toBe(0);
-    expect(prisma.recurringTaskTemplate.updateMany).toHaveBeenCalledWith({ where: { id: 'tpl' }, data: { isActive: false } });
+    expect(prisma.recurringTaskTemplate.updateMany).toHaveBeenCalledWith({
+      where: { id: 'tpl' },
+      data: { isActive: false },
+    });
     expect(prisma.task.create).not.toHaveBeenCalled();
   });
 });
@@ -129,7 +134,9 @@ describe('Generate now', () => {
     } finally {
       jest.useRealTimers();
     }
-    expect(prisma.recurringTaskTemplate.updateMany.mock.calls[0][0].data.nextRunAt).toEqual(new Date('2026-11-03T08:00:00Z'));
+    expect(prisma.recurringTaskTemplate.updateMany.mock.calls[0][0].data.nextRunAt).toEqual(
+      new Date('2026-11-03T08:00:00Z'),
+    );
   });
 
   it('an archived workspace refuses (404) and pauses the repeat', async () => {

@@ -104,7 +104,8 @@ export class TaskRemovalService {
     const seen = new Set([rootId]);
     let level = [rootId];
     for (let depth = 0; level.length && depth < MAX_DEPTH; depth++) {
-      const rows: Node[] = (await this.prisma.task.findMany({ where: { parentId: { in: level } }, select: NODE })) ?? [];
+      const rows: Node[] =
+        (await this.prisma.task.findMany({ where: { parentId: { in: level } }, select: NODE })) ?? [];
       const fresh = rows.filter((r) => !seen.has(r.id));
       fresh.forEach((r) => seen.add(r.id));
       out.push(...fresh);

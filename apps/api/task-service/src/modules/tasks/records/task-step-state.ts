@@ -3,7 +3,12 @@ import { TaskStatus, stepCapabilities, stepStartsWork } from '@hbcfield/shared';
 /** A workflow as the cache gives it: its steps, each with what marks it. */
 export type FlowForStep = {
   name?: string | null;
-  statuses?: Array<{ key: string; isFinal?: boolean | null; isCanceled?: boolean | null; capabilities?: string[] | null }> | null;
+  statuses?: Array<{
+    key: string;
+    isFinal?: boolean | null;
+    isCanceled?: boolean | null;
+    capabilities?: string[] | null;
+  }> | null;
 } | null;
 
 /**

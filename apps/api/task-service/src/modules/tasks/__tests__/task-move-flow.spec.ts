@@ -38,7 +38,10 @@ describe('moving a job to another workspace keeps it on a flow that has its step
     const { service, prisma } = build(job('PICKED_UP'));
     const err = await service.update({ ...admin, id: 't1', spaceId: 'sp-b' }).catch((e) => e);
     expect(err).toBeInstanceOf(ConflictException);
-    expect(err.getResponse()).toMatchObject({ code: TASK_STEP_NOT_IN_DESTINATION_FLOW, params: { status: 'PICKED_UP' } });
+    expect(err.getResponse()).toMatchObject({
+      code: TASK_STEP_NOT_IN_DESTINATION_FLOW,
+      params: { status: 'PICKED_UP' },
+    });
     expect(prisma.task.update).not.toHaveBeenCalled();
   });
 

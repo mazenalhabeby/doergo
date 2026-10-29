@@ -160,7 +160,10 @@ export class RecurringTasksService {
         dayOfMonth: data.dayOfMonth ?? existing.dayOfMonth,
         customDays: data.customDays ?? existing.customDays,
       });
-      const where = { spaceId: data.spaceId === undefined ? existing.spaceId : data.spaceId, organizationId: data.organizationId };
+      const where = {
+        spaceId: data.spaceId === undefined ? existing.spaceId : data.spaceId,
+        organizationId: data.organizationId,
+      };
       const zone = await workspaceZone(this.prisma, where);
       const first = firstRunAt(rule, existing.startDate, zone);
       const used = existing.nextRunAt ? new Date(existing.nextRunAt.getTime() - 1) : existing.lastGeneratedAt;
@@ -216,6 +219,11 @@ export class RecurringTasksService {
 }
 
 /** The schedule fields of a request or a template, as the schedule reads them. */
-function ruleOf(r: { frequency: string; dayOfWeek?: number | null; dayOfMonth?: number | null; customDays?: number | null }): RepeatRule {
+function ruleOf(r: {
+  frequency: string;
+  dayOfWeek?: number | null;
+  dayOfMonth?: number | null;
+  customDays?: number | null;
+}): RepeatRule {
   return { frequency: r.frequency, dayOfWeek: r.dayOfWeek, dayOfMonth: r.dayOfMonth, customDays: r.customDays };
 }

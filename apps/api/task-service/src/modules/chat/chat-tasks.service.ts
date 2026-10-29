@@ -235,7 +235,12 @@ export class ChatTasksService {
   }
 
   /** Over = finished or cancelled, by the job's own flow (cached), else the canonical statuses. */
-  private async isOver(task: { status: string; organizationId: string; workflowId: string | null; spaceId: string | null }) {
+  private async isOver(task: {
+    status: string;
+    organizationId: string;
+    workflowId: string | null;
+    spaceId: string | null;
+  }) {
     const workflow = await effectiveWorkflowOf(this.prisma, this.workflows, task);
     return taskChatClosed(task.status, workflow?.statuses ?? []);
   }

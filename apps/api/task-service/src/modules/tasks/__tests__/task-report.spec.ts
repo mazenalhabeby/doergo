@@ -212,6 +212,9 @@ describe('TaskReportService', () => {
       // Honours the task scope, as Postgres would.
       attachment: { findMany: jest.fn() },
       spaceAssignment: { findFirst: jest.fn().mockResolvedValue(null) },
+      // The job's flow: its workspace's default (effective-workflow.ts) — none set here.
+      spaceWorkflow: { findFirst: jest.fn().mockResolvedValue(null) },
+      companyLocation: { findUnique: jest.fn().mockResolvedValue({ workflowId: null }) },
     };
     const access = new TaskAccessService(prisma);
     const support: any = { taskAccess: access };
@@ -298,6 +301,16 @@ describe('TaskReportService', () => {
     await expect(build()).resolves.toBeDefined();
     prisma.task.findUnique.mockResolvedValue(task({ status: 'dropped' }));
     await expect(build()).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('a job on its workspace’s DEFAULT flow reports when finished, whatever the old column says', async () => {
+    // The column names a stale flow; the SpaceWorkflow default — what the status code reads — is the truth.
+    prisma.spaceWorkflow.findFirst.mockResolvedValue({ workflowId: 'wf-default' });
+    deps.workflows.getWorkflow.mockImplementation(async (_org: string, id: string) =>
+      id === 'wf-default' ? { statuses: [{ key: 'CLOSED_X', isFinal: true, isCanceled: false }] } : { statuses: [] },
+    );
+    prisma.task.findUnique.mockResolvedValue(task({ status: 'CLOSED_X', space: { ...task().space, workflowId: 'wf-old' } }));
+    await expect(build()).resolves.toBeDefined();
   });
 
   it('a member not on the job gets 404, not 403', async () => {

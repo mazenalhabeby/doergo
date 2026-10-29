@@ -37,7 +37,9 @@ describe('the next run is the PLANNED one plus a period, in the workspace zone',
     const planned = new Date('2026-11-03T01:00:00Z');
     const next = nextRunAfter({ frequency: 'WEEKLY', dayOfWeek: 1 }, planned, NEW_YORK);
     expect(iso(next)).toBe('2026-11-10T01:00:00.000Z'); // the next Monday 20:00 there
-    expect(iso(nextRunAfter({ frequency: 'BIWEEKLY', dayOfWeek: 1 }, planned, NEW_YORK))).toBe('2026-11-17T01:00:00.000Z');
+    expect(iso(nextRunAfter({ frequency: 'BIWEEKLY', dayOfWeek: 1 }, planned, NEW_YORK))).toBe(
+      '2026-11-17T01:00:00.000Z',
+    );
   });
 
   it('a monthly day past the month’s end lands on its last day, and comes back', () => {

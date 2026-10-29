@@ -57,7 +57,9 @@ function addMonthsStr(dateStr: string, months: number, day: number): string {
   const [y, m] = dateStr.split('-').map(Number);
   const first = new Date(Date.UTC(y!, m! - 1 + months, 1));
   const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
-  return new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(day, last))).toISOString().slice(0, 10);
+  return new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(day, last)))
+    .toISOString()
+    .slice(0, 10);
 }
 
 /** The first day on or after `dateStr` that is weekday `dow` (0 = Sunday). */

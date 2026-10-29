@@ -45,7 +45,15 @@ describe('editing and deleting a job on a custom flow', () => {
     };
     const workflows: any = { getWorkflow: jest.fn().mockResolvedValue(FLOW) };
     const service = new TaskUpdateService(prisma, { emit: jest.fn() } as any, {} as any, workflows);
-    const removal = new TaskRemovalService(prisma, { emit: jest.fn() } as any, {} as any, {} as any, workflows, {} as any, null);
+    const removal = new TaskRemovalService(
+      prisma,
+      { emit: jest.fn() } as any,
+      {} as any,
+      {} as any,
+      workflows,
+      {} as any,
+      null,
+    );
     return { service, removal, prisma };
   };
   const caller = { userId: 'u', userRole: Role.ADMIN, organizationId: 'org' } as any;

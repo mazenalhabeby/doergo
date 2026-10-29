@@ -13,7 +13,9 @@ const prismaWith = (defaults: Record<string, string>, column: Record<string, str
     spaceWorkflow: {
       findFirst: async ({ where }: any) => (defaults[where.spaceId] ? { workflowId: defaults[where.spaceId] } : null),
       findMany: async ({ where }: any) =>
-        (where.spaceId.in as string[]).filter((id) => defaults[id]).map((id) => ({ spaceId: id, workflowId: defaults[id] })),
+        (where.spaceId.in as string[])
+          .filter((id) => defaults[id])
+          .map((id) => ({ spaceId: id, workflowId: defaults[id] })),
     },
     companyLocation: {
       findUnique: async ({ where }: any) => (where.id in column ? { workflowId: column[where.id] } : null),
@@ -45,7 +47,11 @@ describe('the effective workflow of a job', () => {
 
   it('reads the flow in the JOB’s organization (a guest never reads their own)', async () => {
     const getWorkflow = jest.fn().mockResolvedValue({ id: 'wf-default' });
-    await effectiveWorkflowOf(prisma, { getWorkflow } as any, { organizationId: 'owner-org', workflowId: null, spaceId: 'sp' });
+    await effectiveWorkflowOf(prisma, { getWorkflow } as any, {
+      organizationId: 'owner-org',
+      workflowId: null,
+      spaceId: 'sp',
+    });
     expect(getWorkflow).toHaveBeenCalledWith('owner-org', 'wf-default');
   });
 });

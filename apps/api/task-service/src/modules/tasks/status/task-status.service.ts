@@ -233,7 +233,8 @@ export class TaskStatusService {
     // Which moves each check asks about is read from the flow's capabilities (step-checks.ts).
     if (isAssignedUser) await assertAtJobSite(this.prisma, task, data, occurredAt, occurrenceFlags, wf);
     if (isAssignedUser && stepSetsOff(wf, data.status)) assertDueBySiteDay(task, occurredAt);
-    if (isAssignedUser) await assertNoOtherActiveTask(this.prisma, this.workflowCache, task, wf, data.status, data.userId);
+    if (isAssignedUser)
+      await assertNoOtherActiveTask(this.prisma, this.workflowCache, task, wf, data.status, data.userId);
 
     /*
       ── What this step asks ──

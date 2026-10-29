@@ -17,7 +17,13 @@ const VISITS = {
     { key: 'WRAPPED', capabilities: ['photos'] },
   ],
 };
-const OFFICE = { name: 'Office', statuses: [{ key: 'TODO', capabilities: [] }, { key: 'DOING', capabilities: ['timer'] }] };
+const OFFICE = {
+  name: 'Office',
+  statuses: [
+    { key: 'TODO', capabilities: [] },
+    { key: 'DOING', capabilities: ['timer'] },
+  ],
+};
 
 describe('which moves the execution checks ask about', () => {
   it('the built-in flow answers exactly as the names did', () => {
@@ -54,9 +60,14 @@ describe('the checks on a custom flow', () => {
   it('arriving ON_SITE far from the pin is refused like ARRIVED', async () => {
     const prisma: any = { companyLocation: { findUnique: jest.fn() } };
     const data: any = { status: 'ON_SITE', lat: 48.2, lng: 16.3, accuracy: 5 };
-    const err = await assertAtJobSite(prisma, job({ locationLat: 48.0, locationLng: 16.3 }), data, new Date(), [], VISITS).catch(
-      (e) => e,
-    );
+    const err = await assertAtJobSite(
+      prisma,
+      job({ locationLat: 48.0, locationLng: 16.3 }),
+      data,
+      new Date(),
+      [],
+      VISITS,
+    ).catch((e) => e);
     expect(err).toBeInstanceOf(BadRequestException);
     expect(err.getResponse()).toMatchObject({ code: 'TOO_FAR_TO_ARRIVE' });
   });
@@ -65,9 +76,11 @@ describe('the checks on a custom flow', () => {
     const build = (otherStatus: string) => {
       const prisma: any = {
         task: {
-          findMany: jest.fn().mockResolvedValue([
-            { title: 'Boiler', status: otherStatus, organizationId: 'org', workflowId: 'visits', spaceId: null },
-          ]),
+          findMany: jest
+            .fn()
+            .mockResolvedValue([
+              { title: 'Boiler', status: otherStatus, organizationId: 'org', workflowId: 'visits', spaceId: null },
+            ]),
         },
       };
       const workflows = {
@@ -78,12 +91,16 @@ describe('the checks on a custom flow', () => {
     };
     const todo = job({ status: 'TODO', workflowId: 'office' });
     const busy = build('ON_SITE');
-    await expect(assertNoOtherActiveTask(busy.prisma, busy.workflows as any, todo, OFFICE, 'DOING', 'u')).rejects.toThrow(
-      'You already have an active task: "Boiler"',
+    await expect(
+      assertNoOtherActiveTask(busy.prisma, busy.workflows as any, todo, OFFICE, 'DOING', 'u'),
+    ).rejects.toThrow('You already have an active task: "Boiler"');
+    expect(busy.prisma.task.findMany.mock.calls[0][0].where.status.in).toEqual(
+      expect.arrayContaining(['ON_SITE', 'DOING']),
     );
-    expect(busy.prisma.task.findMany.mock.calls[0][0].where.status.in).toEqual(expect.arrayContaining(['ON_SITE', 'DOING']));
     const done = build('WRAPPED');
-    await expect(assertNoOtherActiveTask(done.prisma, done.workflows as any, todo, OFFICE, 'DOING', 'u')).resolves.toBeUndefined();
+    await expect(
+      assertNoOtherActiveTask(done.prisma, done.workflows as any, todo, OFFICE, 'DOING', 'u'),
+    ).resolves.toBeUndefined();
   });
 
   it('a move inside the slot (already holding it) asks nothing', async () => {
