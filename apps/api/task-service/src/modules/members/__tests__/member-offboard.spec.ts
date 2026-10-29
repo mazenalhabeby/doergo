@@ -85,6 +85,13 @@ describe('MemberOffboardService', () => {
     });
   });
 
+  it('a member switched off comes off every unfinished crew (lead, places, checklist and chat follow)', async () => {
+    const { tasks, service } = setup();
+    const r = await service.deactivated({ organizationId: 'o1', userId: 'u1' });
+    expect(tasks.releaseMemberFromOpenWork).toHaveBeenCalledWith('o1', 'u1', 'u1', 'MEMBER_DEACTIVATED');
+    expect(r.tasksReleased).toBe(3);
+  });
+
   it('an account deletion also erases the leave record', async () => {
     const { prisma, service } = setup();
     const r = await service.offboard({ organizationId: 'o1', userId: 'u1', actorId: 'u1', erase: true });

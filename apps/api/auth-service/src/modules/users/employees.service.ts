@@ -200,7 +200,7 @@ export class EmployeesService {
     }
 
     // Check for active tasks
-    const activeTasks = await memberOpenJobCount(this.prisma, id);
+    const activeTasks = await memberOpenJobCount(this.prisma, id, organizationId);
 
     if (activeTasks > 0) {
       throw new BadRequestException(

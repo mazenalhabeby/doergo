@@ -14,7 +14,8 @@ describe('a member switched off is announced to task-service', () => {
     const prisma: any = {
       user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1' }), update: jest.fn() },
       refreshToken: { deleteMany: jest.fn() },
-      task: { count: jest.fn().mockResolvedValue(0) },
+      task: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
+      workflowStatus: { findMany: jest.fn().mockResolvedValue([]) },
       taskAssignee: { count: jest.fn().mockResolvedValue(0) },
       $transaction: jest.fn().mockResolvedValue([]),
     };
@@ -22,6 +23,26 @@ describe('a member switched off is announced to task-service', () => {
     const svc = new EmployeesService(prisma, undefined, client as any);
     await svc.deactivateEmployee('u1', 'o1');
     expect(told(client)).toEqual([{ organizationId: 'o1', userId: 'u1' }]);
+  });
+
+  it('Deactivate counts every unfinished job they are on — crew rows and a custom flow’s steps too', async () => {
+    const prisma: any = {
+      user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1' }), update: jest.fn() },
+      task: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'crew-job', status: 'IN_TRANSIT', workflowId: 'logistics' },
+          { id: 'done-job', status: 'DELIVERED', workflowId: 'logistics' },
+        ]),
+      },
+      workflowStatus: { findMany: jest.fn().mockResolvedValue([{ workflowId: 'logistics', key: 'DELIVERED' }]) },
+      $transaction: jest.fn().mockResolvedValue([]),
+    };
+    const svc = new EmployeesService(prisma, undefined, { emit: jest.fn() } as any);
+    await expect(svc.deactivateEmployee('u1', 'o1')).rejects.toThrow('1 active task');
+    expect(prisma.task.findMany.mock.calls[0][0].where).toMatchObject({
+      organizationId: 'o1',
+      OR: [{ assignedToId: 'u1' }, { assignees: { some: { userId: 'u1' } } }],
+    });
   });
 
   it('the edit form’s switch — and only when it switches them off', async () => {

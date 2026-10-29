@@ -5,7 +5,7 @@ import {
   TaskEventType,
   success,
   canReceiveTasks,
-  TERMINAL_STATUSES,
+  memberOpenJobs,
   assertFoundInOrg,
   workerToAssign,
 } from '@hbcfield/shared';
@@ -162,34 +162,20 @@ export class TaskCrewMembersService {
    * a crew changing. Finished, closed and canceled jobs keep the person: that
    * is the record of who did the work, and a leaver does not unmake history.
    *
-   * Called by `member_offboard` only (members/member-offboard.service.ts).
+   * Called by `member_offboard` and `member_deactivated` (members/member-offboard.service.ts).
    */
-  async releaseMemberFromOpenWork(organizationId: string, userId: string, actorId: string): Promise<number> {
-    const candidates = await this.prisma.task.findMany({
-      where: {
-        organizationId,
-        status: { notIn: TERMINAL_STATUSES },
-        OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }],
-      },
-      select: { id: true, status: true, workflowId: true },
-    });
+  async releaseMemberFromOpenWork(
+    organizationId: string,
+    userId: string,
+    actorId: string,
+    reason: 'MEMBER_LEFT' | 'MEMBER_DEACTIVATED' = 'MEMBER_LEFT',
+  ): Promise<number> {
     /*
-      ⚠️ "Finished" is the WORKFLOW's word, not ours. The built-in flows end on
-      Delivered, Done, Outcome, Submitted — names TERMINAL_STATUSES has never
-      heard of. A job in one of those is history, and the person stays on it.
+      ⚠️ "Finished" is the WORKFLOW's word, not ours (shared memberOpenJobs): the
+      built-in flows end on Delivered, Done, Outcome, Submitted. A job in one of
+      those is history, and the person stays on it.
     */
-    const flowIds = [...new Set(candidates.map((t) => t.workflowId).filter((x): x is string => !!x))];
-    const finished = new Set(
-      flowIds.length
-        ? (
-            await this.prisma.workflowStatus.findMany({
-              where: { workflowId: { in: flowIds }, OR: [{ isFinal: true }, { isCanceled: true }] },
-              select: { workflowId: true, key: true },
-            })
-          ).map((s) => `${s.workflowId}:${s.key}`)
-        : [],
-    );
-    const tasks = candidates.filter((t) => !(t.workflowId && finished.has(`${t.workflowId}:${t.status}`)));
+    const tasks = await memberOpenJobs(this.prisma, userId, organizationId);
     for (const { id } of tasks) {
       await this.prisma.taskAssignee.deleteMany({ where: { taskId: id, userId } });
       // The primary column too: a job assigned the old way has no crew row to remove.
@@ -197,7 +183,7 @@ export class TaskCrewMembersService {
       await this.crewChange.afterAssigneesChanged(id, [], actorId);
       await this.support.createTaskEvent(id, actorId, TaskEventType.ASSIGNEE_REMOVED, {
         assigneeId: userId,
-        reason: 'MEMBER_LEFT',
+        reason,
       });
     }
     return tasks.length;

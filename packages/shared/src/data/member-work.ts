@@ -4,6 +4,7 @@
  * `spaceIds` undefined = org-wide viewer; a list = only work in those workspaces.
  */
 import type { On } from './db';
+import { TERMINAL_STATUSES } from '../constants/task';
 
 const inSpaces = (spaceIds?: string[]) => (spaceIds ? { spaceId: { in: spaceIds } } : {});
 const atSites = (spaceIds?: string[]) => (spaceIds ? { locationId: { in: spaceIds } } : {});
@@ -34,11 +35,48 @@ export function memberJobsOnTime(db: On<'task', 'count' | 'fields'>, memberId: s
   });
 }
 
-/** How many jobs a member has in hand now (assigned, accepted, on the way, on site, working). */
-export function memberOpenJobCount(db: On<'task', 'count'>, memberId: string) {
-  return db.task.count({
-    where: { assignedToId: memberId, status: { in: ['ASSIGNED', 'ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'] } },
+/**
+ * The member's jobs still open: on its crew (a crew row) or named the old way (the column), in a step that is
+ * not finished — finished in the WORKFLOW's own words (isFinal / isCanceled: "Delivered", "Done"), not only the
+ * canonical COMPLETED/CANCELED/CLOSED. Two queries, whatever the number of jobs.
+ */
+export async function memberOpenJobs(
+  db: On<'task', 'findMany'> & On<'workflowStatus', 'findMany'>,
+  memberId: string,
+  organizationId?: string,
+): Promise<Array<{ id: string; status: string; workflowId: string | null }>> {
+  const candidates = await db.task.findMany({
+    where: {
+      ...(organizationId ? { organizationId } : {}),
+      status: { notIn: [...TERMINAL_STATUSES] },
+      OR: [{ assignedToId: memberId }, { assignees: { some: { userId: memberId } } }],
+    },
+    select: { id: true, status: true, workflowId: true },
   });
+  const flowIds = [...new Set(candidates.map((t) => t.workflowId).filter((x): x is string => !!x))];
+  if (!flowIds.length) return candidates;
+  const finished = new Set(
+    (
+      await db.workflowStatus.findMany({
+        where: { workflowId: { in: flowIds }, OR: [{ isFinal: true }, { isCanceled: true }] },
+        select: { workflowId: true, key: true },
+      })
+    ).map((s) => `${s.workflowId}:${s.key}`),
+  );
+  return candidates.filter((t) => !(t.workflowId && finished.has(`${t.workflowId}:${t.status}`)));
+}
+
+/**
+ * How many jobs a member has in hand now — every unfinished job they are on (crew row or column), not only the
+ * five canonical working steps: a crew member or a custom workflow's step was invisible to it, so a member could be
+ * switched off while still on open crews.
+ */
+export async function memberOpenJobCount(
+  db: On<'task', 'findMany'> & On<'workflowStatus', 'findMany'>,
+  memberId: string,
+  organizationId?: string,
+): Promise<number> {
+  return (await memberOpenJobs(db, memberId, organizationId)).length;
 }
 
 /** A member's latest 100 jobs, newest first (org-scoped when the organization is given). */

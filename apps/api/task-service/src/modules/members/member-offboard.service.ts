@@ -122,14 +122,26 @@ export class MemberOffboardService {
   }
 
   /**
-   * A member switched off (deactivated). Reversible, so nothing they hold is released and their rota stays for
-   * when they come back — but a shift still running closes (nobody can clock out of it now) and the shifts still
-   * ahead are not expected (no no-show chasing for somebody who cannot clock in). Idempotent.
+   * A member switched off (deactivated). Reversible, so their rota stays for when they come back — but a shift still
+   * running closes (nobody can clock out of it now), the shifts still ahead are not expected (no no-show chasing for
+   * somebody who cannot clock in), and they come off every UNFINISHED job's crew: somebody who cannot sign in cannot
+   * lead it, take its role place or tick its checklist (the same release as a leaver — lead, places, checklist owners,
+   * job chat follow). Finished jobs keep them. Idempotent.
    */
-  async deactivated(data: { organizationId: string; userId: string }): Promise<{ shiftsClosed: number }> {
+  async deactivated(data: {
+    organizationId: string;
+    userId: string;
+  }): Promise<{ shiftsClosed: number; tasksReleased: number }> {
     const shiftsClosed = await closeShiftsOfLeaver(this.closer, this.prisma, data);
     await dropUpcomingShifts(this.prisma, data);
-    return { shiftsClosed };
+    // The event names no actor: the history reads it as the member's own leaving, with the reason.
+    const tasksReleased = await this.tasks.releaseMemberFromOpenWork(
+      data.organizationId,
+      data.userId,
+      data.userId,
+      'MEMBER_DEACTIVATED',
+    );
+    return { shiftsClosed, tasksReleased };
   }
 
   /**
