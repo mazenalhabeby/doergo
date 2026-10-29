@@ -3,7 +3,7 @@ import { PrismaService } from '@hbcfield/shared';
 import { ShiftRematchService } from '../attendance/shifts/shift-rematch.service';
 import { assertSpaceInOrg, assertUserInOrg } from '../../common/tenant-scope.util';
 import { success, scopeAllows, type SpaceScopeIds } from '@hbcfield/shared';
-import { earliestOf } from './shifts-helpers';
+import { earliestOf, rotaDay } from './shifts-helpers';
 import { assertDayBounds, assertRecurrence, clampInt, getOwnedShift, parseDates } from './shift-rules';
 import type { Prisma, ShiftRecurrence } from '@prisma/client';
 
@@ -88,8 +88,8 @@ export class ShiftAssignmentsService {
         daysOfWeek: data.daysOfWeek ?? [],
         daysOfMonth: data.daysOfMonth ?? [],
         dates,
-        effectiveFrom: data.effectiveFrom ? new Date(data.effectiveFrom) : new Date(),
-        effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
+        effectiveFrom: data.effectiveFrom ? rotaDay(data.effectiveFrom) : new Date(),
+        effectiveTo: data.effectiveTo ? rotaDay(data.effectiveTo) : null,
         priority: clampInt(data.priority, 0, 0, 1000),
         createdById: data.createdById,
       },
@@ -165,8 +165,8 @@ export class ShiftAssignmentsService {
     if (data.daysOfWeek !== undefined) patch.daysOfWeek = data.daysOfWeek;
     if (data.daysOfMonth !== undefined) patch.daysOfMonth = data.daysOfMonth;
     if (data.dates !== undefined) patch.dates = effDates;
-    if (data.effectiveFrom !== undefined) patch.effectiveFrom = new Date(data.effectiveFrom);
-    if (data.effectiveTo !== undefined) patch.effectiveTo = data.effectiveTo ? new Date(data.effectiveTo) : null;
+    if (data.effectiveFrom !== undefined) patch.effectiveFrom = rotaDay(data.effectiveFrom);
+    if (data.effectiveTo !== undefined) patch.effectiveTo = data.effectiveTo ? rotaDay(data.effectiveTo) : null;
     if (data.priority !== undefined) patch.priority = clampInt(data.priority, 0, 0, 1000);
     if (data.isActive !== undefined) patch.isActive = data.isActive;
 

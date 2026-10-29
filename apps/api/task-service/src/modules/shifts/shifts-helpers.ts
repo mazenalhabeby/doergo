@@ -18,4 +18,16 @@ function earliestOf(...dates: Array<Date | null | undefined>): Date | null {
   return t.length ? new Date(Math.min(...t)) : null;
 }
 
-export { HHMM, earliestOf };
+/**
+ * A rota window bound as the day it names: midnight UTC of that calendar day, whatever time a
+ * client sent with it ("2026-11-03T23:59:59+01:00" is the 3rd). Every reader compares DAYS
+ * (`rotaInForceOn`), so a time on the bound only ever made instant comparisons disagree.
+ */
+function rotaDay(s: string): Date {
+  const asDate = new Date(s);
+  if (isNaN(asDate.getTime())) return asDate; // refused downstream exactly as before
+  const d = /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : toISODateString(asDate);
+  return new Date(`${d}T00:00:00.000Z`);
+}
+
+export { HHMM, earliestOf, rotaDay };

@@ -1,6 +1,8 @@
 import type { PrismaService } from '@hbcfield/shared';
 import {
-  activeWindowWhere,
+  addDaysStr,
+  notEndedWhere,
+  rotaInForceOn,
   SHIFT_REMINDER_DEFAULTS,
   SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   rotaRunsOn,
@@ -23,12 +25,20 @@ export async function shiftFromRota(
   local: LocalDate,
   firstMatch = false,
 ): Promise<ResolvedShift | null> {
+  /*
+    ⚠️ The window is a range of LOCAL DAYS (effectiveFrom/To are stored as midnight UTC of the
+    first/last day), never compared with the clock-in instant: 08:00 Vienna on the rota's last
+    day is 07:00Z, after its effectiveTo of 00:00Z, and found no shift. The query reaches back to
+    yesterday (a night's tail) and `rotaInForceOn` decides on the instance's own start day.
+  */
+  const day = (d: string) => new Date(`${d}T00:00:00.000Z`);
   const assignments = await prisma.shiftAssignment.findMany({
     where: {
       userId,
       spaceId,
       isActive: true,
-      ...activeWindowWhere(clockInAt),
+      effectiveFrom: { lt: day(addDaysStr(local.dateStr, 1)) },
+      ...notEndedWhere(day(addDaysStr(local.dateStr, -1))),
     },
     include: { shift: true },
     // Highest priority wins overlaps; then the most recently-effective rota.
@@ -49,7 +59,7 @@ export async function shiftFromRota(
     */
     const startDay = instanceStartDay(shift, local);
     // ⚠️ ONE RULE — `rotaRunsOn` in shared, the answer the Schedules page draws too.
-    if (!rotaRunsOn(a, startDay)) continue;
+    if (!rotaInForceOn(a, startDay) || !rotaRunsOn(a, startDay)) continue;
     const window = shiftWindowOn(shift, tz, startDay);
     /*
       ⚠️ A clock-in after that instance has ENDED (past its tolerance) is not
