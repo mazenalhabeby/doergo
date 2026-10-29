@@ -3318,6 +3318,7 @@
       "REQUEST_KIND_NOT_OFFERED": "Diese Art von Antrag ist in Ihrem Arbeitsbereich nicht verfügbar.",
       "LOCATION_REQUIRED": "Wählen Sie den Arbeitsort, an dem Sie einstempeln.",
       "NOT_ASSIGNED_HERE": "Sie sind diesem Arbeitsort nicht zugeteilt. Bitten Sie Ihr Büro, Sie hinzuzufügen.",
+      "WORKSPACE_ARCHIVED": "Dieser Arbeitsort wurde archiviert. Fragen Sie Ihr Büro, wo Sie einstempeln sollen.",
       "NOT_ON_THE_CLOCK": "Sie sind nicht eingestempelt.",
       "ALREADY_ON_REST": "Sie sind bereits in einer Pause. Beenden Sie sie zuerst.",
       "REMOTE_NOT_ALLOWED": "Einstempeln außerhalb eines Arbeitsorts ist für Ihr Konto nicht erlaubt. Fragen Sie Ihr Büro.",

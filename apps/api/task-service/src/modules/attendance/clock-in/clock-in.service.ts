@@ -27,7 +27,8 @@ import { ClockInContextService } from './clock-in-context.service';
 import { ClockInRemoteService } from './clock-in-remote.service';
 import { ClockInSiteWriter } from './clock-in-site.writer';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
-import { fixOf, gpsAccuracyRefusal, outsideSiteRefusal, type ClockInInput } from './clock-in-steps';
+import { fixOf, gpsAccuracyRefusal, outsideSiteRefusal, workspaceArchivedRefusal } from './clock-in-steps';
+import type { ClockInInput } from './clock-in-steps';
 import { joinedIntoWhere } from '../core/clock-in-join';
 import { clockInZones } from './clock-in-helpers';
 
@@ -196,12 +197,15 @@ export class ClockInService {
     // Get location details. Never the Remote bucket: it has no site to judge and no rota — it is reached
     // only through `isRemote`, by somebody with no workspace (ClockInRemoteService).
     const workspace = await this.prisma.companyLocation.findFirst({
-      where: { id: data.locationId, organizationId: data.organizationId, isActive: true, isRemote: false },
+      // Archived workspaces are FOUND (an offline tap made before archiving gets a coded refusal below), never the bucket.
+      where: { id: data.locationId, organizationId: data.organizationId, isRemote: false },
     });
 
     if (!workspace) {
       throw new NotFoundException('Location not found or inactive');
     }
+    // Archived meanwhile (an offline tap made before it was): a CODED refusal the phone can put into words.
+    if (!workspace.isActive) throw workspaceArchivedRefusal();
     // The rules THIS member clocks by here (clock review D1): the workspace's, unless their assignment says
     // they work here another way, with their own daily hours. Everything below reads the result.
     const location = { ...workspace, ...effectiveClockRules(workspace, assignment) } as typeof workspace;

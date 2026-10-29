@@ -8367,6 +8367,7 @@
     "DAY_HOURS_SPACE_NOT_YOURS": "Choose a workspace you manage.",
     "LOCATION_REQUIRED": "Choose the workspace you are clocking in at.",
     "NOT_ASSIGNED_HERE": "You are not assigned to this workspace. Ask your office to add you.",
+    "WORKSPACE_ARCHIVED": "This workspace was archived. Ask your office where to clock in.",
     "NOT_ON_THE_CLOCK": "You are not clocked in.",
     "ALREADY_ON_REST": "You are already on a rest. End it first.",
     "REMOTE_NOT_ALLOWED": "Clocking in away from a workspace is not allowed for your account. Ask your office.",

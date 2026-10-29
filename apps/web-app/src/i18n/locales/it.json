@@ -8367,6 +8367,7 @@
     "DAY_HOURS_SPACE_NOT_YOURS": "Scegli uno spazio di lavoro che gestisci.",
     "LOCATION_REQUIRED": "Scegli il luogo di lavoro in cui timbri.",
     "NOT_ASSIGNED_HERE": "Non sei assegnato a questo luogo di lavoro. Chiedi al tuo ufficio di aggiungerti.",
+    "WORKSPACE_ARCHIVED": "Questo luogo di lavoro è stato archiviato. Chiedi al tuo ufficio dove timbrare.",
     "NOT_ON_THE_CLOCK": "Non hai timbrato l'entrata.",
     "ALREADY_ON_REST": "Sei già in pausa. Terminala prima.",
     "REMOTE_NOT_ALLOWED": "Timbrare fuori da un luogo di lavoro non è consentito per il tuo account. Chiedi al tuo ufficio.",

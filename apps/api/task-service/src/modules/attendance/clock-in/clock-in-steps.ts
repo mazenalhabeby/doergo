@@ -57,6 +57,17 @@ import { CLOCK_IN_USER_SELECT } from '@hbcfield/shared';
 export type ClockInUser = Prisma.UserGetPayload<{ select: typeof CLOCK_IN_USER_SELECT }>;
 
 /**
+ * The workspace was archived — a tap made offline before it was, replayed after. Coded, so the phone says it in
+ * the member's language ("archived — ask your office") instead of "not found".
+ */
+export function workspaceArchivedRefusal(): BadRequestException {
+  return new BadRequestException({
+    code: 'WORKSPACE_ARCHIVED',
+    message: 'This workspace was archived. Ask your office where to clock in.',
+  });
+}
+
+/**
  * Null when the fix is good enough to judge (or there is no fix); otherwise the refusal.
  *
  * ⚠️ A position WITHOUT an accuracy (or with 0, which no real fix reports) is not "precise": it used to

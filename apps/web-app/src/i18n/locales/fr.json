@@ -8367,6 +8367,7 @@
     "DAY_HOURS_SPACE_NOT_YOURS": "Choisissez un espace de travail que vous gérez.",
     "LOCATION_REQUIRED": "Choisissez le lieu de travail où vous pointez.",
     "NOT_ASSIGNED_HERE": "Vous n'êtes pas affecté à ce lieu de travail. Demandez à votre bureau de vous ajouter.",
+    "WORKSPACE_ARCHIVED": "Ce lieu de travail a été archivé. Demandez à votre bureau où pointer.",
     "NOT_ON_THE_CLOCK": "Vous n'avez pas pointé votre arrivée.",
     "ALREADY_ON_REST": "Vous êtes déjà en pause. Terminez-la d'abord.",
     "REMOTE_NOT_ALLOWED": "Pointer hors d'un lieu de travail n'est pas autorisé pour votre compte. Demandez à votre bureau.",

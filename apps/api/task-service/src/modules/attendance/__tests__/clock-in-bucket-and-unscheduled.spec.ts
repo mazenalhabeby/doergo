@@ -364,3 +364,13 @@ describe('saving the workspace settings', () => {
     expect(prisma.companyLocation.update).toHaveBeenCalled();
   });
 });
+
+describe('a workspace archived before the tap reaches the server', () => {
+  it('is a CODED refusal the phone can put into words, nothing written', async () => {
+    const { service, prisma } = await build({ space: { isActive: false } });
+    await expect(service.clockIn(tap({ locationId: 'loc-1' }))).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'WORKSPACE_ARCHIVED' }),
+    });
+    expect(prisma.timeEntry.create).not.toHaveBeenCalled();
+  });
+});
