@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import {
   zoneOf,
+  addDaysStr,
   DAILY_WORK_GUIDE_MINUTES,
   isAbsence,
   parseRequestInput,
@@ -41,6 +42,35 @@ export class RequestPrecheckService {
     private readonly rules: ApprovalRulesService,
   ) {}
 
+  /**
+   * Remaining before → after, PER LEAVE YEAR: Dec 28 – Jan 8 draws 4 days on this year and 6 on
+   * the next, never this year's balance minus all ten. At most a few years (a request is short).
+   */
+  private async balanceByYear(
+    who: { userId: string; organizationId: string },
+    from: string,
+    to: string,
+    workingDays: number,
+  ): Promise<RequestPrecheck['balance']> {
+    const years: NonNullable<NonNullable<RequestPrecheck['balance']>['years']> = [];
+    let on = from;
+    for (let i = 0; i < 3 && on <= to; i++) {
+      const b = await this.ledger.getBalance({ technicianId: who.userId, organizationId: who.organizationId, on });
+      const ly = b.leaveYear;
+      const last = ly && ly.end < to ? ly.end : to;
+      const days =
+        on === from && last === to
+          ? workingDays
+          : await this.technicians.countWorkingDays(who.organizationId, who.userId, new Date(on), new Date(last));
+      years.push({ start: ly?.start ?? on, end: ly?.end ?? to, days, before: b.remaining, after: b.remaining - days });
+      if (last === to) break;
+      on = addDaysStr(last, 1);
+    }
+    if (!years.length) return null;
+    const lowest = years.reduce((m, y) => (y.after < m.after ? y : m), years[0]!);
+    return { before: lowest.before, after: lowest.after, ...(years.length > 1 ? { years } : {}) };
+  }
+
   async precheck(data: { userId: string; organizationId: string; body: unknown }): Promise<RequestPrecheck> {
     const parsed = parseRequestInput(data.body);
     if (!parsed.ok) throw new BadRequestException({ code: parsed.code, message: REQUEST_REFUSALS[parsed.code] });
@@ -65,10 +95,7 @@ export class RequestPrecheckService {
         .catch(() => null);
       if (workingDays != null) stretchDays = await this.stretchDays(data, value.kind, start, end, workingDays);
       if ((value.type ?? 'VACATION') === 'VACATION' && workingDays != null) {
-        const b = await this.ledger
-          .getBalance({ technicianId: data.userId, organizationId: data.organizationId, on: value.startDate })
-          .catch(() => null);
-        if (b) balance = { before: b.remaining, after: b.remaining - workingDays };
+        balance = await this.balanceByYear(data, value.startDate, value.endDate, workingDays).catch(() => null);
       }
       const verdict = (
         await this.cover

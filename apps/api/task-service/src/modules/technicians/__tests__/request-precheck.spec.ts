@@ -62,6 +62,30 @@ describe('RequestPrecheckService', () => {
     );
   });
 
+  it('across the leave-year boundary: each year is charged its own days', async () => {
+    // 28 Dec 2026 – 8 Jan 2027: 4 working days this year, 6 next; 3 left this year, 25 next.
+    technicians.countWorkingDays
+      .mockResolvedValueOnce(10) // the whole request
+      .mockResolvedValueOnce(4) // 28–31 Dec
+      .mockResolvedValueOnce(6); // 1–8 Jan
+    ledger.getBalance
+      .mockResolvedValueOnce({ remaining: 3, leaveYear: { start: '2026-01-01', end: '2026-12-31' } })
+      .mockResolvedValueOnce({ remaining: 25, leaveYear: { start: '2027-01-01', end: '2027-12-31' } });
+    const r = await svc.precheck({
+      ...who,
+      body: { kind: 'LEAVE', type: 'VACATION', startDate: '2026-12-28', endDate: '2027-01-08' },
+    });
+    expect(r.balance).toEqual({
+      before: 3,
+      after: -1,
+      years: [
+        { start: '2026-01-01', end: '2026-12-31', days: 4, before: 3, after: -1 },
+        { start: '2027-01-01', end: '2027-12-31', days: 6, before: 25, after: 19 },
+      ],
+    });
+    expect(ledger.getBalance.mock.calls.map((c: any[]) => c[0].on)).toEqual(['2026-12-28', '2027-01-01']);
+  });
+
   it('a clash with their own request is said before sending', async () => {
     technicians.requestClashes.mockResolvedValueOnce([
       { kind: 'LEAVE', startDate: new Date('2026-11-04'), endDate: new Date('2026-11-06'), status: 'PENDING' },

@@ -7,8 +7,15 @@
 export interface RequestPrecheck {
   /** Working days it costs (leave), the server's count. */
   workingDays: number | null;
-  /** VACATION only: remaining before → after. */
-  balance: { before: number; after: number } | null;
+  /**
+   * VACATION only: remaining before → after. A request across the leave-year boundary draws on
+   * each year for its own days (`years`, in order); the top-level pair is the year left LOWEST.
+   */
+  balance: {
+    before: number;
+    after: number;
+    years?: Array<{ start: string; end: string; days: number; before: number; after: number }>;
+  } | null;
   /** Their own requests it would collide with (sending would be refused). */
   clashes: Array<{ kind: string; startDate: string; endDate: string; status: string }>;
   /**
