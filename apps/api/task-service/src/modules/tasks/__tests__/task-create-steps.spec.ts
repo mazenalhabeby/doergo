@@ -10,7 +10,7 @@ jest.mock('../../workflows/space-workflow.util', () => ({
   listSpaceWorkflowIds: jest.fn().mockResolvedValue([]),
 }));
 
-const space = { organizationId: 'org', lat: 1, lng: 2, address: 'Main St', workflowId: null };
+const space = { organizationId: 'org', lat: 1, lng: 2, address: 'Main St', workflowId: null, isActive: true };
 
 describe('task create steps', () => {
   it('a SPACE-scoped member with exactly one workspace gets it; with two is asked', async () => {
@@ -34,6 +34,13 @@ describe('task create steps', () => {
     expect(data.spaceId).toBeUndefined();
     await settleCreateSpace(prisma, data, false);
     expect(data.spaceId).toBe('def');
+  });
+
+  it('an archived workspace takes no new job (404, as moving one there)', async () => {
+    const prisma: any = { companyLocation: { findUnique: jest.fn().mockResolvedValue({ ...space, isActive: false }) } };
+    await expect(resolveCreatePlacement(prisma, job({ spaceId: 's', organizationId: 'org' }))).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   it('fills the location from the space only when none was given', async () => {

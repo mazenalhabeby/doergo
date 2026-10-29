@@ -74,10 +74,12 @@ export async function resolveCreatePlacement(prisma: PrismaService, data: TaskCr
 
   const space = await prisma.companyLocation.findUnique({
     where: { id: data.spaceId },
-    select: { organizationId: true, lat: true, lng: true, address: true, workflowId: true },
+    select: { organizationId: true, lat: true, lng: true, address: true, workflowId: true, isActive: true },
   });
-  if (!space) {
-    throw new NotFoundException('Space not found');
+  // An archived workspace takes no new job — as moving one there (assertSpaceInOrg activeOnly), adding a member or
+  // a client already refuse (layer 2 test, 2026-10-29: creating was the one door left open).
+  if (!space || !space.isActive) {
+    throw new NotFoundException('Space not found in this organization');
   }
   // Through the shared resolver: the join first, the column as fallback.
   placement.spaceWorkflowId = await resolveSpaceDefaultWorkflowId(prisma, data.spaceId);
