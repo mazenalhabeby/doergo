@@ -203,3 +203,14 @@ export type ExistingClient = {
   spaceId: string | null;
   portalId: string | null;
 };
+
+/** Where a linked record is filed and whose it is — read to decide reach, never returned. */
+export const REACH_FIELDS = { spaceId: true, ownerId: true, managerIds: true } as const;
+
+/** A linked record without the fields read only to decide reach. */
+export function withoutReach<T extends { spaceId: unknown; ownerId: unknown; managerIds: unknown }>(
+  r: T,
+): Omit<T, 'spaceId' | 'ownerId' | 'managerIds'> {
+  const { spaceId: _s, ownerId: _o, managerIds: _m, ...rest } = r;
+  return rest;
+}

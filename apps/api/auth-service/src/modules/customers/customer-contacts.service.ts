@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { CrmCaller, withContactKeys } from './customers-helpers';
+import { CrmCaller, withContactKeys, REACH_FIELDS, withoutReach } from './customers-helpers';
 import { CrmReachService } from './crm-reach.service';
 
 /** Contact people: who works at a company, linking, changing, unlinking, promoting. */
@@ -27,7 +27,10 @@ export class CustomerContactsService {
     id: true, name: true, email: true, phone: true, isContact: true,
   } as const;
 
-  /** Who works at this company. */
+  /**
+   * Who works at this company. ⚠️ Reaching the company is not reaching its people: those the caller
+   * cannot reach are LEFT OUT and only counted (`hidden`) — no name, address or id of anybody they may not open.
+   */
   async listContacts(data: { companyId: string; organizationId: string; caller?: CrmCaller }) {
     const reach = await this.reach.crmReachFor(data.caller, data.organizationId);
     await this.reach.reachable(data.companyId, data.organizationId, reach, data.caller);
@@ -35,13 +38,14 @@ export class CustomerContactsService {
       where: { companyId: data.companyId, organizationId: data.organizationId },
       select: {
         id: true, role: true, isPrimary: true, createdAt: true,
-        person: { select: CustomerContactsService.CONTACT_PERSON_SELECT },
+        person: { select: { ...CustomerContactsService.CONTACT_PERSON_SELECT, ...REACH_FIELDS } },
       },
       // Primary first, then oldest — the person you ring is the top row, and the
       // rest keep a stable order so the panel does not reshuffle on every load.
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
-    return { data: rows };
+    const seen = rows.filter((r) => this.reach.canReach(reach, r.person, data.caller));
+    return { data: seen.map((r) => ({ ...r, person: withoutReach(r.person) })), hidden: rows.length - seen.length };
   }
 
   /** Which companies this person is a contact at. */
@@ -52,11 +56,12 @@ export class CustomerContactsService {
       where: { personId: data.personId, organizationId: data.organizationId },
       select: {
         id: true, role: true, isPrimary: true,
-        company: { select: { id: true, name: true, industry: true } },
+        company: { select: { id: true, name: true, industry: true, ...REACH_FIELDS } },
       },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
-    return { data: rows };
+    const seen = rows.filter((r) => this.reach.canReach(reach, r.company, data.caller));
+    return { data: seen.map((r) => ({ ...r, company: withoutReach(r.company) })), hidden: rows.length - seen.length };
   }
 
   /**
