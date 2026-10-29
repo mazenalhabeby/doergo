@@ -140,15 +140,30 @@ export class ShiftSweepService {
       targetsByEntry.set(e.id, await this.routing.notifyTargetsFor(e, 'attendance', leadersBySpace));
     }
 
+    /*
+      Two ticks can overlap (the sweep queue runs 20 at once), and a clock-in, an
+      excuse or "absent" can land between the read and the write. Each row is
+      CLAIMED on what was read — still waiting, same reminder count — and the
+      push goes out only when this tick won; a lost claim never overwrites
+      PRESENT / EXCUSED / ABSENT and never tells anybody twice.
+    */
+    const claim = (inst: (typeof due)[number], data: { state: 'REMINDED' | 'ESCALATED'; [k: string]: unknown }) =>
+      this.prisma.shiftInstance
+        .updateMany({
+          where: { id: inst.id, state: { in: ['PENDING', 'REMINDED'] }, reminderCount: inst.reminderCount },
+          data,
+        })
+        .then((r) => r.count === 1);
+
+    let remindedCount = 0;
+    let escalatedCount = 0;
     const tasks: Array<() => Promise<void>> = [];
     for (const { inst, nextCount, intervalMin } of toRemind) {
       const userName = nameById.get(inst.userId) ?? 'A worker';
       const nextRemindAt = new Date(now.getTime() + intervalMin * 60_000);
       tasks.push(async () => {
-        await this.prisma.shiftInstance.update({
-          where: { id: inst.id },
-          data: { state: 'REMINDED', reminderCount: nextCount, nextRemindAt },
-        });
+        if (!(await claim(inst, { state: 'REMINDED', reminderCount: nextCount, nextRemindAt }))) return;
+        remindedCount++;
         emitEvent(this.notificationClient, attendanceNoshowReminderEvent, {
           instanceId: inst.id,
           userId: inst.userId,
@@ -164,10 +179,8 @@ export class ShiftSweepService {
       const userName = nameById.get(inst.userId) ?? 'A worker';
       const leaderIds = targetsByEntry.get(inst.id) ?? [];
       tasks.push(async () => {
-        await this.prisma.shiftInstance.update({
-          where: { id: inst.id },
-          data: { state: 'ESCALATED', nextRemindAt: null },
-        });
+        if (!(await claim(inst, { state: 'ESCALATED', nextRemindAt: null }))) return;
+        escalatedCount++;
         emitEvent(this.notificationClient, attendanceNoshowEscalationEvent, {
           instanceId: inst.id,
           userId: inst.userId,
@@ -183,6 +196,6 @@ export class ShiftSweepService {
     for (let i = 0; i < tasks.length; i += CONCURRENCY) {
       await Promise.all(tasks.slice(i, i + CONCURRENCY).map((fn) => fn()));
     }
-    return success({ remindedCount: toRemind.length, escalatedCount: toEscalate.length, excusedCount });
+    return success({ remindedCount, escalatedCount, excusedCount });
   }
 }

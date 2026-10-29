@@ -125,8 +125,8 @@ describe('no-show sweep — the shift’s own cadence', () => {
   it('re-arms the next nudge at the shift’s interval', async () => {
     const svc = service([inst()], { shifts: [{ id: 'shift-1', reminderIntervalMin: 15, maxReminders: 2 }] });
     await svc.runNoShowSweep();
-    expect(svc.prisma.shiftInstance.update).toHaveBeenCalledWith({
-      where: { id: 'inst-1' },
+    expect(svc.prisma.shiftInstance.updateMany).toHaveBeenCalledWith({
+      where: { id: 'inst-1', state: { in: ['PENDING', 'REMINDED'] }, reminderCount: 0 },
       data: { state: 'REMINDED', reminderCount: 1, nextRemindAt: new Date(NOW.getTime() + 15 * 60_000) },
     });
   });
@@ -142,7 +142,7 @@ describe('no-show sweep — the shift’s own cadence', () => {
     const svc = service([inst({ reminderCount: 2 })]);
     const res = await svc.runNoShowSweep();
     expect(res.data.remindedCount).toBe(1); // 3rd of the default 3
-    expect(svc.prisma.shiftInstance.update).toHaveBeenCalledWith(
+    expect(svc.prisma.shiftInstance.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ nextRemindAt: new Date(NOW.getTime() + 5 * 60_000) }) }),
     );
   });
@@ -157,5 +157,31 @@ describe('no-show sweep — the shift’s own cadence', () => {
   it('one cadence rule for both sweeps', () => {
     expect(shiftNudgeCadence(null)).toEqual({ intervalMin: 5, maxReminders: 3 });
     expect(shiftNudgeCadence({ reminderIntervalMin: 10, maxReminders: 1 })).toEqual({ intervalMin: 10, maxReminders: 1 });
+  });
+});
+
+describe('no-show sweep — every row is CLAIMED (two ticks can overlap)', () => {
+  beforeAll(() => jest.useFakeTimers().setSystemTime(NOW));
+  afterAll(() => jest.useRealTimers());
+
+  it('a lost reminder claim (clocked in / excused meanwhile) writes nothing more and pushes nothing', async () => {
+    const svc = service([inst()]);
+    svc.prisma.shiftInstance.updateMany.mockResolvedValue({ count: 0 });
+    const res = await svc.runNoShowSweep();
+    expect(res.data.remindedCount).toBe(0);
+    expect(svc.prisma.shiftInstance.update).not.toHaveBeenCalled();
+    expect(svc.notificationClient.emit).not.toHaveBeenCalled();
+  });
+
+  it('a lost escalation claim never tells the leader and never overwrites PRESENT', async () => {
+    const svc = service([inst({ reminderCount: 3 })]);
+    svc.prisma.shiftInstance.updateMany.mockResolvedValue({ count: 0 });
+    const res = await svc.runNoShowSweep();
+    expect(svc.prisma.shiftInstance.updateMany).toHaveBeenCalledWith({
+      where: { id: 'inst-1', state: { in: ['PENDING', 'REMINDED'] }, reminderCount: 3 },
+      data: { state: 'ESCALATED', nextRemindAt: null },
+    });
+    expect(res.data.escalatedCount).toBe(0);
+    expect(svc.notificationClient.emit).not.toHaveBeenCalled();
   });
 });
