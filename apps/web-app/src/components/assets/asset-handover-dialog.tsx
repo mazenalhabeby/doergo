@@ -86,7 +86,8 @@ export function AssetHandoverDialog({
   // future" and "that is before they got it" appear beside the box while it is
   // being set, and the server refuses on exactly the same list.
   const plan = planHandover({
-    periods: openPeriods as unknown as CustodyPeriod[],
+    // Closed periods too: a back-dated handover may not open over one (overlaps-past).
+    periods: periods as unknown as CustodyPeriod[],
     to: decodeHolders(to),
     at,
     limit: shape.holder.multiple ? 50 : 1,
@@ -94,6 +95,7 @@ export function AssetHandoverDialog({
   const ready = canHandOver(plan)
   const future = plan.problems.some((p) => p.kind === "future")
   const beforeStart = plan.problems.find((p) => p.kind === "before-start")
+  const overlapsPast = plan.problems.some((p) => p.kind === "overlaps-past")
 
   const hand = useMutation({
     mutationFn: () => assetsApi.handOver(assetId, { to: decodeHolders(to), at, reason: reason.trim() || undefined }),
@@ -149,7 +151,7 @@ export function AssetHandoverDialog({
               value={when}
               max={toLocalInput(new Date())}
               onChange={(e) => { setWhen(e.target.value); setWhenTouched(true) }}
-              className={future || beforeStart ? "border-destructive" : undefined}
+              className={future || beforeStart || overlapsPast ? "border-destructive" : undefined}
             />
             {future ? (
               <p className="text-[11.5px] text-destructive">
@@ -160,6 +162,10 @@ export function AssetHandoverDialog({
                 {t("assetFacts.handover.beforeStart", "That is before {{name}} was given it.", {
                   name: nameOf(beforeStart.period as unknown as CustodyPeriodDto),
                 })}
+              </p>
+            ) : overlapsPast ? (
+              <p className="text-[11.5px] text-destructive">
+                {t("serverErrors.CUSTODY_OVERLAPS_PAST", "Somebody else held it then. Choose a date after their custody ended.")}
               </p>
             ) : (
               <p className="text-[11.5px] text-muted-foreground">

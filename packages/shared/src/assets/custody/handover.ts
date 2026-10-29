@@ -29,6 +29,8 @@ export type HandoverProblem =
   | { kind: 'before-start'; period: CustodyPeriod }
   | { kind: 'future'; at: Date }
   | { kind: 'too-many'; limit: number; asked: number }
+  /** A back-dated handover would open a period over a CLOSED one it may not share time with. */
+  | { kind: 'overlaps-past'; period: CustodyPeriod }
   | { kind: 'nobody' };
 
 /**
@@ -94,6 +96,23 @@ export function planHandover(input: {
     // every reader here would then treat as covering nothing.
     for (const p of closing) {
       if (at.getTime() < ms(p.startedAt)) problems.push({ kind: 'before-start', period: p });
+    }
+
+    /*
+      ⚠️ A back-dated handover may not open a period over a CLOSED one.
+
+      Bea had the van until Wednesday; recording on Thursday that Carl got it on
+      Monday would give a one-at-a-time van two holders for three days, and
+      every receipt in those days two owners. On a kind held by several, only
+      the same party twice is refused. Pass the closed periods that end after
+      `at` (the server does) — open ones are planned as above.
+    */
+    if (opening.length) {
+      const newKeys = new Set(opening.map(partyKey));
+      const clash = input.periods.find(
+        (p) => p.endedAt != null && ms(p.endedAt) > at.getTime() && (limit === 1 || newKeys.has(partyKey(p))),
+      );
+      if (clash) problems.push({ kind: 'overlaps-past', period: clash });
     }
   }
 

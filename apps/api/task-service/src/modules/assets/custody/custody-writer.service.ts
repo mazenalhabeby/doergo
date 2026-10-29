@@ -133,8 +133,14 @@ export class CustodyWriterService {
 
     // The periods AND the row that mirrors them, together: a no-op plan still
     // has to be able to notice that the two disagree. See below.
+    // Open periods, plus closed ones ending after the handover's date: a back-dated one may not overlap them.
+    const at = input.at ? new Date(input.at) : new Date();
+    const after = Number.isNaN(at.getTime()) ? new Date() : at;
     const [periods, held] = await Promise.all([
-      this.openFor(db, input.assetId),
+      db.assetCustody.findMany({
+        where: { assetId: input.assetId, OR: [{ endedAt: null }, { endedAt: { gt: after } }] },
+        select: CUSTODY_SELECT,
+      }) as unknown as Promise<CustodyPeriod[]>,
       db.assetHolder.findMany({ where: { assetId: input.assetId }, select: { userId: true, customerId: true } }),
     ]);
     const plan = planHandover({ periods, to: input.to, at: input.at, limit: input.limit });
@@ -163,7 +169,12 @@ export class CustodyWriterService {
         }
         return plan;
       }
-      if (input.strict) throw new BadRequestException(this.explain(plan));
+      if (input.strict) {
+        const overlap = plan.problems.some((p) => p.kind === 'overlaps-past');
+        throw new BadRequestException(
+          overlap ? { message: this.explain(plan), code: 'CUSTODY_OVERLAPS_PAST' } : this.explain(plan),
+        );
+      }
       return plan;
     }
 
@@ -189,6 +200,8 @@ export class CustodyWriterService {
         return 'A handover cannot be dated in the future — record it when it happens.';
       case 'before-start':
         return 'That date is before the current holder was given it.';
+      case 'overlaps-past':
+        return 'Somebody else held it then. Choose a date after their custody ended.';
       default:
         return 'Nothing to change.';
     }

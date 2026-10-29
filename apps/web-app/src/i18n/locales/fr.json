@@ -8370,6 +8370,7 @@
     "WORKSPACE_ARCHIVED": "Ce lieu de travail a été archivé. Demandez à votre bureau où pointer.",
     "TRIAGE_WORKSPACE_ARCHIVED": "Cet espace de travail a été archivé. Envoyez la demande vers un autre espace de travail.",
     "CRM_PORTAL_OTHER_WORKSPACE": "Ce portail appartient à un autre espace de travail que le client.",
+    "CUSTODY_OVERLAPS_PAST": "Quelqu'un d'autre le détenait à ce moment-là. Choisissez une date après la fin de sa détention.",
     "ASSET_MOVE_HOLDERS": "Les détenteurs actuels ne peuvent pas détenir le nouveau type. Choisissez qui le détient (ou personne) lors du déplacement.",
     "ASSET_HAS_HISTORY": "Cet élément a des coûts ou un historique de détention, il ne peut donc pas être supprimé. Passez plutôt son statut à Retiré : son historique est conservé et il n'est plus facturé.",
     "CLOCK_OUT_AFTER_NEXT_SHIFT": "Cette heure de sortie est après le début de votre prochain service. Choisissez une heure plus tôt ou demandez à votre bureau.",

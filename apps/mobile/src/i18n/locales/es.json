@@ -3321,6 +3321,7 @@
       "WORKSPACE_ARCHIVED": "Este lugar de trabajo se ha archivado. Pregunte a su oficina dónde fichar.",
       "TRIAGE_WORKSPACE_ARCHIVED": "Este espacio de trabajo se archivó. Envía la solicitud a otro espacio de trabajo.",
       "CRM_PORTAL_OTHER_WORKSPACE": "Este portal pertenece a un espacio de trabajo distinto al del cliente.",
+      "CUSTODY_OVERLAPS_PAST": "En esa fecha lo tenía otra persona. Elija una fecha posterior al fin de su custodia.",
       "ASSET_MOVE_HOLDERS": "Quienes lo tienen ahora no pueden tener el nuevo tipo. Elija quién lo tiene (o nadie) al moverlo.",
       "ASSET_HAS_HISTORY": "Este elemento tiene costes o un historial de quién lo tuvo, así que no se puede eliminar. Cambie su estado a Retirado: su historial se conserva y deja de facturarse.",
       "CLOCK_OUT_AFTER_NEXT_SHIFT": "Esta hora de salida es posterior al inicio de tu siguiente turno. Elige una hora anterior o pregunta a tu oficina.",
