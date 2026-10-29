@@ -166,21 +166,29 @@ export class AssetContractService {
       });
       handovers.push({ assetId: asset.id, plan: given });
 
+      /*
+        Only THIS member's custody of what is replaced ends: a co-holder of the
+        old one (a shared machine, a client on the same van) keeps their period,
+        and an asset somebody still holds is never retired from under them.
+      */
       const replaced: string[] = [];
+      const retirable: string[] = [];
       for (const step of proposal.steps) {
         if (step.kind !== 'close') continue;
+        const others = await this.custody.othersHolding(tx as unknown as Db, step.assetId, data.holderUserId);
         const takenBack = await this.custody.apply(tx as unknown as Db, {
           assetId: step.assetId,
           organizationId: data.organizationId,
           actorId: data.userId,
-          to: [],
+          to: others,
           at: startsAt,
           reason: `Replaced by ${asset.name}`,
-          limit,
+          limit: Math.max(limit, others.length),
           strict: true,
         });
         handovers.push({ assetId: step.assetId, plan: takenBack });
         replaced.push(step.assetId);
+        if (others.length === 0) retirable.push(step.assetId);
       }
 
       /*
@@ -189,9 +197,9 @@ export class AssetContractService {
         the option is offered — while its history, its jobs and its ledger stay
         exactly where they are.
       */
-      if (data.retireReplaced && replaced.length) {
+      if (data.retireReplaced && retirable.length) {
         await tx.asset.updateMany({
-          where: { id: { in: replaced }, organizationId: data.organizationId },
+          where: { id: { in: retirable }, organizationId: data.organizationId },
           data: { status: 'RETIRED' },
         });
       }
@@ -205,7 +213,7 @@ export class AssetContractService {
           body: nameFromContract(parsed) || asset.name,
           metadata: {
             replaced,
-            retired: !!data.retireReplaced && replaced.length > 0,
+            retired: !!data.retireReplaced && retirable.length > 0,
             termStartsOn: data.fields.startsOn ?? null,
             termEndsOn: data.fields.endsOn ?? null,
             startClamped,
@@ -213,7 +221,7 @@ export class AssetContractService {
         },
       });
 
-      return { asset, replaced };
+      return { asset, replaced, retirable };
     });
 
     if (options.announceHandover !== false) {
@@ -231,7 +239,7 @@ export class AssetContractService {
       assetId: created.asset.id,
       name: created.asset.name,
       replaced: created.replaced,
-      retired: !!data.retireReplaced && created.replaced.length > 0,
+      retired: !!data.retireReplaced && created.retirable.length > 0,
       startedAt: startsAt,
       startClamped,
     });

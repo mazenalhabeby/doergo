@@ -32,7 +32,7 @@ const FIELDS = {
 describe('AssetContractService', () => {
   let service: AssetContractService;
   let tx: any;
-  const custody = { apply: jest.fn(), announce: jest.fn() };
+  const custody = { apply: jest.fn(), announce: jest.fn(), othersHolding: jest.fn().mockResolvedValue([]) };
 
   const prisma: any = {
     assetCategory: { findFirst: jest.fn() },

@@ -137,9 +137,7 @@ export class AssetCustodyService {
     let released = 0;
     for (const h of held) {
       const limit = maxHolders(normalizeKindShape(h.asset?.category?.config));
-      const others = (await this.writer.openFor(this.prisma as unknown as Db, h.assetId))
-        .filter((p) => p.userId !== userId)
-        .map((p) => (p.userId ? { userId: p.userId } : { customerId: p.customerId! })) as CustodyParty[];
+      const others = await this.othersHolding(this.prisma as unknown as Db, h.assetId, userId);
       await this.prisma.$transaction((tx) =>
         this.apply(tx as unknown as Db, {
           assetId: h.assetId,
@@ -154,6 +152,17 @@ export class AssetCustodyService {
       released++;
     }
     return released;
+  }
+
+  /**
+   * Everybody ELSE holding this asset now — what "take it back from ONE person"
+   * hands it on to, so a co-holder keeps their own period (`to: []` would end
+   * every open period, not only theirs). A read; writing stays with `apply`.
+   */
+  async othersHolding(db: Db, assetId: string, userId: string): Promise<CustodyParty[]> {
+    return (await this.writer.openFor(db, assetId))
+      .filter((p) => p.userId !== userId)
+      .map((p) => (p.userId ? { userId: p.userId } : { customerId: p.customerId! }));
   }
 
   /**
