@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 
 import { spaceRolesApi, spaceMembersApi } from "@/lib/api"
 import { RoutingSection } from "./routing-section"
-import { roleQueryKey } from "./work-roles"
+import { roleQueryKey } from "@/components/spaces/work-roles"
 import { PeopleSection } from "./members-people"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SubRolesSection } from "./sub-roles-section"

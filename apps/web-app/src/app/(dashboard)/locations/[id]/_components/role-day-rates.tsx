@@ -7,7 +7,7 @@ import type { SpaceRoleInSpace } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { spaceRolesApi } from "@/lib/api"
 import { DatedRateField } from "@/components/rates/dated-rate"
-import { roleQueryKey, useCents, useSpaceCurrency } from "./work-roles"
+import { roleQueryKey, useCents, useSpaceCurrency } from "@/components/spaces/work-roles"
 
 /** A work role's day rate here, and the default every other workspace uses. */
 export function RoleDayRates({ role, spaceId }: { role: SpaceRoleInSpace; spaceId: string }) {

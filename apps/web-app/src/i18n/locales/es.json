@@ -2305,6 +2305,26 @@
       "daysRun_one": "{{count}} día trabajado",
       "daysRun_other": "{{count}} días trabajados",
       "onSite": "{{hours}} h en el sitio"
+    },
+    "access": {
+      "whereTitle": "Dónde trabaja y su rol allí",
+      "whereHint": "La empresa y cada espacio de trabajo, en un solo lugar. Abre un espacio para cambiar lo que puede hacer allí.",
+      "where": "Dónde",
+      "role": "Rol",
+      "trade": "Oficio",
+      "company": "Empresa",
+      "companyBelow": "Detalles abajo",
+      "noRole": "Sin rol",
+      "personal": "Personal (su propio conjunto)",
+      "open": "Abrir",
+      "close": "Cerrar",
+      "addWorkspace": "Añadir a un espacio de trabajo",
+      "chooseWorkspace": "Elige un espacio…",
+      "notHere": "Ya no está en este espacio de trabajo.",
+      "plainTitle": "En pocas palabras:",
+      "plainCompany": "{{role}} para toda la empresa",
+      "plainHere": "{{role}} en {{place}}",
+      "plainTrade": "trabaja como {{role}} en {{place}}"
     }
   },
   "invitations": {

@@ -107,6 +107,9 @@ export class MemberSpacesService {
       },
       include: {
         space: true,
+        // Names only, for the person's Access table — never a role's permissions (those stay with the builder's read).
+        role: { select: { id: true, name: true, personalAssignmentId: true } },
+        workRole: { select: { id: true, name: true } },
       },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });

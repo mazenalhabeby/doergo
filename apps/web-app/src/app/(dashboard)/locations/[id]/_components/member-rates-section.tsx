@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { rateHistoryApi, spaceMembersApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { DatedRateField } from "@/components/rates/dated-rate"
-import { useCents, useSpaceCurrency, type BillBy } from "./work-roles"
+import { useCents, useSpaceCurrency, type BillBy } from "@/components/spaces/work-roles"
 
 /**
  * What a client pays for this member here — their own dated hourly rate (or the inherited one), the

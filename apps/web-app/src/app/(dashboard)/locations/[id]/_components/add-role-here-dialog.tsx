@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { roleQueryKey, useSpaceCurrency } from "./work-roles"
+import { roleQueryKey, useSpaceCurrency } from "@/components/spaces/work-roles"
 
 const formatMoneyCents = (cents: number, currency: string) => formatMoney(cents, currency, MONEY_LOCALE)
 

@@ -4,18 +4,9 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
-import {
-  jobTitleOf,
-  mayGrantSpaceRoles,
-  mayManageSpaceMembers,
-  personInitials,
-  personName,
-  type SpaceMember,
-  type SpaceRoleInSpace,
-} from "@hbcfield/shared/client"
+import { jobTitleOf, personInitials, personName, type SpaceMember, type SpaceRoleInSpace } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
-import { useAuth } from "@/contexts/auth-context"
 import { type LocationAssignment, spaceMembersApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -23,11 +14,10 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { MemberRoutingEditor } from "./member-routing-editor"
 import { MemberAutoClock } from "./member-auto-clock"
-import { MemberPermissions } from "./member-permissions"
-import { MemberRolesSection } from "./member-roles-section"
+import { MemberAccessSections, useMemberRolesUpdate } from "@/components/spaces/member-access"
 import { MemberBillingSection } from "./member-billing-section"
 import { MemberRatesSection } from "./member-rates-section"
-import { roleQueryKey, type BillBy } from "./work-roles"
+import { roleQueryKey, type BillBy } from "@/components/spaces/work-roles"
 
 /** Everything about one person in this workspace — what the row only shows. */
 export function MemberPanel({
@@ -56,33 +46,15 @@ export function MemberPanel({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
   const [confirmRemove, setConfirmRemove] = useState(false)
 
   const external = member?.user?.isExternal === true
-  /*
-    Giving roles here — the same rule as the server's builder routes
-    (`spaceMemberAuthority().grantRoles`): managing this workspace's people, or
-    `canGrantSpaceRoles` here or org-wide (workspaces administrators and admins
-    included). For an external member the builder REPLACES the role picker:
-    their whole authority is what they may do in this one workspace.
-  */
-  const mayGrant = !!user && (mayManageSpaceMembers(user, spaceId) || mayGrantSpaceRoles(user, spaceId))
-  const builderReplacesPicker = external && mayGrant
-
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
     queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
   }
-  const update = useMutation({
-    mutationFn: (data: Parameters<typeof spaceMembersApi.updateRoles>[2]) =>
-      spaceMembersApi.updateRoles(spaceId, member!.id, data),
-    onSuccess: () => {
-      invalidate()
-      notify.success(t("scheduling.workRoles.memberSaved"))
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
+  // Billing saves through the same roles route as the role pickers (one hook, both doors).
+  const update = useMemberRolesUpdate(spaceId, member?.id)
   const remove = useMutation({
     mutationFn: () => spaceMembersApi.remove(spaceId, member!.id),
     onSuccess: () => {
@@ -127,30 +99,8 @@ export function MemberPanel({
             </SheetHeader>
 
             <div className="space-y-4">
-              {/* An external member's whole authority is the builder below — no trade, no second role. */}
-              {!builderReplacesPicker && (
-                <MemberRolesSection
-                  spaceId={spaceId}
-                  member={member}
-                  roles={roles}
-                  external={external}
-                  onUpdate={(data) => update.mutate(data)}
-                  saving={update.isPending}
-                  section={section}
-                  heading={heading}
-                />
-              )}
-
-              {mayGrant && (
-                <MemberPermissions
-                  key={member.id}
-                  spaceId={spaceId}
-                  member={member}
-                  section={section}
-                  heading={heading}
-                  collapsible={!external}
-                />
-              )}
+              {/* Roles + what they may do here — the same sections as the person's own Access tab. */}
+              <MemberAccessSections spaceId={spaceId} member={member} roles={roles} section={section} heading={heading} />
 
               {isClient && !external && (
                 <MemberBillingSection

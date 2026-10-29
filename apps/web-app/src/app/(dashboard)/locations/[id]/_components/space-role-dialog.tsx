@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DEFAULT_ROLE_COLOR, Segmented, roleQueryKey } from "./work-roles"
+import { DEFAULT_ROLE_COLOR, Segmented, roleQueryKey } from "@/components/spaces/work-roles"
 import { RoleDayRates } from "./role-day-rates"
 import { RolePermissionPicker, SPACE_PERMISSIONS } from "./role-permission-picker"
 import { MergeRoleSection } from "./merge-role-section"

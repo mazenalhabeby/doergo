@@ -10,7 +10,7 @@ import { notify } from "@/lib/toast"
 import { spaceRolesApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { roleQueryKey } from "./work-roles"
+import { roleQueryKey } from "@/components/spaces/work-roles"
 
 /** Merging a duplicate trade into another — its holders and day rates move. Asked twice before it happens. */
 export function MergeRoleSection({

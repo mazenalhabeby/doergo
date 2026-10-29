@@ -79,6 +79,9 @@ export const employeeRecordsApi = {
         effectiveFrom: string;
         effectiveTo?: string;
         location: CompanyLocation;
+        /** Names only (the person's Access table); null = no role here. `personalAssignmentId` = their own set. */
+        role?: { id: string; name: string; personalAssignmentId: string | null } | null;
+        workRole?: { id: string; name: string } | null;
       }[];
     }>;
 

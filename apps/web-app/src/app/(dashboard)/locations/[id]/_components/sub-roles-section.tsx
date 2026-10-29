@@ -14,7 +14,7 @@ import { ConfirmTargetDialog } from "@/components/common/confirm-dialog"
 import { SectionHeader, EmptyState } from "../../../../../components/common/section-header"
 import { RoleDialog } from "./space-role-dialog"
 import { AddRoleHereDialog } from "./add-role-here-dialog"
-import { RoleCard, roleQueryKey, useSpaceCurrency } from "./work-roles"
+import { RoleCard, roleQueryKey, useSpaceCurrency } from "@/components/spaces/work-roles"
 
 /** The workspace's roles: work roles with their day rate here, and management roles. */
 // ── Section (a): roles in this workspace ─────────────────────────────────────

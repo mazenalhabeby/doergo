@@ -30,6 +30,7 @@ import {
   useWarmMemberTabs,
 } from "./member-tabs-lazy"
 import { MemberOverview } from "./member-overview"
+import { AccessWorkspaces } from "./access-workspaces"
 import { MemberTasksPanel } from "./member-tasks-panel"
 
 interface MemberProfileTabsProps {
@@ -204,6 +205,8 @@ export function MemberProfileTabs({
       {showAccessTab && (
         <TabsContent value="access" className="mt-4">
           <div className="space-y-4">
+            {/* Everything this person may do, in one place: the company row and every workspace, then the company's details. */}
+            <AccessWorkspaces member={member} assignments={memberAssignments} />
             <AccessBuilder member={member} onSaved={onMemberSaved} />
           </div>
         </TabsContent>

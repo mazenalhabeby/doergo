@@ -30,8 +30,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, type BillBy } from "./work-roles"
-import { NONE } from "./role-tag"
+import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, type BillBy } from "@/components/spaces/work-roles"
+import { NONE } from "@/components/spaces/role-tag"
 
 /** Add somebody: who, their role (trade or management), and — for a trade — how they are billed. */
 export function AddMemberDialog({

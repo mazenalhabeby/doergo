@@ -2305,6 +2305,26 @@
       "daysRun_one": "{{count}} day worked",
       "daysRun_other": "{{count}} days worked",
       "onSite": "{{hours}} h on site"
+    },
+    "access": {
+      "whereTitle": "Where they work, and their role there",
+      "whereHint": "The company and every workspace, in one place. Open a workspace to change what they may do there.",
+      "where": "Where",
+      "role": "Role",
+      "trade": "Trade",
+      "company": "Company",
+      "companyBelow": "Details below",
+      "noRole": "No role",
+      "personal": "Personal (their own set)",
+      "open": "Open",
+      "close": "Close",
+      "addWorkspace": "Add to a workspace",
+      "chooseWorkspace": "Choose a workspace…",
+      "notHere": "Not in this workspace any more.",
+      "plainTitle": "In plain words:",
+      "plainCompany": "{{role}} for the whole company",
+      "plainHere": "{{role}} in {{place}}",
+      "plainTrade": "works as {{role}} in {{place}}"
     }
   },
   "invitations": {

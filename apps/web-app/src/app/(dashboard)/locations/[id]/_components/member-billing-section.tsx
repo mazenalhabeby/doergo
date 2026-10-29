@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import type { SpaceMember } from "@hbcfield/shared/client"
 import type { spaceMembersApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { BILL_BY, Segmented, useBillByLabel, type BillBy } from "./work-roles"
+import { BILL_BY, Segmented, useBillByLabel, type BillBy } from "@/components/spaces/work-roles"
 
 /** How a client is billed for this member: by the hour, the day or both, and which of their hours count. */
 export function MemberBillingSection({
